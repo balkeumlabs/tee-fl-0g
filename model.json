@@ -1,0 +1,5 @@
+{
+  "model": "test-model",
+  "version": "1.0",
+  "type": "linear-regression"
+}
