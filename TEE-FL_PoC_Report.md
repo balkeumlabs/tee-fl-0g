@@ -41,20 +41,22 @@ struct Job {
     uint256 fee;
     bool completed;
 }
+```
 
-Flow:
+## Flow:
 
 Upload files to 0g Storage → get Merkle root hash
 Call submitJob() with those hashes + fee
 Call completeJob() with output result hash
 Smart contract emits logs and transfers reward
 
-Outputs and Verifications
+**Outputs and Verifications**
 Deployment
 Contract deployed to:
 0x57a069a1c980a1E7577b9094b15968A2962d7b33
 Confirmed on 0g Explorer.
-Job Submission
+
+## Job Submission:
 
 npx hardhat run scripts/submit_job.js --network galileo
 Output:
@@ -93,28 +95,37 @@ Accuracy: 0.8045
 
 Result hash submitted to contract:
 f4247a08c3bf4ea001e6c2074e045572ea508a58dc4cca0d44d7e367676d09b7
-Verification Summary
-Task	Verified	Method
-Contract deployed	Yes	0g Explorer
-Job submitted	Yes	Hardhat script logs
-Job marked complete	Yes	Smart contract call
-Data uploaded	Yes	0g Storage Explorer
-Result readable	Yes	get_job.js
-Reward sent	Yes	Solidity transfer()
 
-Files in This Repo:
-File	Purpose
-FLAIComputeJobs.sol	Smart contract for FL jobs
-submit_job.js	Job submission script
-complete_job.js	Complete job with result hash
-get_job.js	Retrieve job status and metadata
-upload_to_0g_storage.ts	Upload model/input to 0g storage
-model.json, data.json	Mock model and input data
-run_logistic_diabetes.py	Local FL compute with result hashing
-TEE-FL_PoC_Report.md	This full report
-README.md	Overview and setup
 
-Lessons Learned:
+## Verification Summary
+
+| Task                | Verified | Method                  |
+|---------------------|----------|--------------------------|
+| Contract deployed   | Yes      | 0g Explorer              |
+| Job submitted       | Yes      | Hardhat script logs      |
+| Job marked complete | Yes      | Smart contract call      |
+| Data uploaded       | Yes      | 0g Storage Explorer      |
+| Result readable     | Yes      | `get_job.js`             |
+| Reward sent         | Yes      | Solidity `transfer()`    |
+
+
+### Files in This Repo
+
+| File                          | Purpose                              |
+|-------------------------------|---------------------------------------|
+| `FLAIComputeJobs.sol`         | Smart contract for FL jobs           |
+| `submit_job.js`               | Job submission script                |
+| `complete_job.js`             | Complete job with result hash        |
+| `get_job.js`                  | Retrieve job status and metadata     |
+| `upload_to_0g_storage.ts`     | Upload model/input to 0g storage     |
+| `model.json`, `data.json`     | Mock model and input data            |
+| `run_logistic_diabetes.py`    | Local FL compute with result hashing |
+| `TEE-FL_PoC_Report.md`        | This full report                     |
+| `README.md`                   | Project overview and setup           |
+
+
+## Lessons Learned:
+
 0g Galileo is EVM-compatible and easy to deploy with Hardhat
 File uploads are reliable and produce traceable Merkle roots
 The job smart contract logic handles off-chain results effectively
