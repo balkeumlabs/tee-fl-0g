@@ -130,3 +130,21 @@ f4247a08c3bf4ea001e6c2074e045572ea508a58dc4cca0d44d7e367676d09b7
 File uploads are reliable and produce traceable Merkle roots
 The job smart contract logic handles off-chain results effectively
 Git casing issues (README.md vs Readme.md) can be problematic on Windows and need caution
+
+
+
+## Phase 2: Compute Task Preparation (TEE-Ready)
+
+We developed a logistic regression training task designed to run inside a TEE-enabled compute provider on 0g.
+
+- **train.py**: Implements a binary logistic regression using the sklearn diabetes dataset. Accuracy printed to stdout and serialized to `metrics.json`.
+- **Dockerfile**: Packages training environment with `python:3.10-slim`, `scikit-learn`, `joblib`
+- **Local Test Output**: Accuracy: ~0.7640
+- **config.json** uploaded to 0g Storage:
+    - Root hash: `0x7e6b87dcc37ab07c1e970224b7806a6c5dd5d0123811b0466d22141c7f76b525`
+
+### Blocker:
+The official 0g Compute CLI is required to submit TEE-backed training jobs. Attempts to install it via npm (`@0glabs/0g-compute-cli`) and GitHub (`0glabs/0g-compute-cli.git`) failed. SDK does not support training jobs.
+
+### Next Step:
+Request CLI access from 0g Labs and submit the Dockerized job using the `create-task` flow.
