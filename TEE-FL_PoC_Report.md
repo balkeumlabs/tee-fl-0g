@@ -135,16 +135,86 @@ Git casing issues (README.md vs Readme.md) can be problematic on Windows and nee
 
 ## Phase 2: Compute Task Preparation (TEE-Ready)
 
-We developed a logistic regression training task designed to run inside a TEE-enabled compute provider on 0g.
+This phase focused on preparing a Dockerized ML training task to be executed on a TEE-backed compute node in the 0g Network.
 
-- **train.py**: Implements a binary logistic regression using the sklearn diabetes dataset. Accuracy printed to stdout and serialized to `metrics.json`.
-- **Dockerfile**: Packages training environment with `python:3.10-slim`, `scikit-learn`, `joblib`
-- **Local Test Output**: Accuracy: ~0.7640
-- **config.json** uploaded to 0g Storage:
-    - Root hash: `0x7e6b87dcc37ab07c1e970224b7806a6c5dd5d0123811b0466d22141c7f76b525`
+---
 
-### Blocker:
-The official 0g Compute CLI is required to submit TEE-backed training jobs. Attempts to install it via npm (`@0glabs/0g-compute-cli`) and GitHub (`0glabs/0g-compute-cli.git`) failed. SDK does not support training jobs.
+### Step 1: Isolated Compute Job Setup
 
-### Next Step:
-Request CLI access from 0g Labs and submit the Dockerized job using the `create-task` flow.
+- Created a dedicated folder: `tee_fl_node/` under the main project directory
+- Wrote a Python training script (`train.py`) to train a logistic regression model on the scikit-learn diabetes dataset
+- Added a `Dockerfile` to install dependencies (`scikit-learn`, `joblib`) and run the training
+
+---
+
+### Step 2: Local Testing in Docker
+
+- Built the Docker image using the command:
+docker build -t tee-fl-logreg .
+
+- Ran the container to verify training:
+docker run --rm tee-fl-logreg
+
+**Result:**  
+Model trained successfully inside the container.  
+Accuracy: 0.7640
+
+
+**Output Artifacts:**  
+- `model.pkl` – trained model (saved inside container)
+- `metrics.json` – serialized accuracy score
+
+---
+
+### Step 3: Uploading Compute Config to 0g Storage
+
+- Created a `config.json` file describing the compute parameters and training script path
+- Attempted upload using our existing `upload_to_0g_storage.ts` script
+
+**Issue:**  
+The RPC endpoint (`rpc.0g-chain.dev`) failed to resolve due to DNS issues (same as previously observed)
+
+**Workaround:**  
+Manually uploaded `config.json` using the 0g Labs web uploader
+
+**Merkle Root Returned:**  
+0x7e6b87dcc37ab07c1e970224b7806a6c5dd5d0123811b0466d22141c7f76b525
+
+
+---
+
+### Step 4: CLI Blocker
+
+- Next step would be to submit a compute job using `0g-compute-cli`
+- CLI is referenced in all official 0g documentation and required for:
+  - Submitting compute jobs
+  - Choosing TEE-backed providers
+  - Decrypting model outputs
+- We tried:
+  - Installing via npm → 404 error
+  - Cloning from GitHub → repo not found
+
+No working install path is publicly available
+
+---
+
+### Current Status
+
+All prep work is complete:
+- Training logic works
+- Docker image builds cleanly
+- Output is accurate
+- Config is uploaded and hash received
+
+But we are blocked on:
+> Access to the official `0g-compute-cli` tool to submit the job to a TEE-backed provider.
+
+---
+
+### Next Steps
+
+- Request CLI access from 0g Labs via Discord or through manager
+- Once available:
+  - Run `create-task` with the config hash and Docker model name
+  - Track and decrypt results
+  - Optionally post result hash to `FLAIComputeJobs` smart contract
