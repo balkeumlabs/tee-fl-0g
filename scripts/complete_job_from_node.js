@@ -5,16 +5,16 @@ async function main() {
   const contractAddress = "0x57a069a1c980a1E7577b9094b15968A2962d7b33";
   const jobs = await ethers.getContractAt("FLAIComputeJobs", contractAddress);
 
-  const jobId = 2;
-  const resultHash = "2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f";
+  const jobId = 1;  // New job ID
+  const resultHash = "f4247a08c3bf4ea001e6c2074e045572ea508a58dc4cca0d44d7e367676d09b7"; // Hash from Python
 
   const tx = await jobs.completeJob(jobId, resultHash);
   await tx.wait();
 
-  console.log("✅ Job", jobId, "marked complete with result hash:", resultHash);
+  console.log("✅ Completed job", jobId, "with result hash:", resultHash);
 }
 
 main().catch((error) => {
-  console.error("❌ Completion failed:", error);
+  console.error("❌ Error completing job:", error);
   process.exitCode = 1;
 });

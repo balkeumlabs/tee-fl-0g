@@ -19,7 +19,7 @@ async function uploadFile(filePath) {
         new _0g_ts_sdk_1.StorageNode('https://node1.storage.0g.ai'),
         new _0g_ts_sdk_1.StorageNode('https://node2.storage.0g.ai')
     ];
-    const providerRpc = 'https://rpc-storage-testnet.0g.ai';
+    const providerRpc = 'https://rpc.0g-chain.dev';
     const provider = new ethers_1.JsonRpcProvider(providerRpc);
     const signer = new ethers_1.Wallet(process.env.PRIVATE_KEY, provider);
     const flow = await (0, _0g_ts_sdk_1.getFlowContract)(providerRpc, signer);
@@ -36,5 +36,6 @@ async function uploadFile(filePath) {
 async function main() {
     await uploadFile('model.json');
     await uploadFile('data.json');
+    await uploadFile('./tee_fl_node/config.json');
 }
 main().catch(console.error);

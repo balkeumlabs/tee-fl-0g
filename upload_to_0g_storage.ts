@@ -25,7 +25,7 @@ async function uploadFile(filePath: string) {
     new StorageNode('https://node2.storage.0g.ai')
   ];
 
-  const providerRpc = 'https://rpc-storage-testnet.0g.ai';
+  const providerRpc = 'https://rpc.0g-chain.dev';
   const provider = new JsonRpcProvider(providerRpc);
   const signer = new Wallet(process.env.PRIVATE_KEY!, provider);
 
@@ -45,6 +45,8 @@ async function uploadFile(filePath: string) {
 async function main() {
   await uploadFile('model.json');
   await uploadFile('data.json');
+  await uploadFile('./tee_fl_node/config.json');
 }
+
 
 main().catch(console.error);
