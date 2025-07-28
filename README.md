@@ -35,7 +35,27 @@ This PoC will serve as a foundation for future integration with live TEE provide
 
 ## Directory Structure
 
-<pre><code>```bash flai-0g-test/ ├── contracts/ │ └── FLAIComputeJobs.sol # On-chain job tracking smart contract ├── data.json # Sample federated input ├── model.json # Sample model metadata ├── trained_model.json # Local output from training ├── train_model.py # Python script for mock TEE compute ├── scripts/ │ ├── deploy_jobs.js # Deploy contract │ ├── submit_job.js # Submit new compute job │ ├── complete_job.js # Complete a job with resultHash │ ├── get_job.js # Read job details ├── upload_to_0g_storage.ts # SDK-based file uploader (TS) ├── tsconfig.json # TS compiler config ├── .env # Private key for 0g deployment ├── .gitignore # Ignore artifacts and secrets ├── hardhat.config.js # EVM setup for 0g ├── package.json # Project metadata └── README.md # This file ```</code></pre>
+```bash
+flai-0g-test/
+├── contracts/
+│   └── FLAIComputeJobs.sol           # On-chain job tracking smart contract
+├── data.json                         # Sample federated input
+├── model.json                        # Sample model metadata
+├── trained_model.json                # Local output from training
+├── train_model.py                    # Python script for mock TEE compute
+├── scripts/
+│   ├── deploy_jobs.js                # Deploy contract
+│   ├── submit_job.js                 # Submit new compute job
+│   ├── complete_job.js               # Complete a job with resultHash
+│   ├── get_job.js                    # Read job details
+├── upload_to_0g_storage.ts           # SDK-based file uploader (TS)
+├── tsconfig.json                     # TS compiler config
+├── .env                              # Private key for 0g deployment
+├── .gitignore                        # Ignore artifacts and secrets
+├── hardhat.config.js                 # EVM setup for 0g
+├── package.json                      # Project metadata
+└── README.md                         # This file
+```
 
 
 
