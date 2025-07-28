@@ -59,23 +59,23 @@ flai-0g-test/
 
 **Prerequisites**
 
-Node.js (v18+)
-Python (v3.11+)
-Hardhat
-TypeScript + ts-node
-0g testnet wallet (private key)
+* Node.js (v18+)
+* Python (v3.11+)
+* Hardhat
+* TypeScript + ts-node
+* 0g testnet wallet (private key)
 
 **Install dependencies**
 
-npm install
-pip install scikit-learn numpy
-Configure .env
-PRIVATE_KEY=your_private_key_without_0x
+* npm install
+* pip install scikit-learn numpy
+* Configure .env
+* PRIVATE_KEY=your_private_key_without_0x
 
 **Commands**
 
 Compile contracts
-*npx hardhat compile
+* npx hardhat compile
 
 Deploy FLAIComputeJobs.sol
 * npx hardhat run scripts/deploy_jobs.js --network galileo
