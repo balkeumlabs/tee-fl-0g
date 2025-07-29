@@ -150,7 +150,8 @@ flai-0g-test/
 
 
 ## 10. Prepared By
-Rao Ahmad
-Engineer, Balkeum Labs
-Mentors: Eli, Umer
-Windows 11 · Python 3.11 · Node 18 · Galileo Testnet
+
+- Rao Ahmad
+- Engineer, Balkeum Labs
+- Mentors: Eli, Umer
+- Windows 11 · Python 3.11 · Node 18 · Galileo Testnet
