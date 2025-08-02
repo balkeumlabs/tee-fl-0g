@@ -1,5 +1,6 @@
 ## FLAI + 0g Galileo PoC: TEE-FL Simulation
 
+
 ## Summary
 
 This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
@@ -9,6 +10,7 @@ Due to current limitations in the 0g stack:
 * 0g Compute CLI does not support general training jobs, so model training was executed locally, simulating TEE execution.
 
 This PoC will serve as a foundation for future integration with live TEE providers and federated model aggregation.
+
 
 ## Architecture
 
@@ -31,6 +33,7 @@ This PoC will serve as a foundation for future integration with live TEE provide
                                ^
                                |
          run logistic_regression locally (TEE simulation)
+
 
 
 ## Directory Structure
@@ -115,18 +118,13 @@ From submit_job.js
 From complete_job.js
 * Job 2 marked complete with result hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f
 
+
 ## Notes
 
 CLI upload of files to 0g Storage did not work, so we used SDK + manual confirmation via web UI.
 0g Compute CLI only supports fine-tuning of pre-existing LLMs, so local training was used instead to simulate TEE behavior.
 Smart contract assumes the reward goes to whoever completes the job. Aggregation logic will be simulated in the next phase.
 
-## Next Steps
-
-Add aggregation simulation (FedAvg) across multiple clients
-Connect to a real TEE provider when supported
-Expand input/output file formats and validations
-Integrate SubDAO governance and revenue flow per FLAI spec
 
 ## License
 

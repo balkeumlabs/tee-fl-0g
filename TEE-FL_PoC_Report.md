@@ -115,14 +115,6 @@ Submit and complete jobs
 
 
 
-## 8. Next Steps (Phase 3)
-* Simulate aggregation of encrypted model updates (FedAvg)
-* Add Docker containerization + encryption
-* Await 0g Compute CLI or real TEE access
-* Integrate global model tracking in smart contract
-* Align with SubDAO logic and payment routing (FLAI spec)
-
-
 ## 9. Directory Layout
 
 ```bash
@@ -146,12 +138,3 @@ flai-0g-test/
 ├── package.json                      # Project metadata
 └── README.md                         # This file
 ```
-
-
-
-## 10. Prepared By
-
-- Rao Ahmad
-- Engineer, Balkeum Labs
-- Mentors: Eli, Umer
-- Windows 11 · Python 3.11 · Node 18 · Galileo Testnet
