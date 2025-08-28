@@ -3,16 +3,26 @@
   "version": "1.0.0",
   "scripts": {
     "build": "tsc",
-    "upload": "ts-node --esm upload_to_0g_storage.ts"
+    "upload": "ts-node --esm upload_to_0g_storage.ts",
+    "list:services": "node scripts/list-services.mjs",
+    "market:discover": "node scripts/list-services.mjs",
+    "market:ping": "node scripts/market-ping.mjs",
+    "market:setup": "node scripts/market-setup.mjs",
+    "market:account": "node scripts/market-account.mjs",
+    "market:inspect": "node scripts/market-inspect.mjs"
   },
   "dependencies": {
+    "@0glabs/0g-serving-broker": "^0.3.3",
     "@0glabs/0g-ts-sdk": "^0.3.0",
-    "dotenv": "^17.2.0",
-    "ethers": "^6.15.0"
+    "cross-fetch": "^4.1.0",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.13.1"
   },
   "devDependencies": {
+    "@types/node": "^24.3.0",
     "hardhat": "^2.22.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.3"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
   }
 }

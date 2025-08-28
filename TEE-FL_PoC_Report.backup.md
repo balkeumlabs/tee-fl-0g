@@ -114,19 +114,6 @@ Submit and complete jobs
 | No TEE or encrypted data flow  | Deferred to future implementation |
 
 
-## 8. 0G Serving Market Integration (New)
-- Discovery works via broker.inference.listService(): 3 providers found with endpoints/models.
-- Metadata retrieval works (getServiceMetadata()).
-- Ping blocked by per-provider account creation/funding in A0GI:
-  - Errors observed: "AccountNotExists (..., <providerAddress>)" and "Error (Arg0: Insufficient balance)".
-  - accountProcessor is present with thresholds but lacks explicit create/open ABI in this JS surface; ledger.getLedger() returns a structure, but per-provider account still missing.
-- Scripts added:
-  - scripts/list-services.mjs (discovery)
-  - scripts/market-setup.mjs (ledger funding + acknowledge; WIP)
-  - scripts/market-ping.mjs (signed request; blocked by balance)
-  - scripts/market-account.mjs & market-inspect.mjs (diagnostics)
-- Next: either use updated SDK with account creation methods or call underlying contract ABI directly to create/fund provider account; then re-test signed ping.
-
 
 ## 9. Directory Layout
 

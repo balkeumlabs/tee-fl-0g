@@ -105,22 +105,6 @@ Complete job with result hash
 Query job info
 * npx hardhat run scripts/get_job.js --network galileo
 
-0G Serving Marketplace (Discovery + Ping)
-Status
-- Discovery works: we list providers and retrieve endpoint/model metadata.
-- Ping currently blocked by per-provider **A0GI account creation**: SDK build exposes `broker.inference.accountProcessor` but no direct create/open function in JS surface; results in `AccountNotExists`/`Insufficient balance`. We added setup/inspect scripts and are coordinating with 0G on the correct method.
-
-**Scripts**
-
-list providers
-* npm run market:discover
-
-fund ledger / acknowledge provider (WIP per-provider account)
-* npm run market:setup -- --provider <address>
-
-signed request to provider's /chat/completions
-* npm run market:ping
-
 
 **Output Example**
 
