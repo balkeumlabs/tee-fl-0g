@@ -19,3 +19,9 @@ trained_model.json
 
 .env.txt
 
+out/
+uploads/
+__pycache__/
+venv/
+node_modules/
+.env.bak
