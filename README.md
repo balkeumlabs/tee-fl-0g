@@ -79,32 +79,32 @@ flai-0g-test/
 * PRIVATE_KEY=your_private_key_without_0x
 
 
-### Commands:
+## Commands:
 
-**Compile contracts**
+### Compile contracts:
 * npx hardhat compile
 
-**Deploy FLAIComputeJobs.sol**
+### Deploy FLAIComputeJobs.sol:
 * npx hardhat run scripts/deploy_jobs.js --network galileo
 
-**Upload data/model files to 0g Storage**
+### Upload data/model files to 0g Storage:
 * Manual via SDK (CLI not functional): ts-node --esm upload_to_0g_storage.ts
 
-**Submit a job**
+### Submit a job:
 * npx hardhat run scripts/submit_job.js --network galileo
 
-**Run training (mocked TEE compute)**
+### Run training (mocked TEE compute):
 * python train_model.py
 * Outputs a result hash (SHA256 of trained_model.json)
 
-**Complete job with result hash**
+### Complete job with result hash:
 * npx hardhat run scripts/complete_job.js --network galileo
 
-**Query job info**
+### Query job info:
 * npx hardhat run scripts/get_job.js --network galileo
 
 
-### Output Example:
+## Output Example:
 
 * Trained model saved to trained_model.json      // From train_model.py
 * Result Hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f      // From train_model.py
