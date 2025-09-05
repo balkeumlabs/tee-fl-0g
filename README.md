@@ -1,4 +1,4 @@
-## FLAI + 0g Galileo PoC: TEE-FL Simulation
+# FLAI + 0g Galileo PoC: TEE-FL Simulation
 
 
 ## Summary
@@ -81,7 +81,7 @@ flai-0g-test/
 
 **Commands**
 
-# Compile contracts
+Compile contracts
 * npx hardhat compile
 
 Deploy FLAIComputeJobs.sol
@@ -126,7 +126,7 @@ From complete_job.js
 
 
 
-## 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
+# 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
 
 * This section adds a working path to call 0G Serving providers from the PoC.
 * Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
@@ -228,7 +228,7 @@ Ledger after:  0.009999999999960000 OG
 
 
 
-## Federated Aggregation (FedAvg) - WIP
+# Federated Aggregation (FedAvg) - WIP
 
 **Goal**
 
