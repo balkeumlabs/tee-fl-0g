@@ -81,20 +81,27 @@ flai-0g-test/
 
 **Commands:**
 
-* npx hardhat compile      // Compile contracts
+### Compile contracts
+* npx hardhat compile
 
-* npx hardhat run scripts/deploy_jobs.js --network galileo      // Deploy FLAIComputeJobs.sol
+### Deploy FLAIComputeJobs.sol
+* npx hardhat run scripts/deploy_jobs.js --network galileo
 
-* Manual via SDK (CLI not functional): ts-node --esm upload_to_0g_storage.ts      // Upload data/model files to 0g Storage
+### Upload data/model files to 0g Storage
+* Manual via SDK (CLI not functional): ts-node --esm upload_to_0g_storage.ts
 
-* npx hardhat run scripts/submit_job.js --network galileo      // Submit a job
+### Submit a job
+* npx hardhat run scripts/submit_job.js --network galileo
 
-* python train_model.py      // Run training (mocked TEE compute)
-* Outputs a result hash (SHA256 of trained_model.json)      // Run training (mocked TEE compute)
+### Run training (mocked TEE compute)
+* python train_model.py
+* Outputs a result hash (SHA256 of trained_model.json)
 
-* npx hardhat run scripts/complete_job.js --network galileo      // Complete job with result hash
+### Complete job with result hash
+* npx hardhat run scripts/complete_job.js --network galileo
 
-* npx hardhat run scripts/get_job.js --network galileo      // Query job info
+### Query job info
+* npx hardhat run scripts/get_job.js --network galileo
 
 
 **Output Example:**
