@@ -64,7 +64,7 @@ flai-0g-test/
 
 ## Setup
 
-**Prerequisites:**
+### Prerequisites:
 * Node.js (v18+)
 * Python (v3.11+)
 * Hardhat
@@ -72,39 +72,39 @@ flai-0g-test/
 * 0g testnet wallet (private key)
 
 
-**Install dependencies:**
+### Install dependencies:
 * npm install
 * pip install scikit-learn numpy
 * Configure .env
 * PRIVATE_KEY=your_private_key_without_0x
 
 
-**Commands:**
+### Commands:
 
-### Compile contracts
+**Compile contracts**
 * npx hardhat compile
 
-### Deploy FLAIComputeJobs.sol
+**Deploy FLAIComputeJobs.sol**
 * npx hardhat run scripts/deploy_jobs.js --network galileo
 
-### Upload data/model files to 0g Storage
+**Upload data/model files to 0g Storage**
 * Manual via SDK (CLI not functional): ts-node --esm upload_to_0g_storage.ts
 
-### Submit a job
+**Submit a job**
 * npx hardhat run scripts/submit_job.js --network galileo
 
-### Run training (mocked TEE compute)
+**Run training (mocked TEE compute)**
 * python train_model.py
 * Outputs a result hash (SHA256 of trained_model.json)
 
-### Complete job with result hash
+**Complete job with result hash**
 * npx hardhat run scripts/complete_job.js --network galileo
 
-### Query job info
+**Query job info**
 * npx hardhat run scripts/get_job.js --network galileo
 
 
-**Output Example:**
+### Output Example:
 
 * Trained model saved to trained_model.json      // From train_model.py
 * Result Hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f      // From train_model.py
@@ -128,7 +128,7 @@ flai-0g-test/
 This section adds a working path to call 0G Serving providers from the PoC.
 Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 
-**What this adds:**
+### What this adds:
 * Discover providers and read their endpoint and model metadata.
 * Fund your ledger in OG.
 * Acknowledge a provider one time.
@@ -160,20 +160,20 @@ scripts/
 
 ## Commands
 
-**List providers:**
+### List providers:
 * npm run market:discover
 
 
-**Ensure ledger funding in OG and acknowledge provider:**
+### Ensure ledger funding in OG and acknowledge provider:
 * npm run market:setup
 
 
-**Signed request to a provider and settlement:**
+### Signed request to a provider and settlement:
 * npm run market:ping           // uses .env PROMPT by default
 * npm run market:ping -- --provider 0xf07240Efa67755B5311bc75784a061eDB47165Dd --prompt "What is 2+2?"              // override at runtime
 
 
-**Full end-to-end demo flow (reference):**
+### Full end-to-end demo flow (reference):
 * npm run market:compute
 
 
