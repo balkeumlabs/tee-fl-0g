@@ -1,4 +1,5 @@
 # FLAI + 0g Galileo PoC: TEE-FL Simulation
+---
 
 
 ## Summary
@@ -80,8 +81,8 @@ flai-0g-test/
 
 
 **Commands:**
-
-* npx hardhat compile      // Compile contracts
+Compile contracts
+- npx hardhat compile
 
 * npx hardhat run scripts/deploy_jobs.js --network galileo      // Deploy FLAIComputeJobs.sol
 
@@ -114,7 +115,7 @@ flai-0g-test/
 * Smart contract assumes the reward goes to whoever completes the job. Aggregation logic will be simulated in the next phase.
 
 
-
+---
 
 # 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
 
@@ -216,13 +217,14 @@ Ledger after:  0.009999999999960000 OG
 * If RPC issues occur, verify RPC_ENDPOINT=https://evmrpc-testnet.0g.ai.
 * If imports fail on Node 22, note these scripts import the broker using createRequire for compatibility.
 
+---
 
 
 # Federated Aggregation (FedAvg) - WIP
 
 ## Goal
 
-* Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
+Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
 
 ## High level flow
 
@@ -235,4 +237,4 @@ Ledger after:  0.009999999999960000 OG
 
 ## Status
 
-* Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
+Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
