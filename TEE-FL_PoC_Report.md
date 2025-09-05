@@ -157,7 +157,8 @@ Chat ID: chatcmpl-ec0b004c80204774981d609908df8ebd
 ```
 
 
-## 8. Federated Aggregation (FedAvg) – WIP
+
+## 8. Federated Aggregation (FedAvg)
 
 ### Goal:
 
@@ -175,6 +176,44 @@ Encrypt client updates, upload CIDs to 0g Storage, record hashes on-chain per ro
 ### Status:
 
 Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
+
+
+## Encrypted FedAvg (Round 1)
+
+This phase simulates the encrypted client updates, local aggregation (TEE-sim), and anchoring of the global model hash on-chain.
+
+### Goal:
+- Encrypt client updates.
+- Upload to 0g Storage, record hashes on-chain.
+- Aggregate locally using mock TEE behavior (FedAvg).
+- Publish an encrypted global model and store its on-chain hash.
+
+### High-Level Flow:
+1. Clients generate encrypted updates using X25519 + AES-GCM.
+2. Upload artifacts to 0g Storage and save CIDs.
+3. Record round CIDs and SHA-256 hashes on-chain for audit.
+4. Aggregator decrypts the artifacts, runs FedAvg, and outputs a new global model.
+5. Store the global model in 0g Storage and keep its on-chain hash.
+
+### Artifacts:
+- `out/round-1/client-A.cipher.json`, `out/round-1/client-B.cipher.json`
+- `out/round-1/global_model.npy`, `out/round-1/global_model.json`
+
+### On-Chain:
+- Contract (jobs): `<CONTRACT_ADDRESS>`
+- Anchor tx: `<TX_HASH>`
+- Calldata format: `0x464c4149` ("FLAI") + `round(uint32 BE)` + `keccak(bytes32)`
+
+### How to Verify:
+```powershell
+# Receipt status
+$rc = Invoke-RestMethod -Uri $env:EVM_RPC -Method Post -ContentType 'application/json' -Body (@{ jsonrpc="2.0"; id=1; method="eth_getTransactionReceipt"; params=@($TX) } | ConvertTo-Json)
+$rc.result.status   # expect 0x1
+
+# Calldata
+$tx = Invoke-RestMethod -Uri $env:EVM_RPC -Method Post -ContentType 'application/json' -Body (@{ jsonrpc="2.0"; id=1; method="eth_getTransactionByHash"; params=@($TX) } | ConvertTo-Json)
+[string]$tx.result.input
+```
 
 
 ## 9. Lessons Learned

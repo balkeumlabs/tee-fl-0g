@@ -38,7 +38,7 @@ This PoC will serve as a foundation for future integration with live TEE provide
 
 ## Directory Structure
 
-```bash
+```powershell
 flai-0g-test/
 ├── contracts/
 │   └── FLAIComputeJobs.sol           # On-chain job tracking smart contract
@@ -138,7 +138,7 @@ Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 
 ## Additional files in scripts/
 
-```bash
+```powershell
 scripts/
 ├── list-services.mjs          # List marketplace providers, print endpoint + model + prices
 ├── market-setup.mjs           # Ensure ledger funded in OG and acknowledge provider
@@ -181,7 +181,7 @@ scripts/
 
 ### Provider discovery example:
 
-```bash
+```powershell
 Found 3 services
   [1] deepseek-r1-70b | provider=0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3 | input=0.00000049 OG | output=0.00000114 OG
   [2] llama-3.3-70b-instruct | provider=0xf07240Efa67755B5311bc75784a061eDB47165Dd | input=0.000000000000000001 OG | output=0.000000000000000001 OG
@@ -190,7 +190,7 @@ Found 3 services
 
 ### Working request and settlement example:
 
-```bash
+```powershell
 Provider acknowledged.
 Endpoint: http://50.145.48.92:30081/v1/proxy
 Model: phala/llama-3.3-70b-instruct
@@ -244,3 +244,38 @@ Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, 
 ## Status
 
 Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
+
+
+## Encrypted FedAvg (Round 1)
+
+This phase simulates TEE-backed Federated Learning (FedAvg) with encrypted client updates, local aggregation, and on-chain anchoring of the global model hash.
+
+### High-Level Pipeline:
+1. **Client Updates**: Clients generate encrypted updates using X25519 (for secure key exchange) and AES-GCM (for encryption). The updates are saved as `client-*.cipher.json`.
+2. **Aggregator**: Aggregation happens locally, simulating TEE behavior. The encrypted updates are decrypted and averaged to generate the `global_model.npy` and `global_model.json` files. The model’s SHA-256 hash is recorded.
+3. **Keccak**: We compute the Keccak-256 hash of the global model and anchor it on the Galileo testnet. The transaction is broadcasted with calldata of the form: `FLAI | round(uint32, BE) | keccak(bytes32)`.
+4. **On-Chain Verification**: The generated model hash is stored on-chain via `FLAIComputeJobs.sol` smart contract on the Galileo testnet.
+
+### Reproduce
+```powershell
+# prerequisites
+.\venv\Scripts\Activate.ps1
+pip install -q cryptography python-dotenv numpy
+
+# generate two encrypted client updates
+.\venv\Scripts\python .\client\client_update.py --round 1 --client-id A --seed 101
+.\venv\Scripts\python .\client\client_update.py --round 1 --client-id B --seed 202
+
+# aggregate (FedAvg)
+.\venv\Scripts\python .\aggregator\aggregate_local.py --round 1
+
+# compute keccak(global_model.npy)
+.\venv\Scripts\python .\scripts\utils\keccak_global.py
+# EXPECT: {"file":"out\\round-1\\global_model.npy","keccak":"0x<hash>"}
+
+# anchor (dry-run, then real)
+$env:DRY_RUN='1'; node .\scripts\onchain\anchor-self.mjs 1 0x<hash>
+$env:DRY_RUN='0'; node .\scripts\onchain\anchor-self.mjs 1 0x<hash>
+```
+
+
