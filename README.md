@@ -65,7 +65,6 @@ flai-0g-test/
 ## Setup
 
 **Prerequisites**
-
 * Node.js (v18+)
 * Python (v3.11+)
 * Hardhat
@@ -74,7 +73,6 @@ flai-0g-test/
 
 
 **Install dependencies**
-
 * npm install
 * pip install scikit-learn numpy
 * Configure .env
@@ -127,13 +125,13 @@ Smart contract assumes the reward goes to whoever completes the job. Aggregation
 
 
 
+
 ## 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
 
 This section adds a working path to call 0G Serving providers from the PoC.
 Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 
-**What this adds**
-
+**What this adds:**
 * Discover providers and read their endpoint and model metadata.
 * Fund your ledger in OG.
 * Acknowledge a provider one time.
@@ -141,7 +139,7 @@ Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 * Call the provider’s /chat/completions and settle payment with processResponse.
 
 
-## Additional files in scripts/ (new)
+## Additional files in scripts/
 
 ```bash
 scripts/
@@ -154,13 +152,13 @@ scripts/
 
 ## Environment variables for marketplace
 **required**
-PRIVATE_KEY=0xYOUR_TEST_PRIVATE_KEY
-RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
+* PRIVATE_KEY=0xYOUR_TEST_PRIVATE_KEY
+* RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
 
 **optional**
-LEDGER_OG=0.10                        # how much OG to ensure on your ledger (decimal)
-PROVIDER_ADDR=0xf07240Efa67755B5311bc75784a061eDB47165Dd   # default provider (llama-3.3-70b)
-PROMPT=Say hello from FLAI on 0G.                          # default prompt for market:ping
+* LEDGER_OG=0.10                        # how much OG to ensure on your ledger (decimal)
+* PROVIDER_ADDR=0xf07240Efa67755B5311bc75784a061eDB47165Dd   # default provider (llama-3.3-70b)
+* PROMPT=Say hello from FLAI on 0G.                          # default prompt for market:ping
 
 
 ## Commands
@@ -181,9 +179,11 @@ PROMPT=Say hello from FLAI on 0G.                          # default prompt for 
 **Full end-to-end demo flow (reference)**
 * npm run market:compute
 
+
 ## Expected output snapshot
 
 **Provider discovery example**
+
 ```bash
 Found 3 services
   [1] deepseek-r1-70b | provider=0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3 | input=0.00000049 OG | output=0.00000114 OG
@@ -192,6 +192,7 @@ Found 3 services
 ```
 
 **Working request and settlement example**
+
 ```bash
 Provider acknowledged.
 Endpoint: http://50.145.48.92:30081/v1/proxy
@@ -243,4 +244,5 @@ Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, 
 * For pay-per-inference, call the 0G Serving marketplace using the scripts above.
 
 **Status**
+
 Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
