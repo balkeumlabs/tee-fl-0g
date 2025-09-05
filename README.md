@@ -3,7 +3,7 @@
 
 ## Summary
 
-* This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
+This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
 
 Due to current limitations in the 0g stack:
 * File uploads to 0g Storage via CLI failed, so files were uploaded manually using the SDK and web UI.
@@ -81,7 +81,7 @@ flai-0g-test/
 
 **Commands**
 
-Compile contracts
+# Compile contracts
 * npx hardhat compile
 
 Deploy FLAIComputeJobs.sol
