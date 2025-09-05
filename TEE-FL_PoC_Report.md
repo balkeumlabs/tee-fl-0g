@@ -10,11 +10,10 @@
 ## 1. Objective
 
 To simulate a functional end-to-end Trusted Execution Environment + Federated Learning (TEE-FL) pipeline using the 0g Galileo testnet for:
-- Storing model and data (0g Storage)
-- Managing job submissions and completions on-chain
-- Executing local training as a placeholder for future TEE compute
+* Storing model and data (0g Storage)
+* Managing job submissions and completions on-chain
+* Executing local training as a placeholder for future TEE compute
 
----
 
 
 ## 2. Architecture Overview
@@ -45,8 +44,8 @@ To simulate a functional end-to-end Trusted Execution Environment + Federated Le
 
 ## 3. Implementation Summary
 
-**Component	Tool / File	Description**
-
+**Component	Tool / File	Description:**
+```bash
 | Component           | Tool / File                 | Description                                      |
 |---------------------|-----------------------------|--------------------------------------------------|
 | Smart Contract       | `FLAIComputeJobs.sol`        | Manages job lifecycle and reward logic           |
@@ -55,22 +54,22 @@ To simulate a functional end-to-end Trusted Execution Environment + Federated Le
 | Simulated Compute    | `train_model.py`             | Logistic Regression (sklearn) with SHA256 hash   |
 | Submission Scripts   | `submit_job.js`, `complete_job.js` | Registers and settles job via Hardhat     |
 | Output Hash          | `trained_model.json`         | Locally generated model result                   |
-
+```
 
 
 ## 4. What Was Actually Done
 
-**0g Storage**
+**0g Storage:**
 * Used SDK to upload model.json and data.json
 * Verified Merkle root on 0g Storage Explorer
 * CLI upload failed — fallback used
 
-**Local Training (TEE Mock)**
+**Local Training (TEE Mock):**
 * Ran logistic regression training locally
 * Produced model output + calculated SHA256 hash
 * Simulated trusted behavior (no external access)
 
-**Smart Contract + On-chain Job Lifecycle**
+**Smart Contract + On-chain Job Lifecycle:**
 * Deployed FLAIComputeJobs.sol on 0g Galileo
 * Used Hardhat to:
   * Submit job with data/model hash

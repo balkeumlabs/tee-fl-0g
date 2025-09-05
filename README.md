@@ -1,5 +1,4 @@
 # FLAI + 0g Galileo PoC: TEE-FL Simulation
----
 
 
 ## Summary
@@ -82,8 +81,7 @@ flai-0g-test/
 
 **Commands:**
 
-Compile contracts
-- npx hardhat compile
+* npx hardhat compile      // Compile contracts
 
 * npx hardhat run scripts/deploy_jobs.js --network galileo      // Deploy FLAIComputeJobs.sol
 
