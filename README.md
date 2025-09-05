@@ -97,7 +97,7 @@ flai-0g-test/
 * npx hardhat run scripts/get_job.js --network galileo      // Query job info
 
 
-**Output Example**
+**Output Example:**
 
 * Trained model saved to trained_model.json      // From train_model.py
 * Result Hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f      // From train_model.py
@@ -118,8 +118,8 @@ flai-0g-test/
 
 # 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
 
-* This section adds a working path to call 0G Serving providers from the PoC.
-* Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
+This section adds a working path to call 0G Serving providers from the PoC.
+Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 
 **What this adds:**
 * Discover providers and read their endpoint and model metadata.
@@ -141,11 +141,11 @@ scripts/
 
 
 ## Environment variables for marketplace
-**required**
+**Required:**
 * PRIVATE_KEY=0xYOUR_TEST_PRIVATE_KEY
 * RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
 
-**optional**
+**Optional:**
 * LEDGER_OG=0.10                        # how much OG to ensure on your ledger (decimal)
 * PROVIDER_ADDR=0xf07240Efa67755B5311bc75784a061eDB47165Dd   # default provider (llama-3.3-70b)
 * PROMPT=Say hello from FLAI on 0G.                          # default prompt for market:ping
@@ -153,26 +153,26 @@ scripts/
 
 ## Commands
 
-**List providers**
+**List providers:**
 * npm run market:discover
 
 
-**Ensure ledger funding in OG and acknowledge provider**
+**Ensure ledger funding in OG and acknowledge provider:**
 * npm run market:setup
 
 
-**Signed request to a provider and settlement**
+**Signed request to a provider and settlement:**
 * npm run market:ping           // uses .env PROMPT by default
 * npm run market:ping -- --provider 0xf07240Efa67755B5311bc75784a061eDB47165Dd --prompt "What is 2+2?"              // override at runtime
 
 
-**Full end-to-end demo flow (reference)**
+**Full end-to-end demo flow (reference):**
 * npm run market:compute
 
 
 ## Expected output snapshot
 
-**Provider discovery example**
+**Provider discovery example:**
 
 ```bash
 Found 3 services
@@ -181,7 +181,7 @@ Found 3 services
   [3] Unknown | provider=0x6D233D2610c32f630ED53E8a7Cbf759568041f8f | input=0.0000009 OG | output=0.00000015 OG
 ```
 
-**Working request and settlement example**
+**Working request and settlement example:**
 
 ```bash
 Provider acknowledged.
@@ -220,11 +220,11 @@ Ledger after:  0.009999999999960000 OG
 
 # Federated Aggregation (FedAvg) - WIP
 
-**Goal**
+**Goal:**
 
 * Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
 
-**High level flow**
+**High level flow:**
 
 * Clients train locally and produce encrypted gradients or deltas.
 * Upload artifacts to 0g Storage. Save CIDs.
@@ -233,6 +233,6 @@ Ledger after:  0.009999999999960000 OG
 * Store the global model in 0g Storage and keep its on-chain hash for verification.
 * For pay-per-inference, call the 0G Serving marketplace using the scripts above.
 
-**Status**
+**Status:**
 
 * Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
