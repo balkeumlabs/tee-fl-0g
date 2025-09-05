@@ -79,17 +79,17 @@ To simulate a functional end-to-end Trusted Execution Environment + Federated Le
 
 ## 5. Key Commands
 
-Compile & deploy contract
+### Compile & deploy contract
 * npx hardhat compile
 * npx hardhat run scripts/deploy_jobs.js --network galileo
 
-Upload data & model to storage
+### Upload data & model to storage
 * ts-node --esm upload_to_0g_storage.ts
 
-Simulate compute
+### Simulate compute
 * python train_model.py
 
-Submit and complete jobs
+### Submit and complete jobs
 * npx hardhat run scripts/submit_job.js --network galileo
 * npx hardhat run scripts/complete_job.js --network galileo
 * npx hardhat run scripts/get_job.js --network galileo
