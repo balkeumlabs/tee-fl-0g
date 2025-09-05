@@ -220,11 +220,11 @@ Ledger after:  0.009999999999960000 OG
 
 # Federated Aggregation (FedAvg) - WIP
 
-**Goal:**
+## Goal
 
 * Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
 
-**High level flow:**
+## High level flow
 
 * Clients train locally and produce encrypted gradients or deltas.
 * Upload artifacts to 0g Storage. Save CIDs.
@@ -233,6 +233,6 @@ Ledger after:  0.009999999999960000 OG
 * Store the global model in 0g Storage and keep its on-chain hash for verification.
 * For pay-per-inference, call the 0G Serving marketplace using the scripts above.
 
-**Status:**
+## Status
 
 * Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
