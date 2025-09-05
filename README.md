@@ -3,7 +3,7 @@
 
 ## Summary
 
-This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
+* This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
 
 Due to current limitations in the 0g stack:
 * File uploads to 0g Storage via CLI failed, so files were uploaded manually using the SDK and web UI.
@@ -119,17 +119,17 @@ From complete_job.js
 
 ## Notes
 
-CLI upload of files to 0g Storage did not work, so we used SDK + manual confirmation via web UI.
-0g Compute CLI only supports fine-tuning of pre-existing LLMs, so local training was used instead to simulate TEE behavior.
-Smart contract assumes the reward goes to whoever completes the job. Aggregation logic will be simulated in the next phase.
+* CLI upload of files to 0g Storage did not work, so we used SDK + manual confirmation via web UI.
+* 0g Compute CLI only supports fine-tuning of pre-existing LLMs, so local training was used instead to simulate TEE behavior.
+* Smart contract assumes the reward goes to whoever completes the job. Aggregation logic will be simulated in the next phase.
 
 
 
 
 ## 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
 
-This section adds a working path to call 0G Serving providers from the PoC.
-Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
+* This section adds a working path to call 0G Serving providers from the PoC.
+* Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
 
 **What this adds:**
 * Discover providers and read their endpoint and model metadata.
@@ -232,7 +232,7 @@ Ledger after:  0.009999999999960000 OG
 
 **Goal**
 
-Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
+* Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
 
 **High level flow**
 
@@ -245,4 +245,4 @@ Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, 
 
 **Status**
 
-Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
+* Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
