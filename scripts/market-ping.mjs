@@ -1,82 +1,94 @@
 import "dotenv/config";
-import fetch from "cross-fetch";
-import { Wallet, JsonRpcProvider } from "ethers";
+import { JsonRpcProvider, Wallet, formatEther } from "ethers";
+import OpenAI from "openai";
 import { createRequire } from "node:module";
 
-// Load broker via CommonJS (stable on Node 22)
+// Node 22 friendly import of the broker
 const require = createRequire(import.meta.url);
-const brokerPkg = require("@0glabs/0g-serving-broker");
-const { createZGComputeNetworkBroker } = brokerPkg;
+const { createZGComputeNetworkBroker } = require("@0glabs/0g-serving-broker");
 
-function getArg(name, def = undefined) {
-  const idx = process.argv.indexOf(`--${name}`);
-  return idx > -1 ? process.argv[idx + 1] : def;
+const RPC = process.env.RPC_ENDPOINT || process.env.EVM_RPC || "https://evmrpc-testnet.0g.ai";
+const EXPLICIT_PROVIDER = process.env.PROVIDER_ADDR || null;
+const PROMPT = process.env.PROMPT || "Say hello from FLAI on 0G.";
+
+// CLI args: --provider 0x..., --prompt "text"
+function arg(name, def) {
+  const i = process.argv.indexOf(`--${name}`);
+  return i > -1 ? process.argv[i + 1] : def;
+}
+
+function pickProvider(services) {
+  // Prefer llama-3.3-70b-instruct if present; else first
+  const preferred = "0xf07240Efa67755B5311bc75784a061eDB47165Dd".toLowerCase();
+  const match = services.find(s => s.provider?.toLowerCase?.() === preferred);
+  return match?.provider || services[0]?.provider;
 }
 
 async function main() {
-  const rpc = process.env.RPC_ENDPOINT || process.env.EVM_RPC;
-  const pk  = process.env.PRIVATE_KEY;
-  if (!rpc || !pk) {
-    console.error("Missing RPC_ENDPOINT/EVM_RPC or PRIVATE_KEY in .env");
-    process.exit(1);
-  }
+  const pk = process.env.PRIVATE_KEY;
+  if (!pk) throw new Error("Missing PRIVATE_KEY in .env");
 
-  const provider = new JsonRpcProvider(rpc);
-  await provider.getBlockNumber(); // throws if RPC is down
-
+  const provider = new JsonRpcProvider(RPC);
   const signer = new Wallet(pk, provider);
   const broker = await createZGComputeNetworkBroker(signer);
 
-  // Pick provider: --provider <address> or fallback to first from discovery
-  let providerAddr = getArg("provider");
-  let service;
-  if (!providerAddr) {
-    const svcs = await broker.inference.listService();
-    if (!svcs?.length) {
-      console.error("No services available to ping.");
-      process.exit(1);
-    }
-    service = svcs[0];
-    providerAddr = service.provider;
-  }
+  // Pick provider and ensure it's acknowledged (safe to re-call)
+  const services = await broker.inference.listService();
+  if (!services?.length) throw new Error("No services available");
+  const selected = arg("provider", EXPLICIT_PROVIDER) || pickProvider(services);
+  console.log("Using provider:", selected);
 
-  // Metadata: endpoint + model
-  const md = await broker.inference.getServiceMetadata(providerAddr);
-  if (!md?.endpoint) {
-    console.error("Missing endpoint for provider", providerAddr, md);
-    process.exit(1);
-  }
-  const endpoint = md.endpoint.replace(/\/+$/, "");
-  const model = md.model || "unknown-model";
-
-  // Minimal content to sign; SDK returns required headers
-  const content = {
-    model,
-    messages: [{ role: "user", content: "Say hello from FLAI / Balkeum." }],
-    max_tokens: 32
-  };
-
-  const headers = await broker.inference.getRequestHeaders(providerAddr, content);
-
-  // NOTE: endpoints shown were http://... (not TLS). Accept for test/demo only.
-  const url = `${endpoint}/chat/completions`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...headers },
-    body: JSON.stringify(content),
-  });
-
-  console.log("status:", res.status);
-  const text = await res.text();
   try {
-    const json = JSON.parse(text);
-    console.log("json:", JSON.stringify(json, null, 2));
-  } catch {
-    console.log("body:", text);
+    await broker.inference.acknowledgeProviderSigner(selected);
+    console.log("Provider acknowledged.");
+  } catch (e) {
+    const msg = e?.message || String(e);
+    if (msg.includes("already acknowledged")) console.log("Provider already acknowledged.");
+    else console.warn("ack error:", msg);
   }
+
+  // Get service metadata
+  const { endpoint, model } = await broker.inference.getServiceMetadata(selected);
+  console.log("endpoint:", endpoint);
+  console.log("model:", model);
+
+  const prompt = arg("prompt", PROMPT);
+  console.log("prompt:", prompt);
+
+  // Generate single-use auth headers
+  const headers = await broker.inference.getRequestHeaders(selected, prompt);
+  console.log("Auth headers ready.");
+
+  // Optional: show current ledger balance before
+  const before = await broker.ledger.getLedger();
+  const beforeWei = Array.isArray(before) && typeof before[1] === "bigint" ? before[1] : 0n;
+  console.log("Ledger before (OG):", formatEther(beforeWei));
+
+  // Call the provider using OpenAI client with custom headers
+  const openai = new OpenAI({ baseURL: endpoint, apiKey: "" });
+  const completion = await openai.chat.completions.create(
+    { model, messages: [{ role: "user", content: prompt }] },
+    { headers }
+  );
+
+  const aiResponse = completion?.choices?.[0]?.message?.content || "";
+  const chatId = completion?.id;
+  console.log("AI response:", aiResponse);
+  console.log("Chat ID:", chatId);
+
+  // Process response (verification + payment)
+  try {
+    const ok = await broker.inference.processResponse(selected, aiResponse, chatId);
+    console.log("processResponse:", ok ? "Valid / payment settled" : "Invalid");
+  } catch (e) {
+    console.warn("processResponse error:", e?.message || e);
+  }
+
+  // Final ledger
+  const after = await broker.ledger.getLedger();
+  const afterWei = Array.isArray(after) && typeof after[1] === "bigint" ? after[1] : 0n;
+  console.log("Ledger after (OG):", formatEther(afterWei));
+  console.log("✅ ping complete");
 }
 
-main().catch((e) => {
-  console.error("ping error:", e?.message ?? e);
-  process.exit(1);
-});
+main().catch(e => { console.error("ping error:", e?.message || e); process.exit(1); });

@@ -9,14 +9,16 @@
     "market:ping": "node scripts/market-ping.mjs",
     "market:setup": "node scripts/market-setup.mjs",
     "market:account": "node scripts/market-account.mjs",
-    "market:inspect": "node scripts/market-inspect.mjs"
+    "market:inspect": "node scripts/market-inspect.mjs",
+    "market:compute": "node scripts/compute-flow.mjs"
   },
   "dependencies": {
     "@0glabs/0g-serving-broker": "^0.3.3",
     "@0glabs/0g-ts-sdk": "^0.3.0",
     "cross-fetch": "^4.1.0",
-    "dotenv": "^17.2.1",
-    "ethers": "^6.13.1"
+    "dotenv": "^17.2.2",
+    "ethers": "^6.13.1",
+    "openai": "^5.19.1"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

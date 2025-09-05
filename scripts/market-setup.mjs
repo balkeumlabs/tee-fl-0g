@@ -1,121 +1,104 @@
 import "dotenv/config";
-import { Wallet, JsonRpcProvider } from "ethers";
+import { JsonRpcProvider, Wallet, formatEther } from "ethers";
 import { createRequire } from "node:module";
 
+// Node 22 friendly import of the broker
 const require = createRequire(import.meta.url);
-const brokerPkg = require("@0glabs/0g-serving-broker");
-const { createZGComputeNetworkBroker } = brokerPkg;
+const { createZGComputeNetworkBroker } = require("@0glabs/0g-serving-broker");
 
-function getArg(name, def = undefined) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : def;
+// Config
+const RPC = process.env.RPC_ENDPOINT || process.env.EVM_RPC || "https://evmrpc-testnet.0g.ai";
+const TARGET_OG = parseFloat(process.env.LEDGER_OG ?? "0.10"); // fund/ensure at least this much OG on the ledger
+const EXPLICIT_PROVIDER = process.env.PROVIDER_ADDR || null;
+
+// Utils
+function extractLedgerBalanceWei(ledger) {
+  // Ledger often comes back as Result(7) [addr, balanceWei, totalWei, ...]
+  if (ledger?.ledgerInfo?.[0]) return BigInt(ledger.ledgerInfo[0]);
+  if (Array.isArray(ledger) && typeof ledger[1] === "bigint") return ledger[1];
+  try { return BigInt(ledger?.[1]); } catch { return 0n; }
 }
 
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function ensureLedgerFunded(broker, targetOG) {
+  try {
+    const l = await broker.ledger.getLedger();
+    const balWei = extractLedgerBalanceWei(l);
+    const balOG = parseFloat(formatEther(balWei));
+    console.log("Current ledger balance (OG):", balOG);
+
+    const delta = targetOG - balOG;
+    if (delta > 1e-18) {
+      console.log(`Topping up ledger by ${delta} OG...`);
+      try {
+        await broker.ledger.depositFund(delta);
+      } catch (e) {
+        console.warn("depositFund failed, trying addLedger:", e?.message || e);
+        await broker.ledger.addLedger(delta);
+      }
+      const updated = await broker.ledger.getLedger();
+      const updatedWei = extractLedgerBalanceWei(updated);
+      console.log("Updated ledger balance (OG):", formatEther(updatedWei));
+    } else {
+      console.log("Ledger sufficiently funded.");
+    }
+    return;
+  } catch (e) {
+    console.log("No ledger found, creating with", targetOG, "OG...");
+    await broker.ledger.addLedger(targetOG); // IMPORTANT: decimal OG, not big-int units
+  }
+}
+
+function pickProvider(services) {
+  // Prefer llama-3.3-70b-instruct if present; else first
+  const preferred = "0xf07240Efa67755B5311bc75784a061eDB47165Dd".toLowerCase();
+  const match = services.find(s => s.provider?.toLowerCase?.() === preferred);
+  return match?.provider || services[0]?.provider;
+}
 
 async function main() {
-  const rpc = process.env.RPC_ENDPOINT || process.env.EVM_RPC;
-  const pk  = process.env.PRIVATE_KEY;
-  if (!rpc || !pk) {
-    console.error("Missing RPC_ENDPOINT/EVM_RPC or PRIVATE_KEY in .env");
-    process.exit(1);
-  }
+  const pk = process.env.PRIVATE_KEY;
+  if (!pk) throw new Error("Missing PRIVATE_KEY in .env");
 
-  const provider = new JsonRpcProvider(rpc);
+  const provider = new JsonRpcProvider(RPC);
   const signer = new Wallet(pk, provider);
-  const addr = await signer.getAddress();
-  console.log("wallet:", addr);
+  console.log("wallet:", await signer.getAddress());
 
   const broker = await createZGComputeNetworkBroker(signer);
 
-  // ===== 1) Ensure a ledger account exists & is funded (A0GI units, NOT ETH) =====
-  // Docs: 'addLedger(balance)' and 'depositFund(amount)' take A0GI units. :contentReference[oaicite:1]{index=1}
-  const targetA0GI = parseInt(process.env.LEDGER_A0GI || "2000000", 10); // default 2,000,000 A0GI
-  console.log("Target ledger balance (A0GI):", targetA0GI);
+  // 1) Ensure ledger is funded in OG decimals
+  console.log("Target ledger balance (OG):", TARGET_OG);
+  await ensureLedgerFunded(broker, TARGET_OG);
 
-  // Try to create/fund the ledger; SDK may not return a tx object, so we just call and then poll state.
+  // 2) Pick a provider
+  const services = await broker.inference.listService();
+  if (!services?.length) throw new Error("No services available");
+  const selected = EXPLICIT_PROVIDER || pickProvider(services);
+  console.log("Using provider:", selected);
+
+  // Print pricing for awareness (ether-style formatting)
+  const svc = services.find(s => s.provider?.toLowerCase?.() === selected.toLowerCase()) || services[0];
+  const ip = svc?.inputPrice ? formatEther(svc.inputPrice) : "0";
+  const op = svc?.outputPrice ? formatEther(svc.outputPrice) : "0";
+  console.log("prices (OG): input=", ip, "output=", op);
+
+  // 3) Acknowledge provider (no-op if already acknowledged)
   try {
-    await broker.ledger.addLedger(targetA0GI);
-    console.log("addLedger(A0GI) called");
+    await broker.inference.acknowledgeProviderSigner(selected);
+    console.log("acknowledgeProviderSigner: OK");
   } catch (e) {
-    console.warn("addLedger warning:", e?.message ?? e);
-  }
-
-  // Poll for ledger readiness (max ~10s)
-  let ready = false;
-  for (let i = 0; i < 10; i++) {
-    try {
-      const info = await broker.ledger.getLedger?.();
-      if (info) {
-        console.log("getLedger():", info);
-        // If info has a 'balance' or similar, check it; otherwise assume success once object exists
-        if (typeof info.balance === "number") {
-          console.log("ledger balance (A0GI):", info.balance);
-          if (info.balance >= targetA0GI) ready = true;
-        } else {
-          ready = true;
-        }
-        if (ready) break;
-      }
-    } catch (e) {
-      console.log("getLedger() not ready yet:", e?.message ?? e);
-    }
-    await sleep(1000);
-  }
-  if (!ready) {
-    console.warn("Ledger may not be indexed yet, continuing anyway…");
-  }
-
-  // ===== 2) Choose provider (arg or first from discovery) =====
-  let providerAddr = getArg("provider");
-  if (!providerAddr) {
-    const svcs = await broker.inference.listService();
-    if (!svcs?.length) {
-      console.error("No services available to acknowledge.");
-      process.exit(1);
-    }
-    providerAddr = svcs[0].provider;
-    console.log("Using first provider:", providerAddr);
-    // Log price info if present so you can size your A0GI deposit
-    const s0 = svcs.find(s => s.provider === providerAddr);
-    if (s0) {
-      console.log("prices (A0GI): inputPrice=", s0.inputPrice?.toString?.(), "outputPrice=", s0.outputPrice?.toString?.());
+    const msg = e?.message || String(e);
+    if (msg.includes("already acknowledged")) {
+      console.log("acknowledgeProviderSigner: already acknowledged");
+    } else {
+      console.warn("acknowledgeProviderSigner error:", msg);
     }
   }
 
-  // ===== 3) Acknowledge provider (required once per provider) =====
-  try {
-    const already = await broker.inference.userAcknowledged(providerAddr);
-    console.log("userAcknowledged?", !!already);
-    if (!already) {
-      console.log("Acknowledging provider:", providerAddr);
-      await broker.inference.acknowledgeProviderSigner(providerAddr);
-      console.log("acknowledged.");
-    }
-  } catch (e) {
-    console.error("acknowledge/userAcknowledged error:", e?.message ?? e);
-    process.exit(1);
-  }
-
-  // ===== 4) (Optional) Top up after creation =====
-  const topUp = parseInt(process.env.LEDGER_TOPUP_A0GI || "0", 10);
-  if (topUp > 0) {
-    console.log("Depositing additional A0GI:", topUp);
-    try {
-      await broker.ledger.depositFund(topUp);
-      console.log("depositFund done");
-    } catch (e) {
-      console.warn("depositFund error:", e?.message ?? e);
-    }
-  }
-
-  // ===== 5) Show metadata and exit OK =====
-  const md = await broker.inference.getServiceMetadata(providerAddr);
-  console.log("metadata:", md);
-  console.log("✅ Ledger ready (A0GI funded) + provider acknowledged");
+  // 4) Final ledger snapshot
+  const finalLedger = await broker.ledger.getLedger();
+  const finalWei = extractLedgerBalanceWei(finalLedger);
+  console.log("Final ledger balance (OG):", formatEther(finalWei));
+  console.log("✅ setup complete");
 }
 
-main().catch((e) => {
-  console.error("setup error:", e?.message ?? e);
-  process.exit(1);
-});
+main().catch(e => { console.error("setup error:", e?.message || e); process.exit(1); });
