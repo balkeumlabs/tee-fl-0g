@@ -179,7 +179,7 @@ scripts/
 
 ## Expected output snapshot
 
-**Provider discovery example:**
+### Provider discovery example:
 
 ```bash
 Found 3 services
@@ -188,7 +188,7 @@ Found 3 services
   [3] Unknown | provider=0x6D233D2610c32f630ED53E8a7Cbf759568041f8f | input=0.0000009 OG | output=0.00000015 OG
 ```
 
-**Working request and settlement example:**
+### Working request and settlement example:
 
 ```bash
 Provider acknowledged.
