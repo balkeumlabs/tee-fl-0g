@@ -279,3 +279,62 @@ $env:DRY_RUN='0'; node .\scripts\onchain\anchor-self.mjs 1 0x<hash>
 ```
 
 
+
+
+## Update (2025-09-09T20:39:23Z)
+
+<!-- BL-UPDATE-docs/raoah-readme-report-20250910-0139 -->
+
+### Quickstart (Galileo testnet)
+\\\powershell
+# // Install deps
+npm ci
+
+# // Compile with minimal config (uses .env)
+npx hardhat compile --config .\hardhat.galileo.js
+
+# // Sanity: check deployer balance on Galileo
+node .\scripts\check_balance_raw.js
+\\\
+
+### End-to-end demo (copy/paste)
+\\\powershell
+# // Deploy contracts once (addresses saved in .addresses.json)
+node .\scripts\deploy_access_raw.js
+node .\scripts\deploy_epoch_raw.js
+type .addresses.json
+
+# // Round (epoch 1): start → submit → scoresRoot → aggregate+publish → verify
+# // Prepare a client update file first (see examples in report)
+node .\scripts\start_epoch_once_raw.js <EpochManager> 1
+node .\scripts\submit_update_raw.js   <EpochManager> 1 cid://simulated/u-1 .\client_update_round1.json
+node .\scripts\compute_scores_and_post_root_raw.js <EpochManager> 1 0
+node .\scripts\aggregate_and_publish_raw.js <EpochManager> 1 .\aggregated_model_round1.json cid://simulated/global-1 .\client_update_round1.json
+node .\scripts\read_epoch_meta_raw.js <EpochManager> 1
+\\\
+
+### Access gating path (off-chain check)
+- Use \submit_update_checked_raw.js\ to enforce \AccessRegistry.isProviderApproved(owner, provider, datasetCid, modelHash)\ before submission.
+- See the report section “Access Control Gating” for the grant → submit sequence.
+
+### Scripts map (added)
+- \deploy_access_raw.js\ – deploy AccessRegistry
+- \deploy_epoch_raw.js\ – deploy EpochManager
+- \start_epoch_once_raw.js\ – idempotent epoch start
+- \submit_update_raw.js\ – submit update (no gating)
+- \submit_update_checked_raw.js\ – submit with AccessRegistry gating
+- \ead_update_raw.js\ – index updates from events
+- \compute_scores_and_post_root_raw.js\ – dummy scoring → Merkle root → post
+- \ggregate_and_publish_raw.js\ – FedAvg aggregation → publish
+- \ead_epoch_meta_raw.js\ – read epoch struct
+- \ound_controller.ps1\ – one-button end-to-end round
+
+### Known caveats
+- CIDs are simulated unless you wire the 0G storage uploader (\dist/upload_to_0g_storage.js\).
+- Scoring and aggregation currently run outside TEEs; attestation not yet enforced.
+- \publishModel\ is one-time per epoch by design; start a new epoch to republish.
+
+### Next steps
+- Swap simulated CIDs for real 0G Storage CIDs in submit/publish.
+- Add attestation artifacts (quote/measurement) to updates and verify in scoring.
+- CI smoke workflow to compile and run a minimal round with mocks.

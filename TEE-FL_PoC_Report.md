@@ -228,3 +228,63 @@ $tx = Invoke-RestMethod -Uri $env:EVM_RPC -Method Post -ContentType 'application
 * Parameterize provider/model in scripts; add round-by-round artifacts to README.
 * Extend FedAvg path with encrypted upload + on-chain attestations per round.
 * Prepare a simple end-to-end demo: submit job → local train (mock TEE) → upload → on-chain hash → pay-per-inference via marketplace.
+
+## Update (2025-09-09T20:39:23Z)
+
+<!-- BL-REPORT-docs/raoah-readme-report-20250910-0139 -->
+
+### Progress snapshot (then → now)
+| Task | % complete then | % complete now | Notes (why this score) |
+|---|---:|---:|---|
+| Repo bootstrap & installs | 70 | 100 | Lock drift fixed; reproducible \
+pm ci\. |
+| Hardhat config & compile | 30 | 100 | Minimal \hardhat.galileo.js\ with .env; clean compile. |
+| Contracts (AccessRegistry, EpochManager) | 50 | 100 | Deployed and exercised core paths. |
+| Deploy to Galileo | 0 | 100 | Both contracts deployed; \.addresses.json\ committed. |
+| Epoch lifecycle (start/submit/read) | 20 | 100 | Epochs 1–3 exercised; event-based readers. |
+| Event-based update indexer | 0 | 100 | \ead_update_raw.js\ reconstructs updates from logs. |
+| Scoring root (compute + post) | 0 | 100 | Deterministic dummy scores → Merkle root on-chain. |
+| Aggregation & publish (FedAvg) | 10 | 100 | Aggregated JSON + SHA-256; immutable publish per epoch. |
+| Access control gating (off-chain) | 0 | 80 | \submit_update_checked_raw.js\ enforces approvals; not yet used everywhere. |
+| Round orchestrator | 0 | 80 | \ound_controller.ps1\ runs full loop. |
+| 0G Storage integration (real CIDs) | 70 | 70 | Uploader exists; demo still uses simulated CIDs. |
+| Data encryption before upload | 20 | 20 | Planned, not yet enforced in scripts. |
+| TEE simulation + attestation placeholders | 20 | 30 | Stronger skeleton; RA not implemented. |
+| TEE scoring service (real) | 0 | 0 | Pending enclave + attestation. |
+| TEE aggregation service (real) | 0 | 0 | Pending enclave + attestation. |
+| Inference via 0G Service Marketplace | 0 | 0 | Not started. |
+| Payments/rewards distribution | 0 | 0 | Not started. |
+| Governance/SubDAO registries | 0 | 0 | Not started. |
+| CI/CD + smoke tests | 0 | 10 | No GH Actions yet; candidates identified. |
+| Documentation (README + Report) | 60 | 80 | This update brings docs in sync with current flow. |
+
+### On-chain runs (Galileo)
+- AccessRegistry: \ xE3bffF639B4522Fa3D1E72973f9BEc040504c21e\  
+- EpochManager:   \ x9341619f6B889A12bbb90BbE366405ce363Ab779\
+
+**Epoch 1**
+- updates: 1  
+- scoresRoot: \ x3606b407a32ff354665b0466c0a66f1d23b53e11e24646a437a5c086bf0bb157\  
+- publish:  
+  - globalModelCid: \cid://simulated/global-1757444721\  
+  - globalModelHash: \ x5e47909ae238ac0486826478017e6f5ee1da68c6e8f528249bc858d2bce838fc\  
+  - published: \	rue\
+
+**Epoch 2**
+- updates: 2  
+- scoresRoot: \ x391a54342f48a1229d7f87afbbce4593538f0ad05274ae0befc3477ee4c194fb\  
+- FedAvg weights ≈ \[0.01, -0.01, 0.025]\  
+- publish:  
+  - globalModelCid: \cid://simulated/global-1757446457\  
+  - globalModelHash: \ x2031283ac53a2e8b1c6438b20913bee3b5099e056acb3fd60ea7ae106aed278e\  
+  - published: \	rue\
+
+### Access control gating (how to)
+1. Attempt submit with \submit_update_checked_raw.js\ → expect failure if not approved.  
+2. Grant via \grant_access_raw.js\ for \(owner, provider, datasetCid, modelHash)\.  
+3. Retry submit → success; then post scoresRoot and publish.
+
+### Next steps
+- Replace simulated CIDs with real 0G storage CIDs in submit/publish.
+- Add attestation artifacts (quote/measurement) and verify in scoring.
+- Minimal CI workflow to compile + smoke a local round with mocks.
