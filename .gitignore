@@ -25,3 +25,13 @@ __pycache__/
 venv/
 node_modules/
 .env.bak
+
+# === Balkeum local artifacts (auto) ===
+# backups
+*.bak
+# aggregated model outputs
+aggregated_model_*.json
+# client update fixtures
+client_update_*.json
+# synthesized updates from round_controller
+auto_update_epoch*.json
