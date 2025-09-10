@@ -57,3 +57,7 @@ dist/tools/*
 aggregated_model.json
 .tmp/
 # --- end: track selected secure tools and meta ---
+
+# allow orchestration wrappers
+!dist/round_secure.ps1
+!dist/round_dummy.ps1
