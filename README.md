@@ -9,7 +9,21 @@
 ## Summary
 This repo demonstrates a working federated-learning pipeline on the 0G Galileo testnet: providers submit access-gated updates, we score and aggregate with FedAvg, anchor model hashes and metadata on-chain, and publish one model per epoch. Current state: end-to-end demo works with simulated storage CIDs; next steps are real 0G Storage CIDs, client-side encryption, and attestation metadata.
 ## Visual Overview
-```mermaid
+``````mermaid
+flowchart LR
+  A["Client datasets (encrypted)"] --> B["0G Storage"]
+  subgraph Chain["0G Galileo (EVM)"]
+    C[AccessRegistry] --- D[EpochManager]
+  end
+  E["Provider (TEE sim)"] --> F["Update JSON + meta"]
+  F --> C
+  F --> D
+  D --> S["Score & Merkle root"]
+  S --> M["FedAvg"]
+  M --> G["Global model"]
+  G --> D
+  H["Orchestrator (round_controller.ps1)"] --> C
+  H --> D
 flowchart LR
     A[Client datasets (encrypted)] -->|Upload to 0G Storage (CID)| B[Storage]
     subgraph Chain[0G Galileo (EVM)]
@@ -242,7 +256,21 @@ RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
 # // Validate README has key headings and code fences
 $readme = Get-Content -Raw .\README.md
 # // Check for required headings
-$must = @('# Quick Start','# Engineering Deep-Dive','```mermaid','```powershell','On-Chain Integration (0g/EVM)')
+$must = @('# Quick Start','# Engineering Deep-Dive','``````mermaid
+flowchart LR
+  A["Client datasets (encrypted)"] --> B["0G Storage"]
+  subgraph Chain["0G Galileo (EVM)"]
+    C[AccessRegistry] --- D[EpochManager]
+  end
+  E["Provider (TEE sim)"] --> F["Update JSON + meta"]
+  F --> C
+  F --> D
+  D --> S["Score & Merkle root"]
+  S --> M["FedAvg"]
+  M --> G["Global model"]
+  G --> D
+  H["Orchestrator (round_controller.ps1)"] --> C
+  H --> D','```powershell','On-Chain Integration (0g/EVM)')
 # // Ensure all required tokens exist
 $missing = $must | Where-Object { $readme -notlike "*$_*" }
 # // Print result or missing items
@@ -325,4 +353,5 @@ pwsh -ExecutionPolicy Bypass -File .\round_controller.ps1 -EpochId 4 -AutoClient
 4) CI smoke on PRs to rao.
 5) Contract extensions for attestation metadata & receipts.
 6) Marketplace mapping for pay-per-inference.
+
 
