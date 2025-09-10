@@ -1,0 +1,10 @@
+{
+  "name": "aggregated_model.json",
+  "sha256": "92e375e666921a0d3b64c18dd6bc948c99f4225f00cd5aa42b2c4a21f82eac16",
+  "size": 72,
+  "cid": null,
+  "epochId": 7,
+  "source": "aggregate_with_config",
+  "path": "C:\Users\raoah\flai-0g-test\tee-fl-0g\.tmp\scoring-20250911_013153\aggregated_model.json",
+  "timestamp": "2025-09-10T21:50:40Z"
+}
