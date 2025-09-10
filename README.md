@@ -1,3 +1,6 @@
+# // CI status badge for rao branch
+[![ci-smoke](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml/badge.svg?branch=rao)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml)
+
 # tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-smoke--round-lightgrey)
@@ -267,5 +270,6 @@ Expected: final log shows `published=true`, plus `globalModelHash` and `globalMo
 4) CI smoke on PRs to rao.
 5) Contract extensions for attestation metadata & receipts.
 6) Marketplace mapping for pay-per-inference.
+
 
 
