@@ -35,3 +35,9 @@ aggregated_model_*.json
 client_update_*.json
 # synthesized updates from round_controller
 auto_update_epoch*.json
+# docs backup hygiene
+README.md.*.bak
+README.md.bak*
+README.backup.md
+previous-readme.md
+TEE-FL_PoC_Report.md*

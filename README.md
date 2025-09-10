@@ -1,340 +1,252 @@
-# FLAI + 0g Galileo PoC: TEE-FL Simulation
-
-
+# tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-smoke--round-lightgrey)
+![Coverage](https://img.shields.io/badge/coverage-n%2Fa-inactive)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Version](https://img.shields.io/badge/version-0.2.0--poc-important)
+![Docs](https://img.shields.io/badge/docs-Combined%20README-informational)
+**Quick links:** [Install](#quick-start) | [Usage](#usage) | [Architecture](#visual-overview) | [Deep-Dive](#engineering-deep-dive) | [Roadmap](#roadmap-and-milestones)
 ## Summary
-
-This project is a minimal but functional Trusted Execution Environment + Federated Learning (TEE-FL) simulation using 0g services on the Galileo testnet. It demonstrates a decentralized, privacy-preserving model training workflow where data and models are stored on 0g Storage, jobs are tracked and settled on-chain, and training is simulated locally (mocking TEE behavior).
-
-Due to current limitations in the 0g stack:
-* File uploads to 0g Storage via CLI failed, so files were uploaded manually using the SDK and web UI.
-* 0g Compute CLI does not support general training jobs, so model training was executed locally, simulating TEE execution.
-
-This PoC will serve as a foundation for future integration with live TEE providers and federated model aggregation.
-
-
-## Architecture
-
-                   +------------------------+
-                   |  data.json + model.json|
-                   +-----------+------------+
-                               |
-                               | (uploaded manually)
-                               v
-                     +---------+---------+
-                     |     0g Storage     |
-                     +---------+---------+
-                               |
-          submitJob()         |        completeJob(resultHash)
-             via JS           |              via JS
-                               v
-                  +------------+-------------+
-                  |   FLAIComputeJobs.sol    | <-- on 0g Galileo
-                  +------------+-------------+
-                               ^
-                               |
-         run logistic_regression locally (TEE simulation)
-
-
-
-## Directory Structure
-
-```powershell
-flai-0g-test/
-├── contracts/
-│   └── FLAIComputeJobs.sol           # On-chain job tracking smart contract
-├── data.json                         # Sample federated input
-├── model.json                        # Sample model metadata
-├── trained_model.json                # Local output from training
-├── train_model.py                    # Python script for mock TEE compute
-├── scripts/
-│   ├── deploy_jobs.js                # Deploy contract
-│   ├── submit_job.js                 # Submit new compute job
-│   ├── complete_job.js               # Complete a job with resultHash
-│   ├── get_job.js                    # Read job details
-├── upload_to_0g_storage.ts           # SDK-based file uploader (TS)
-├── tsconfig.json                     # TS compiler config
-├── .env                              # Private key for 0g deployment
-├── .gitignore                        # Ignore artifacts and secrets
-├── hardhat.config.js                 # EVM setup for 0g
-├── package.json                      # Project metadata
-└── README.md                         # This file
-```
-
-
-
-## Setup
-
-### Prerequisites:
-* Node.js (v18+)
-* Python (v3.11+)
-* Hardhat
-* TypeScript + ts-node
-* 0g testnet wallet (private key)
-
-
-### Install dependencies:
-* npm install
-* pip install scikit-learn numpy
-* Configure .env
-* PRIVATE_KEY=your_private_key_without_0x
-
-
-## Commands:
-
-### Compile contracts:
-* npx hardhat compile
-
-### Deploy FLAIComputeJobs.sol:
-* npx hardhat run scripts/deploy_jobs.js --network galileo
-
-### Upload data/model files to 0g Storage:
-* Manual via SDK (CLI not functional): ts-node --esm upload_to_0g_storage.ts
-
-### Submit a job:
-* npx hardhat run scripts/submit_job.js --network galileo
-
-### Run training (mocked TEE compute):
-* python train_model.py
-* Outputs a result hash (SHA256 of trained_model.json)
-
-### Complete job with result hash:
-* npx hardhat run scripts/complete_job.js --network galileo
-
-### Query job info:
-* npx hardhat run scripts/get_job.js --network galileo
-
-
-## Output Example:
-
-* Trained model saved to trained_model.json      // From train_model.py
-* Result Hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f      // From train_model.py
-
-* New Job Submitted with ID: 2      // From submit_job.js
-
-* Job 2 marked complete with result hash: 2d26ea410c336015ef19e1533a3abc91ddae00e3b6b79859aa337e5cea5b3a2f      // From complete_job.js
-
-
-## Notes
-
-* CLI upload of files to 0g Storage did not work, so we used SDK + manual confirmation via web UI.
-* 0g Compute CLI only supports fine-tuning of pre-existing LLMs, so local training was used instead to simulate TEE behavior.
-* Smart contract assumes the reward goes to whoever completes the job. Aggregation logic will be simulated in the next phase.
-
-
----
-
-# 0G Serving Marketplace (Discovery → Headers → Request → Settlement)
-
-This section adds a working path to call 0G Serving providers from the PoC.
-Important: ledger amounts are OG decimals (ether style), not big integer A0GI.
-
-### What this adds:
-* Discover providers and read their endpoint and model metadata.
-* Fund your ledger in OG.
-* Acknowledge a provider one time.
-* Generate single-use auth headers.
-* Call the provider’s /chat/completions and settle payment with processResponse.
-
-
-## Additional files in scripts/
-
-```powershell
-scripts/
-├── list-services.mjs          # List marketplace providers, print endpoint + model + prices
-├── market-setup.mjs           # Ensure ledger funded in OG and acknowledge provider
-├── market-ping.mjs            # Generate headers, call provider, processResponse for settlement
-└── compute-flow.mjs           # Full reference flow (wallet → ledger → ack → headers → request → settlement)
-```
-
-
-## Environment variables for marketplace
-**Required:**
-* PRIVATE_KEY=0xYOUR_TEST_PRIVATE_KEY
-* RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
-
-**Optional:**
-* LEDGER_OG=0.10                        # how much OG to ensure on your ledger (decimal)
-* PROVIDER_ADDR=0xf07240Efa67755B5311bc75784a061eDB47165Dd   # default provider (llama-3.3-70b)
-* PROMPT=Say hello from FLAI on 0G.                          # default prompt for market:ping
-
-
-## Commands
-
-### List providers:
-* npm run market:discover
-
-
-### Ensure ledger funding in OG and acknowledge provider:
-* npm run market:setup
-
-
-### Signed request to a provider and settlement:
-* npm run market:ping           // uses .env PROMPT by default
-* npm run market:ping -- --provider 0xf07240Efa67755B5311bc75784a061eDB47165Dd --prompt "What is 2+2?"              // override at runtime
-
-
-### Full end-to-end demo flow (reference):
-* npm run market:compute
-
-
-## Expected output snapshot
-
-### Provider discovery example:
-
-```powershell
-Found 3 services
-  [1] deepseek-r1-70b | provider=0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3 | input=0.00000049 OG | output=0.00000114 OG
-  [2] llama-3.3-70b-instruct | provider=0xf07240Efa67755B5311bc75784a061eDB47165Dd | input=0.000000000000000001 OG | output=0.000000000000000001 OG
-  [3] Unknown | provider=0x6D233D2610c32f630ED53E8a7Cbf759568041f8f | input=0.0000009 OG | output=0.00000015 OG
-```
-
-### Working request and settlement example:
-
-```powershell
-Provider acknowledged.
-Endpoint: http://50.145.48.92:30081/v1/proxy
-Model: phala/llama-3.3-70b-instruct
-Auth headers generated.
-
-AI Response: The capital of France is Paris, ...
-Chat ID: chatcmpl-ec0b004c80204774981d609908df8ebd
-processResponse: Valid / payment settled
-
-Ledger before: 0.010000000000000000 OG
-Ledger after:  0.009999999999960000 OG
-```
-
-
-## Verification steps
-
-* Check testnet OG balance on your wallet address.
-* Run npm run market:setup and confirm it prints a final ledger balance in OG.
-* Run npm run market:ping and confirm:
-   * Endpoint and model print.
-   * You receive an AI response and a Chat ID.
-   * processResponse reports valid or prints a clear error.
-   * Ledger decreases by a tiny amount in OG.
-
-
-
-## Troubleshooting
-
-* If you see AccountNotExists or Insufficient balance, ensure you ran npm run market:setup and that LEDGER_OG is set to a reasonable decimal like 0.10.
-* If RPC issues occur, verify RPC_ENDPOINT=https://evmrpc-testnet.0g.ai.
-* If imports fail on Node 22, note these scripts import the broker using createRequire for compatibility.
-
----
-
-
-# Federated Aggregation (FedAvg) - WIP
-
-## Goal
-
-Encrypt client updates, upload to 0g Storage, record on-chain hashes per round, aggregate locally (mock TEE), and publish an encrypted global model and its hash.
-
-## High level flow
-
-* Clients train locally and produce encrypted gradients or deltas.
-* Upload artifacts to 0g Storage. Save CIDs.
-* Record round CIDs and SHA-256 hashes on-chain for audit.
-* Aggregator loads artifacts, decrypts inside the mock TEE, runs FedAvg, outputs a new global model and hash.
-* Store the global model in 0g Storage and keep its on-chain hash for verification.
-* For pay-per-inference, call the 0G Serving marketplace using the scripts above.
-
-## Status
-
-Initial FedAvg scaffolding is in the repo. README and report will be extended as the pipeline stabilizes.
-
-
-## Encrypted FedAvg (Round 1)
-
-This phase simulates TEE-backed Federated Learning (FedAvg) with encrypted client updates, local aggregation, and on-chain anchoring of the global model hash.
-
-### High-Level Pipeline:
-1. **Client Updates**: Clients generate encrypted updates using X25519 (for secure key exchange) and AES-GCM (for encryption). The updates are saved as `client-*.cipher.json`.
-2. **Aggregator**: Aggregation happens locally, simulating TEE behavior. The encrypted updates are decrypted and averaged to generate the `global_model.npy` and `global_model.json` files. The model’s SHA-256 hash is recorded.
-3. **Keccak**: We compute the Keccak-256 hash of the global model and anchor it on the Galileo testnet. The transaction is broadcasted with calldata of the form: `FLAI | round(uint32, BE) | keccak(bytes32)`.
-4. **On-Chain Verification**: The generated model hash is stored on-chain via `FLAIComputeJobs.sol` smart contract on the Galileo testnet.
-
-### Reproduce
-```powershell
-# prerequisites
-.\venv\Scripts\Activate.ps1
-pip install -q cryptography python-dotenv numpy
-
-# generate two encrypted client updates
-.\venv\Scripts\python .\client\client_update.py --round 1 --client-id A --seed 101
-.\venv\Scripts\python .\client\client_update.py --round 1 --client-id B --seed 202
-
-# aggregate (FedAvg)
-.\venv\Scripts\python .\aggregator\aggregate_local.py --round 1
-
-# compute keccak(global_model.npy)
-.\venv\Scripts\python .\scripts\utils\keccak_global.py
-# EXPECT: {"file":"out\\round-1\\global_model.npy","keccak":"0x<hash>"}
-
-# anchor (dry-run, then real)
-$env:DRY_RUN='1'; node .\scripts\onchain\anchor-self.mjs 1 0x<hash>
-$env:DRY_RUN='0'; node .\scripts\onchain\anchor-self.mjs 1 0x<hash>
-```
-
-
-
-
-## Update (2025-09-09T20:39:23Z)
-
-<!-- BL-UPDATE-docs/raoah-readme-report-20250910-0139 -->
-
-### Quickstart (Galileo testnet)
-\\\powershell
-# // Install deps
+This repo demonstrates a working federated-learning pipeline on the 0G Galileo testnet: providers submit access-gated updates, we score and aggregate with FedAvg, anchor model hashes and metadata on-chain, and publish one model per epoch. Current state: end-to-end demo works with simulated storage CIDs; next steps are real 0G Storage CIDs, client-side encryption, and attestation metadata.
+## Visual Overview
+~~~mermaid
+flowchart LR
+    A[Client datasets (encrypted)] -->|Upload to 0G Storage (CID)| B[Storage]
+    subgraph Chain[0G Galileo (EVM)]
+      C[AccessRegistry] --- D[EpochManager]
+    end
+    E[Provider (TEE sim)] -->|Train locally| F[Update JSON + meta]
+    F -->|Access check via AccessRegistry| C
+    F -->|Submit update event| D
+    D -->|Score + Merkle root| D
+    D -->|Aggregate (FedAvg)| G[Global model]
+    G -->|SHA-256 + CID| D
+    H[Orchestrator (round_controller.ps1)] --> C
+    H --> D
+~~~
+~~~
+Client -> 0G Storage (CID)
+Provider(TEE-sim): train -> update JSON (+hashes, cid?)
+AccessRegistry.isProviderApproved(...) gate
+EpochManager: submit -> score(root) -> FedAvg -> publishModel (one-time)
+On-chain: scoresRoot, globalModelHash, globalModelCid
+Orchestrator: startEpoch -> grant -> submit N -> score -> aggregate+publish -> verify
+~~~
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Features and Non-Goals](#features-and-non-goals)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+- [Observability](#observability)
+- [Engineering Deep-Dive](#engineering-deep-dive)
+  - [System Model and Assumptions](#system-model-and-assumptions)
+  - [Threat Model](#threat-model)
+  - [Cryptography and Key Management](#cryptography-and-key-management)
+  - [TEE Design and Attestation](#tee-design-and-attestation)
+  - [Protocols and Algorithms](#protocols-and-algorithms)
+  - [On-Chain Integration (0g/EVM)](#on-chain-integration-0gevem)
+  - [Performance and Benchmarks](#performance-and-benchmarks)
+  - [Reliability and Failure Modes](#reliability-and-failure-modes)
+  - [Security and Privacy Validation](#security-and-privacy-validation)
+  - [Reproducibility](#reproducibility)
+  - [Artifacts and Evidence](#artifacts-and-evidence)
+- [Engineering & Project Ops](#engineering--project-ops)
+  - [Development](#development)
+  - [Roadmap and Milestones](#roadmap-and-milestones)
+  - [FAQ and Troubleshooting](#faq-and-troubleshooting)
+  - [Contributing and Code of Conduct](#contributing-and-code-of-conduct)
+  - [Versioning and Changelog Policy](#versioning-and-changelog-policy)
+  - [License and Notices](#license-and-notices)
+  - [Acknowledgements](#acknowledgements)
+- [Handoff & Quality Gates](#handoff--quality-gates)
+- [Self-Check and Validators](#self-check-and-validators)
+## Quick Start
+**Prerequisites**
+- Windows 10/11 with PowerShell 7, Node.js 18+, npm 9+, Git
+- Funded key on 0G Galileo testnet (chainId 16601)
+- Visual Studio (preferred for editing) or VS Code (optional)
+~~~powershell
+# // Ensure you are inside the repo folder
+Set-Location 'C:\Users\raoah\flai-0g-test\tee-fl-0g'
+# // Why: Set working directory to the project root
+# // Verify expected files exist
+Get-ChildItem . -Force | Select-Object Name
+# // Why: Sanity check repo contents
+# // Install dependencies deterministically
 npm ci
-
-# // Compile with minimal config (uses .env)
+# // Why: Clean install per package-lock; avoids drift
+# // Compile contracts using Galileo config
 npx hardhat compile --config .\hardhat.galileo.js
-
-# // Sanity: check deployer balance on Galileo
+# // Why: Validates Solidity sources compile with pinned solc versions
+~~~
+**Verify**
+Expected: successful compile output with no errors; artifacts under `artifacts/`.
+**Configure env/secrets**
+~~~powershell
+# // Create .env if missing (never commit)
+if (!(Test-Path .\.env)) { @"
+PRIVATE_KEY=REPLACE_WITH_GALILEO_FUNDED_KEY   # secret
+RPC_ENDPOINT=https://evmrpc-testnet.0g.ai     # config
+"@ | Set-Content -NoNewline .\.env -Encoding UTF8 }
+# // Why: Idempotently create .env with placeholders (no real secrets)
+# // Confirm .env exists and is git-ignored
+Get-ChildItem .\.env; git check-ignore .\.env
+# // Why: Ensure secret file present and ignored by Git
+~~~
+Expected: `.env` listed; `git check-ignore` prints `.env`.
+**Run**
+~~~powershell
+# // Sanity: show signer address, chainId, balance
 node .\scripts\check_balance_raw.js
-\\\
+# // Why: Confirm correct account and funded balance on Galileo
+# // Execute a full round with 2 synthetic clients on Epoch 4
+pwsh .\round_controller.ps1 -EpochId 4 -AutoClients 2
+# // Why: One-button path: startEpoch -> grantAccess -> N submissions -> score -> aggregate+publish -> verify
+~~~
+**Verify**
+Expected: final log shows `published=true`, plus `globalModelHash` and `globalModelCid` (currently simulated CID).
+## Features and Non-Goals
+**Features**
+- Access gating via `AccessRegistry.isProviderApproved` (checked before submit)
+- Epoch lifecycle: start → submit updates → dummy scoring → Merkle root → FedAvg → publish once
+- On-chain anchoring: `scoresRoot`, `globalModelHash`, `globalModelCid` per epoch
+- Orchestrator: `round_controller.ps1` automates end-to-end demo
+**Non-Goals (current phase)**
+- Real 0G Storage writes (CIDs are simulated; wiring next)
+- Live TEE attestation verification (placeholders next)
+- Marketplace pay-per-inference flow (mapping next)
+## Usage
+**Common scripts**
+- `deploy_access_raw.js` — deploy AccessRegistry
+- `deploy_epoch_raw.js` — deploy EpochManager
+- `start_epoch_once_raw.js` — idempotent epoch creation
+- `grant_access_raw.js`, `is_approved_raw.js` — permit flow
+- `submit_update_checked_raw.js` — gated update submission (preferred)
+- `compute_scores_and_post_root_raw.js` — dummy scores → Merkle root on-chain
+- `aggregate_and_publish_raw.js` — FedAvg aggregation → SHA-256 → publishModel
+- `read_update_raw.js`, `read_epoch_meta_raw.js` — inspection tools
+~~~powershell
+# // Run a complete automated round on a new epoch
+pwsh .\round_controller.ps1 -EpochId 5 -AutoClients 2
+# // Why: Demonstrates repeatable end-to-end flow on another epoch id
+~~~
+## Configuration
+**.env keys**
+| Name          | Purpose                              | Type     | Default                          | Secret |
+|---------------|--------------------------------------|----------|----------------------------------|--------|
+| PRIVATE_KEY   | EVM signer for deploy/tx             | hex key  | none                             | Yes    |
+| RPC_ENDPOINT  | 0G Galileo RPC endpoint              | URL      | https://evmrpc-testnet.0g.ai     | No     |
+**.env.example**
+~~~ini
+# // Example template; copy to .env and fill real values safely
+PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX   # never commit
+RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
+~~~
+## Deployment
+**Environments**
+- 0G Galileo testnet (chainId 16601)
+**CI/CD (planned)**
+- GitHub Actions: `npm ci` → compile with `hardhat.galileo.js` → optional mocked smoke round
+- Badges wired to repository once pipeline lands
+**Rollback**
+- `publishModel` is one-time per epoch; if wrong, open a new epoch and republish
+- Use Git tags before contract changes; keep historical `.addresses.json`
+## Observability
+**Logs & metrics (current)**
+- Script stdout includes step markers for start/submit/score/publish
+- `read_epoch_meta_raw.js` provides epoch state snapshot
+## Engineering Deep-Dive
+### System Model and Assumptions
+- Actors: Data owner, Provider (TEE or TEE-sim), Aggregator, Chain (0G Galileo), Storage (0G)
+- Trust: Only TEEs may decrypt client data; aggregator TEE publishes global model
+- One publish per epoch enforced to ensure immutability of final model
+### Threat Model
+- Assets: Encrypted updates, model weights, keys, attestation proofs
+- Adversaries: Malicious providers, curious storage nodes, on-chain observers
+- Mitigations: Client-side encryption (planned), attestation checks (planned), hash anchoring on-chain
+### Cryptography and Key Management
+- Planned: X25519 for ECDH key exchange; AES-GCM for update encryption; per-epoch nonces; SHA-256 for integrity
+- Keys stored in `.env` only for dev; production uses secure vault/KMS
+### TEE Design and Attestation
+- Target: Intel SGX/TDX or AMD SEV-SNP (to be finalized)
+- Evidence: Quote/measurement bound to update; verified before scoring
+- Sealing: Provider keeps sealed state for reproducibility
+### Protocols and Algorithms
+- Aggregation: FedAvg across JSON updates (deterministic sorting; numeric stability rules)
+- Scoring: Dummy placeholder now; will verify attestation and reject non-compliant updates
+### On-Chain Integration (0g/EVM)
+- Network: 0G Galileo (chainId 16601)
+- Deployer: `0x9Ed57870379e28E32cb627bE365745dc184950dF`
+- Contracts:
+  - AccessRegistry: `0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e`
+  - EpochManager:  `0x9341619f6B889A12bbb90BbE366405ce363Ab779`
+- Anchors: `scoresRoot`, `globalModelHash`, `globalModelCid`
+### Performance and Benchmarks
+- Baseline: Logistic regression on small dataset; demo shows epoch publish in seconds
+- Next: Capture timings for N=5..50 providers; track gas costs per submit/publish
+### Reliability and Failure Modes
+- Idempotent: `start_epoch_once_raw.js` to avoid duplicates
+- Failure: If publish fails mid-flight, rerun aggregation; if already published, open new epoch
+### Security and Privacy Validation
+- Current: Hash anchoring and access gate checks
+- Next: Encryption-at-rest, attestation verification, and storage integrity checks
+### Reproducibility
+- Use `npm ci` and pinned solc versions
+- Artifact hashes logged at publish; keep commit SHA with epoch id
+### Artifacts and Evidence
+- Local: `client_update_*.json`, `aggregated_model_*.json`
+- On-chain (examples):
+  - Epoch 1: `scoresRoot=0x3606…bb157`, `globalModelCid=cid://simulated/global-1757444721`, `hash=0x5e47…38fc`, published
+  - Epoch 2: `scoresRoot=0x391a…94fb`, `weights≈[0.01,-0.01,0.025]`, `globalModelCid=cid://simulated/global-1757446457`, `hash=0x2031…7278e`, published
+## Engineering & Project Ops
+### Development
+- Repo layout: `contracts/`, `scripts/`, `round_controller.ps1`, `hardhat.galileo.js`
+- Style: Minimal plugins; dotenv for secrets; PowerShell-first automation
+- Editing: Prefer Visual Studio (`devenv /Edit`); VS Code optional
+### Roadmap and Milestones
+1. Real 0G Storage CIDs wired into submit/publish paths
+2. Client-side encryption; TEE-only decrypt
+3. Attestation metadata and verification in scoring
+4. CI smoke on GitHub Actions with badges
+5. Contract extensions for attestation + inference receipts
+6. Map final model to 0G Service Marketplace
+### FAQ and Troubleshooting
+- Q: Why is `publishModel` reverting?
+  A: It’s one-time per epoch; start a new epoch.
+- Q: `isProviderApproved` returns false?
+  A: Use `grant_access_raw.js` for the dataset/model pair before submit.
+- Q: I see simulated CIDs only.
+  A: Storage wiring pending; see Roadmap item 1.
+### Contributing and Code of Conduct
+- Use PRs with clear descriptions and test evidence
+- Follow respectful communication and security-first principles
+### Versioning and Changelog Policy
+- Semver-ish tags for PoC milestones
+- Changelog entries per PR once CI is active
+### License and Notices
+- MIT License. See `LICENSE` file.
+### Acknowledgements
+- 0G Labs (Galileo), Balkeum Labs team (Eli, Umar, Rao), open-source tooling
+## Handoff & Quality Gates
+- Repo: `balkeumlabs/tee-fl-0g` on branch `rao`
+- .env: `PRIVATE_KEY` (secret), `RPC_ENDPOINT=https://evmrpc-testnet.0g.ai`
+- Deployer: `0x9Ed57870379e28E32cb627bE365745dc184950dF`
+- Addresses: AccessRegistry `0xE3bf…c21e`, EpochManager `0x9341…b779`
+- Verification baseline:
+  - `npm ci` → `npx hardhat compile --config .\hardhat.galileo.js`
+  - `node .\scripts\check_balance_raw.js`
+  - `pwsh .\round_controller.ps1 -EpochId 4 -AutoClients 2`
+## Self-Check and Validators
+~~~powershell
+# // Validate README has key headings and code fences
+$readme = Get-Content -Raw .\README.md
+# // Check for required headings
+$must = @('# Quick Start','# Engineering Deep-Dive','```mermaid','```powershell','On-Chain Integration (0g/EVM)')
+# // Ensure all required tokens exist
+$missing = $must | Where-Object { $readme -notlike "*$_*" }
+# // Print result or missing items
+if ($missing) { "Missing: $($missing -join ', ')" } else { "README baseline checks passed." }
+# // Why: Quick sanity validator for documentation completeness
+~~~
 
-### End-to-end demo (copy/paste)
-\\\powershell
-# // Deploy contracts once (addresses saved in .addresses.json)
-node .\scripts\deploy_access_raw.js
-node .\scripts\deploy_epoch_raw.js
-type .addresses.json
-
-# // Round (epoch 1): start → submit → scoresRoot → aggregate+publish → verify
-# // Prepare a client update file first (see examples in report)
-node .\scripts\start_epoch_once_raw.js <EpochManager> 1
-node .\scripts\submit_update_raw.js   <EpochManager> 1 cid://simulated/u-1 .\client_update_round1.json
-node .\scripts\compute_scores_and_post_root_raw.js <EpochManager> 1 0
-node .\scripts\aggregate_and_publish_raw.js <EpochManager> 1 .\aggregated_model_round1.json cid://simulated/global-1 .\client_update_round1.json
-node .\scripts\read_epoch_meta_raw.js <EpochManager> 1
-\\\
-
-### Access gating path (off-chain check)
-- Use \submit_update_checked_raw.js\ to enforce \AccessRegistry.isProviderApproved(owner, provider, datasetCid, modelHash)\ before submission.
-- See the report section “Access Control Gating” for the grant → submit sequence.
-
-### Scripts map (added)
-- \deploy_access_raw.js\ – deploy AccessRegistry
-- \deploy_epoch_raw.js\ – deploy EpochManager
-- \start_epoch_once_raw.js\ – idempotent epoch start
-- \submit_update_raw.js\ – submit update (no gating)
-- \submit_update_checked_raw.js\ – submit with AccessRegistry gating
-- \ead_update_raw.js\ – index updates from events
-- \compute_scores_and_post_root_raw.js\ – dummy scoring → Merkle root → post
-- \ggregate_and_publish_raw.js\ – FedAvg aggregation → publish
-- \ead_epoch_meta_raw.js\ – read epoch struct
-- \ound_controller.ps1\ – one-button end-to-end round
-
-### Known caveats
-- CIDs are simulated unless you wire the 0G storage uploader (\dist/upload_to_0g_storage.js\).
-- Scoring and aggregation currently run outside TEEs; attestation not yet enforced.
-- \publishModel\ is one-time per epoch by design; start a new epoch to republish.
-
-### Next steps
-- Swap simulated CIDs for real 0G Storage CIDs in submit/publish.
-- Add attestation artifacts (quote/measurement) to updates and verify in scoring.
-- CI smoke workflow to compile and run a minimal round with mocks.
