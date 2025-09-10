@@ -39,5 +39,4 @@ auto_update_epoch*.json
 README.md.*.bak
 README.md.bak*
 README.backup.md
-previous-readme.md
 TEE-FL_PoC_Report.md*
