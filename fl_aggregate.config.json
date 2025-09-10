@@ -1,0 +1,5 @@
+// // fl_aggregate.config.json
+{
+  "forcePath": "$.weights_delta",
+  "onMismatch": "pad"
+}
