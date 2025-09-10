@@ -9,7 +9,7 @@
 ## Summary
 This repo demonstrates a working federated-learning pipeline on the 0G Galileo testnet: providers submit access-gated updates, we score and aggregate with FedAvg, anchor model hashes and metadata on-chain, and publish one model per epoch. Current state: end-to-end demo works with simulated storage CIDs; next steps are real 0G Storage CIDs, client-side encryption, and attestation metadata.
 ## Visual Overview
-```mermaid
+```powershell
 flowchart LR
     A[Client datasets (encrypted)] -->|Upload to 0G Storage (CID)| B[Storage]
     subgraph Chain[0G Galileo (EVM)]
@@ -24,7 +24,7 @@ flowchart LR
     H[Orchestrator (round_controller.ps1)] --> C
     H --> D
 ```
-```mermaid
+```powershell
 Client -> 0G Storage (CID)
 Provider(TEE-sim): train -> update JSON (+hashes, cid?)
 AccessRegistry.isProviderApproved(...) gate
