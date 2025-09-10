@@ -9,28 +9,9 @@
 ## Summary
 This repo demonstrates a working federated-learning pipeline on the 0G Galileo testnet: providers submit access-gated updates, we score and aggregate with FedAvg, anchor model hashes and metadata on-chain, and publish one model per epoch. Current state: end-to-end demo works with simulated storage CIDs; next steps are real 0G Storage CIDs, client-side encryption, and attestation metadata.
 ## Visual Overview
-```powershell
-flowchart LR
-    A[Client datasets (encrypted)] -->|Upload to 0G Storage (CID)| B[Storage]
-    subgraph Chain[0G Galileo (EVM)]
-      C[AccessRegistry] --- D[EpochManager]
-    end
-    E[Provider (TEE sim)] -->|Train locally| F[Update JSON + meta]
-    F -->|Access check via AccessRegistry| C
-    F -->|Submit update event| D
-    D -->|Score + Merkle root| D
-    D -->|Aggregate (FedAvg)| G[Global model]
-    G -->|SHA-256 + CID| D
-    H[Orchestrator (round_controller.ps1)] --> C
-    H --> D
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
 
-Client -> 0G Storage (CID)
-Provider(TEE-sim): train -> update JSON (+hashes, cid?)
-AccessRegistry.isProviderApproved(...) gate
-EpochManager: submit -> score(root) -> FedAvg -> publishModel (one-time)
-On-chain: scoresRoot, globalModelHash, globalModelCid
-Orchestrator: startEpoch -> grant -> submit N -> score -> aggregate+publish -> verify
-```
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 ## Table of Contents
 - [Quick Start](#quick-start)
 - [Features and Non-Goals](#features-and-non-goals)
@@ -65,44 +46,20 @@ Orchestrator: startEpoch -> grant -> submit N -> score -> aggregate+publish -> v
 - Windows 10/11 with PowerShell 7, Node.js 18+, npm 9+, Git
 - Funded key on 0G Galileo testnet (chainId 16601)
 - Visual Studio (preferred for editing) or VS Code (optional)
-```powershell
-# // Ensure you are inside the repo folder
-Set-Location 'C:\Users\raoah\flai-0g-test\tee-fl-0g'
-# // Why: Set working directory to the project root
-# // Verify expected files exist
-Get-ChildItem . -Force | Select-Object Name
-# // Why: Sanity check repo contents
-# // Install dependencies deterministically
-npm ci
-# // Why: Clean install per package-lock; avoids drift
-# // Compile contracts using Galileo config
-npx hardhat compile --config .\hardhat.galileo.js
-# // Why: Validates Solidity sources compile with pinned solc versions
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 **Verify**
 Expected: successful compile output with no errors; artifacts under `artifacts/`.
 **Configure env/secrets**
-```powershell
-# // Create .env if missing (never commit)
-if (!(Test-Path .\.env)) { @"
-PRIVATE_KEY=REPLACE_WITH_GALILEO_FUNDED_KEY   # secret
-RPC_ENDPOINT=https://evmrpc-testnet.0g.ai     # config
-"@ | Set-Content -NoNewline .\.env -Encoding UTF8 }
-# // Why: Idempotently create .env with placeholders (no real secrets)
-# // Confirm .env exists and is git-ignored
-Get-ChildItem .\.env; git check-ignore .\.env
-# // Why: Ensure secret file present and ignored by Git
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 Expected: `.env` listed; `git check-ignore` prints `.env`.
 **Run**
-```powershell
-# // Sanity: show signer address, chainId, balance
-node .\scripts\check_balance_raw.js
-# // Why: Confirm correct account and funded balance on Galileo
-# // Execute a full round with 2 synthetic clients on Epoch 4
-pwsh .\round_controller.ps1 -EpochId 4 -AutoClients 2
-# // Why: One-button path: startEpoch -> grantAccess -> N submissions -> score -> aggregate+publish -> verify
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 **Verify**
 Expected: final log shows `published=true`, plus `globalModelHash` and `globalModelCid` (currently simulated CID).
 ## Features and Non-Goals
@@ -125,11 +82,9 @@ Expected: final log shows `published=true`, plus `globalModelHash` and `globalMo
 - `compute_scores_and_post_root_raw.js` — dummy scores → Merkle root on-chain
 - `aggregate_and_publish_raw.js` — FedAvg aggregation → SHA-256 → publishModel
 - `read_update_raw.js`, `read_epoch_meta_raw.js` — inspection tools
-```powershell
-# // Run a complete automated round on a new epoch
-pwsh .\round_controller.ps1 -EpochId 5 -AutoClients 2
-# // Why: Demonstrates repeatable end-to-end flow on another epoch id
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 ## Configuration
 **.env keys**
 | Name          | Purpose                              | Type     | Default                          | Secret |
@@ -137,11 +92,9 @@ pwsh .\round_controller.ps1 -EpochId 5 -AutoClients 2
 | PRIVATE_KEY   | EVM signer for deploy/tx             | hex key  | none                             | Yes    |
 | RPC_ENDPOINT  | 0G Galileo RPC endpoint              | URL      | https://evmrpc-testnet.0g.ai     | No     |
 **.env.example**
-```ini
-# // Example template; copy to .env and fill real values safely
-PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX   # never commit
-RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 ## Deployment
 **Environments**
 - 0G Galileo testnet (chainId 16601)
@@ -237,17 +190,11 @@ RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
   - `node .\scripts\check_balance_raw.js`
   - `pwsh .\round_controller.ps1 -EpochId 4 -AutoClients 2`
 ## Self-Check and Validators
-```powershell
-# // Validate README has key headings and code fences
-$readme = Get-Content -Raw .\README.md
-# // Check for required headings
-$must = @('# Quick Start','# Engineering Deep-Dive','```mermaid','```powershell','On-Chain Integration (0g/EVM)')
-# // Ensure all required tokens exist
-$missing = $must | Where-Object { $readme -notlike "*$_*" }
-# // Print result or missing items
-if ($missing) { "Missing: $($missing -join ', ')" } else { "README baseline checks passed." }
-# // Why: Quick sanity validator for documentation completeness
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```mermaid','```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 
 
 ## Appendix: Technical Report (archived)
@@ -308,13 +255,9 @@ if ($missing) { "Missing: $($missing -join ', ')" } else { "README baseline chec
 - Storage unavailability: keep local cache and verify CID-posted contents.
 
 ## Reproducibility
-```powershell
-git switch rao
-npm ci
-npx hardhat compile --config .\hardhat.galileo.js
-node .\scripts\check_balance_raw.js
-pwsh -ExecutionPolicy Bypass -File .\round_controller.ps1 -EpochId 4 -AutoClients 2
-```
+```mermaid flowchart LR   A["Client datasets (encrypted)"] --> B["0G Storage (CID)"]   subgraph Chain["0G Galileo (EVM)"]     C[AccessRegistry] --- D[EpochManager]   end   E["Provider (TEE sim)"] --> F["Update JSON + meta"]   F --> C   F --> D   D --> S["Score & Merkle root"]   S --> M["FedAvg"]   M --> G["Global model"]   G --> D   H["Orchestrator (round_controller.ps1)"] --> C   H --> D ```
+
+```text Client datasets (encrypted) -> 0G Storage (CID) Provider (TEE sim) -> Update JSON + meta AccessRegistry --- EpochManager Update -> AccessRegistry; Update -> EpochManager EpochManager -> Score & Merkle root -> FedAvg -> Global model Global model -> EpochManager Orchestrator -> AccessRegistry; Orchestrator -> EpochManager ```
 // Expect: scoresRoot nonzero; global model published for target epoch.
 
 ## Open Issues & Next Steps
@@ -324,4 +267,5 @@ pwsh -ExecutionPolicy Bypass -File .\round_controller.ps1 -EpochId 4 -AutoClient
 4) CI smoke on PRs to rao.
 5) Contract extensions for attestation metadata & receipts.
 6) Marketplace mapping for pay-per-inference.
+
 
