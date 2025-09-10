@@ -61,3 +61,5 @@ aggregated_model.json
 # allow orchestration wrappers
 !dist/round_secure.ps1
 !dist/round_dummy.ps1
+
+!dist/checked_submit.ps1
