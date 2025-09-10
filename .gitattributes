@@ -1,3 +1,15 @@
-*.ps1 text eol=crlf
-*.js  text eol=lf
-*.json text eol=lf
+# // Enforce consistent line endings per filetype
+*                 text=auto
+*.ps1             text eol=crlf
+*.bat             text eol=crlf
+*.cmd             text eol=crlf
+*.sln             text eol=crlf
+*.js              text eol=lf
+*.ts              text eol=lf
+*.json            text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf
+*.md              text eol=lf
+*.sh              text eol=lf
+.gitattributes    text eol=lf
+.gitattributes    export-ignore

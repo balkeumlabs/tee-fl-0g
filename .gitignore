@@ -40,3 +40,20 @@ README.md.*.bak
 README.md.bak*
 README.backup.md
 TEE-FL_PoC_Report.md*
+.tmp/
+aggregated_model.json
+# --- begin: track selected secure tools and meta ---
+!dist/
+dist/*
+!dist/local_normalize_and_aggregate.js
+!dist/run_aggregate_with_config.ps1
+!dist/emit_storage_meta.ps1
+!dist/tools/
+dist/tools/*
+!dist/tools/extract_vector_from_file.js
+
+# allow storage meta evidence but keep raw aggregate ignored
+!aggregated_model_*_storage_meta.json
+aggregated_model.json
+.tmp/
+# --- end: track selected secure tools and meta ---
