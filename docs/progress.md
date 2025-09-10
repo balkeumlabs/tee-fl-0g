@@ -1,26 +1,16 @@
-# Project Progress — TEE-FL on 0G (Galileo)
+# Project Progress — FLAI on 0G (TEE-based)
 Then snapshot: 2025-09-10 18:00 +05:00  
-Now snapshot:  2025-09-11 03:19 +05:00
+Now snapshot:  2025-09-11 03:10 +05:00
 
-| Task | % complete then | % complete now | Notes (why this score) |
+| Stage | % then | % now | Notes |
 |---|---:|---:|---|
-| Repo bootstrap & installs | 70 | 100 | npm ci was blocked by lock drift; fixed with lock-only update; clean install reproducible. |
-| Hardhat config & compile | 30 | 100 | New minimal hardhat.galileo.js; .env wiring; contracts compile clean. |
-| Contracts (AccessRegistry, EpochManager) | 50 | 100 | Sources compile; deployed; core events and getters exercised. |
-| Deploy to Galileo | 0 | 100 | Deployed both contracts; addresses saved in .addresses.json. |
-| Epoch lifecycle (start/submit/read) | 20 | 100 | Started epochs 1–3; submitted updates; event-based readers in place. |
-| Event-based update indexer | 0 | 100 | read_update_raw.js reconstructs updates from UpdateSubmitted logs. |
-| Scoring root (compute + post) | 0 | 100 | Deterministic dummy scoring + Merkle root; postScoresRoot on-chain for epochs 1–2. |
-| Aggregation & publish (FedAvg) | 10 | 100 | FedAvg script; aggregated JSON + SHA-256; publishModel set; verified on-chain. |
-| Access control gating (off-chain) | 0 | 80 | submit_update_checked_raw.js enforces AccessRegistry.isProviderApproved; demo grant→submit flow; not yet used everywhere. |
-| Round orchestrator | 0 | 80 | round_controller.ps1 runs end-to-end (start → grant → N submits → scoresRoot → publish → verify). |
-| 0G Storage integration (real CIDs) | 70 | 70 | Uploader exists and was previously verified; current demo uses simulated CIDs; wiring into submit/publish still pending. |
-| Data encryption before upload | 20 | 20 | Pattern defined in plan; encryption not yet enforced in scripts. |
-| TEE simulation + attestation placeholders | 20 | 30 | Local-only flow plus scores root and gating improve the skeleton; no real RA flow yet. |
-| TEE scoring service (real) | 0 | 0 | Presently a dummy scorer; no enclave or RA verification yet. |
-| TEE aggregation service (real) | 0 | 0 | Aggregation runs off-chain (Node), not in TEE; no attestation. |
-| Inference via 0G Service Marketplace | 0 | 0 | Not started; pending model hosting + marketplace SDK alignment. |
-| Payments/rewards distribution | 0 | 0 | Not implemented; requires additional on-chain logic. |
-| Governance/SubDAO registries | 0 | 0 | Not implemented; part of control plane roadmap. |
-| CI/CD + smoke tests | 0 | 10 | Scripts are deterministic; no GH Actions yet; add a basic workflow next. |
-| Documentation (README + Report) | 60 | 60 | Needs an immediate delta PR to capture today’s working flow and scripts. |
+| 1) Data Upload → Encrypted datasets to 0G Storage | ![40%](https://img.shields.io/badge/-40%25-orange) | ![60%](https://img.shields.io/badge/-60%25-yellow) | Local encryption + envelope done; uploader + dry-run meta in place; 0G Storage maintenance blocks end-to-end. |
+| 2) Access Grant → On-chain keys to approved TEE | ![20%](https://img.shields.io/badge/-20%25-red) | ![40%](https://img.shields.io/badge/-40%25-orange) | AccessRegistry deployed + off-chain gating flow; key grant + model ACL wiring TBD. |
+| 3) Local Training [TEE] | ![20%](https://img.shields.io/badge/-20%25-red) | ![40%](https://img.shields.io/badge/-40%25-orange) | Local training + encrypted update envelopes; no enclave yet; unwrap-to-temp path validated. |
+| 4) Update Submission (chain + storage) | ![40%](https://img.shields.io/badge/-40%25-orange) | ![80%](https://img.shields.io/badge/-80%25-yellowgreen) | On-chain submit working; artifacts hashed; storage CID pending maintenance. |
+| 5) Scoring [TEE] | ![30%](https://img.shields.io/badge/-30%25-orange) | ![70%](https://img.shields.io/badge/-70%25-yellow) | Deterministic dummy scoring; scoresRoot posted on-chain; enclave attestation placeholders exist. |
+| 6) Aggregation [TEE] | ![10%](https://img.shields.io/badge/-10%25-red) | ![70%](https://img.shields.io/badge/-70%25-yellow) | FedAvg working; aggregated model + SHA-256; publishModel emits; not inside TEE yet. |
+| 7) Iteration | ![20%](https://img.shields.io/badge/-20%25-red) | ![60%](https://img.shields.io/badge/-60%25-yellow) | Multi-round orchestration runs; reproducible workspaces + logs. |
+| 8) Final Model → Sealed + versioned + marketplace | ![10%](https://img.shields.io/badge/-10%25-red) | ![50%](https://img.shields.io/badge/-50%25-yellow) | Aggregated model + storage meta; Marketplace submission not wired. |
+| 9) Inference [TEE] via Marketplace | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not started; needs hosted model + marketplace SDK alignment. |
+| 10) Revenue Split | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not implemented; requires additional on-chain logic. |
