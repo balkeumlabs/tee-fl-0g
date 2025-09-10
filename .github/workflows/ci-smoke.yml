@@ -1,0 +1,35 @@
+# // name: ci-smoke
+# // on:
+# //   push:
+# //     branches: [ rao ]
+# //   pull_request:
+# //     branches: [ rao ]
+# // jobs:
+# //   smoke:
+# //     runs-on: windows-latest
+# //     steps:
+# //       - name: Checkout
+# //         uses: actions/checkout@v4
+# //       - name: Setup Node
+# //         uses: actions/setup-node@v4
+# //         with:
+# //           node-version: "22"
+# //           cache: "npm"
+# //       - name: Install
+# //         run: npm ci
+# //       - name: Compile (Galileo)
+# //         run: npx hardhat compile --config .\hardhat.galileo.js
+# //       - name: Mocked round → aggregate (no upload)
+# //         run: |
+# //           echo {"round":1,"weights":[0.1,0.2,0.3]} > sample_update.json
+# //           node .\dist\crypto\encrypt_update.js --in .\sample_update.json --out .\sample_update.enc.json
+# //           node .\dist\crypto\decrypt_update.js --in .\sample_update.enc.json --out .\sample_update.decrypted.json
+# //           node .\dist\local_normalize_and_aggregate.js --in-dir . --out-dir . --on-mismatch pad --force-path "$.weights"
+# //           powershell -NoProfile -Command "$b=[IO.File]::ReadAllBytes('aggregated_model.json'); $h=[BitConverter]::ToString((New-Object Security.Cryptography.SHA256Managed).ComputeHash($b)).Replace('-','').ToLower(); '{\"file\":\"aggregated_model.json\",\"size\":'+$b.Length+',\"sha256\":\"'+$h+'\"}' | Set-Content aggregated_model.storage_meta.json"
+# //       - name: Archive artifacts
+# //         uses: actions/upload-artifact@v4
+# //         with:
+# //           name: smoke-artifacts
+# //           path: |
+# //             aggregated_model.json
+# //             *.storage_meta.json
