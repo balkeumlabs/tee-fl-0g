@@ -1,12 +1,13 @@
 # dist/round_secure.ps1
 # Usage: .\dist\round_secure.ps1 -RoundController .\round_controller.ps1 -WorkDir .\work
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
 param(
   [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$RoundController,
   [Parameter()][string]$WorkDir = "."
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 function Fail([int]$code, [string]$msg) {
   Write-Error $msg
@@ -17,9 +18,9 @@ if (-not $env:FL_TEE_PUBKEY_B64 -or $env:FL_TEE_PUBKEY_B64.Trim().Length -lt 40)
   Fail 201 "FL_TEE_PUBKEY_B64 missing or too short. Aborting."
 }
 
-if ([string]::IsNullOrWhiteSpace($WorkDir)) { $WorkDir = "." }    # tolerate empty -WorkDir values
+if ([string]::IsNullOrWhiteSpace($WorkDir)) { $WorkDir = "." }  # tolerate empty -WorkDir
 
-# Resolve to absolute paths to avoid relative confusion
+# Resolve absolute paths
 $rcPath  = (Resolve-Path -LiteralPath $RoundController).Path
 $workAbs = (Resolve-Path -LiteralPath $WorkDir).Path
 
