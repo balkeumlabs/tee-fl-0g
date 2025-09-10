@@ -23,8 +23,7 @@ flowchart LR
     G -->|SHA-256 + CID| D
     H[Orchestrator (round_controller.ps1)] --> C
     H --> D
-```
-```powershell
+
 Client -> 0G Storage (CID)
 Provider(TEE-sim): train -> update JSON (+hashes, cid?)
 AccessRegistry.isProviderApproved(...) gate
