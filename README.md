@@ -31,8 +31,6 @@ This repo demonstrates a working federated-learning pipeline on the 0G Galileo t
 EpochManager -> [Score & Merkle root] -> [FedAvg] -> [Global model] -> EpochManager
 [Orchestrator (round_controller.ps1)] -> AccessRegistry, EpochManager
 
-yaml
-Copy code
 </details>
 
 ---
