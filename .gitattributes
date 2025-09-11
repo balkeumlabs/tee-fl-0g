@@ -22,3 +22,5 @@ aggregated_model*.json -text
 *.md text eol=lf
 *.yml text eol=lf
 attestation*.json text eol=lf
+
+docs/img/*.svg text eol=lf

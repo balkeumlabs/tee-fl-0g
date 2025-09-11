@@ -21,7 +21,7 @@ This repo demonstrates a working federated-learning pipeline on the 0G Galileo t
 
 ## Visual Overview
 
-![Visual Overview](docs/img/visual_overview.svg)
+![Visual Overview](./docs/img/visual_overview.svg)
 
 <details>
 <summary>ASCII fallback</summary>
@@ -380,3 +380,7 @@ Until 0G Storage is fully live, generate metadata locally and (optionally) bind 
 node .\dist\upload_to_0g_storage.js --file .\aggregated_model.json --dry-run
 node .\dist\upload_to_0g_storage.js --file .\aggregated_model.json --cid bafy... --name aggregated_model.json
 ```
+
+
+
+

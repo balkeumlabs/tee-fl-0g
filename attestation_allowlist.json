@@ -1,3 +1,8 @@
 {
-  "allowedMeasurements": ["SIM-TEE-DEMO-1"]
+  "allowedMeasurements": [
+    "SIM-TEE-DEMO-1"
+  ],
+  "allow": [
+    "SIM-TEE-DEMO-1"
+  ]
 }
