@@ -1,0 +1,2 @@
+CID: [dotenv@17.2.2] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+URL: https://ipfs.io/ipfs/[dotenv@17.2.2] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }

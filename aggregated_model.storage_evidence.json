@@ -1,0 +1,8 @@
+{
+  "file": "aggregated_model.json",
+  "size": 65,
+  "sha256": "935504e77bb359ca6c863df7e28785236bb9adaca4e6572270f16475abcd8067",
+  "cid": "[dotenv@17.2.2] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }",
+  "url": "https://ipfs.io/ipfs/[dotenv@17.2.2] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }",
+  "ts": "2025-09-11T06:31:21"
+}

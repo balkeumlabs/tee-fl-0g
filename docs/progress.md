@@ -1,4 +1,4 @@
-Last Updated: 2025-09-11 06:11:14 +05:00
+Last Updated: 2025-09-11 06:31:22 +05:00
 
 # Project Progress — FLAI on 0G (TEE-based)
 Then snapshot: 2025-09-10 18:00 +05:00  
@@ -18,3 +18,5 @@ Now snapshot:  2025-09-11 03:10 +05:00
 | 10) Revenue Split | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not implemented; requires additional on-chain logic. |
 
 - 2025-09-11 06:11:14 +05:00 | docs: README refreshed (content dump), progress updated
+
+- 2025-09-11 06:31:22 +05:00 | storage: real CID for aggregated_model.json → [dotenv@17.2.2] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }; sha256=935504e77bb359ca6c863df7e28785236bb9adaca4e6572270f16475abcd8067
