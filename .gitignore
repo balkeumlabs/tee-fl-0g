@@ -64,3 +64,5 @@ aggregated_model.json
 
 !dist/checked_submit.ps1
 .quarantine/
+client_update*.json
+!client_update*.enc.json

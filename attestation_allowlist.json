@@ -1,11 +1,3 @@
 {
-  "measurementAllowlist": [
-    {
-      "tee": "SGX",
-      "mrenclave": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "mrsigner": "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-      "productId": "flai-agg",
-      "minSvn": 1
-    }
-  ]
+  "allowedMeasurements": ["SIM-TEE-DEMO-1"]
 }

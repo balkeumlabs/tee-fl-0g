@@ -1,15 +1,7 @@
 {
-  "provider": "0x9Ed57870379e28E32cb627bE365745dc184950dF",
-  "epochId": 1,
-  "enclave": {
-    "tee": "SGX",
-    "mrenclave": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "mrsigner": "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-    "productId": "flai-agg",
-    "svn": 1
-  },
-  "nonce": "0xDEADBEEF",
-  "issuedAt": "2025-09-11T03:25:00Z",
-  "evidenceCid": "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
-  "signature": "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  "provider": "dev-sim",
+  "enclave_id": "TEE-SIM-LOCAL",
+  "measurement": "SIM-TEE-DEMO-1",
+  "quote": { "format": "sim", "ts": "2025-09-11T07:13:52" },
+  "artifacts": { "update_cid": "cid-pending", "update_sha256": "sha256-pending" }
 }
