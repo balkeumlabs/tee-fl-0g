@@ -1,35 +1,63 @@
 # // name: ci-smoke
-# // on:
-# //   push:
-# //     branches: [ rao ]
-# //   pull_request:
-# //     branches: [ rao ]
-# // jobs:
-# //   smoke:
-# //     runs-on: windows-latest
-# //     steps:
-# //       - name: Checkout
-# //         uses: actions/checkout@v4
-# //       - name: Setup Node
-# //         uses: actions/setup-node@v4
-# //         with:
-# //           node-version: "22"
-# //           cache: "npm"
-# //       - name: Install
-# //         run: npm ci
-# //       - name: Compile (Galileo)
-# //         run: npx hardhat compile --config .\hardhat.galileo.js
-# //       - name: Mocked round → aggregate (no upload)
-# //         run: |
-# //           echo {"round":1,"weights":[0.1,0.2,0.3]} > sample_update.json
-# //           node .\dist\crypto\encrypt_update.js --in .\sample_update.json --out .\sample_update.enc.json
-# //           node .\dist\crypto\decrypt_update.js --in .\sample_update.enc.json --out .\sample_update.decrypted.json
-# //           node .\dist\local_normalize_and_aggregate.js --in-dir . --out-dir . --on-mismatch pad --force-path "$.weights"
-# //           powershell -NoProfile -Command "$b=[IO.File]::ReadAllBytes('aggregated_model.json'); $h=[BitConverter]::ToString((New-Object Security.Cryptography.SHA256Managed).ComputeHash($b)).Replace('-','').ToLower(); '{\"file\":\"aggregated_model.json\",\"size\":'+$b.Length+',\"sha256\":\"'+$h+'\"}' | Set-Content aggregated_model.storage_meta.json"
-# //       - name: Archive artifacts
-# //         uses: actions/upload-artifact@v4
-# //         with:
-# //           name: smoke-artifacts
-# //           path: |
-# //             aggregated_model.json
-# //             *.storage_meta.json
+# // On push/PR to rao, do a minimal compile + mocked aggregate and archive outputs.
+name: ci-smoke
+on:
+  push:
+    branches: [ rao ]
+  pull_request:
+    branches: [ rao ]
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    # // Make CI env available to all steps (so encrypt/decrypt works without a .env)
+    env:
+      FL_ENC_MODE: dev
+      FL_TEE_PUBKEY_B64: dGVzdF9wdWJrZXlfcHVia2V5X2Jhc2U2NF9sb25nX2Vub3VnaA==
+      FL_CLIENT_PRIVKEY_B64: dGVzdF9jbGllbnRfcHJpdmF0ZV9rZXk=
+      FL_ENC_DELETE_PLAINTEXT: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        shell: pwsh
+        run: npm ci
+
+      - name: Compile (Galileo)
+        shell: pwsh
+        run: npx hardhat compile --config .\hardhat.galileo.js
+
+      - name: Mocked round → aggregate (no upload)
+        shell: pwsh
+        run: |
+          # // Create a tiny sample update with a weights array
+          '{"round":1,"weights":[0.1,0.2,0.3]}' | Set-Content -Encoding UTF8 sample_update.json
+          # // Exercise encrypt/decrypt path using CI env keys
+          node .\dist\crypto\encrypt_update.js --in .\sample_update.json --out .\sample_update.enc.json
+          node .\dist\crypto\decrypt_update.js --in .\sample_update.enc.json --out .\sample_update.decrypted.json
+          # // Aggregate using the weights path we just wrote
+          node .\dist\local_normalize_and_aggregate.js --in-dir . --out-dir . --on-mismatch pad --force-path '$.weights'
+          # // Emit storage meta (sha256 + size) using PowerShell
+          $b=[IO.File]::ReadAllBytes('aggregated_model.json')
+          $h=[BitConverter]::ToString((New-Object Security.Cryptography.SHA256Managed).ComputeHash($b)).Replace('-','').ToLower()
+          '{' + '"file":"aggregated_model.json","size":' + $b.Length + ',"sha256":"' + $h + '"}' | Set-Content -Encoding UTF8 aggregated_model.storage_meta.json
+          # // Verify decrypt roundtrip
+          if ((Get-Content .\sample_update.json -Raw) -ne (Get-Content .\sample_update.decrypted.json -Raw)) { throw "Decrypt mismatch" }
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artifacts
+          path: |
+            aggregated_model.json
+            aggregated_model.storage_meta.json
+            sample_update.json
+            sample_update.enc.json
+            sample_update.decrypted.json
