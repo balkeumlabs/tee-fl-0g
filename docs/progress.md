@@ -24,3 +24,4 @@ Now snapshot:  2025-09-11 03:10 +05:00
 - 2025-09-11 06:54:11 +05:00 | policy: pre-commit guard + attestation; ci-smoke enforces guard + sha256 evidence; stabilized aggregates in .gitattributes
 
 - 2025-09-11 07:13:53 +05:00 | policy: attestation example + allowlist aligned; pre-commit hook unblocked
+- 2025-09-11 07:16:21 +05:00 | ci: LF normalization + hook bootstrap committed
