@@ -63,3 +63,4 @@ aggregated_model.json
 !dist/round_dummy.ps1
 
 !dist/checked_submit.ps1
+.quarantine/
