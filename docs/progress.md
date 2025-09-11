@@ -1,13 +1,11 @@
-
+# Project Progress — FLAI on 0G (TEE-based)
+Then snapshot: 2025-09-10 18:00 +05:00  
+Now snapshot:  2025-09-11 03:10 +05:00
 
 <!-- OVERALL_START -->
 ## Overall Project Completion
 ![Completion](https://img.shields.io/badge/completion-40%25-orange)
 <!-- OVERALL_END -->
-
-# Project Progress — FLAI on 0G (TEE-based)
-Then snapshot: 2025-09-10 18:00 +05:00  
-Now snapshot:  2025-09-11 03:10 +05:00
 
 | Stage | % then | % now | Notes |
 |---|---:|---:|---|
