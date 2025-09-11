@@ -1,93 +1,123 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
   <defs>
     <style type="text/css"><![CDATA[
       .bg { fill:#0b0e14; }
-      .box { fill:#121826; stroke:#6c8bd1; stroke-width:1.5; rx:10; ry:10; }
-      .pill { fill:#121826; stroke:#9ad1b6; stroke-width:1.5; rx:18; ry:18; }
-      .title { fill:#e6e1cf; font:700 22px 'Consolas', monospace; }
-      .label { fill:#e6e1cf; font:500 15px 'Consolas', monospace; }
-      .small { fill:#b7c5d3; font:500 13px 'Consolas', monospace; }
-      .group { fill:#263043; stroke:#3a4a6b; stroke-dasharray:6 4; rx:12; ry:12; }
-      .arrow { stroke:#96a5c0; stroke-width:1.5; marker-end:url(#ah); fill:none; }
-      .arrowb { stroke:#9ad1b6; stroke-width:1.5; marker-end:url(#ah); fill:none; }
+      .group { fill:#162032; stroke:#334766; stroke-dasharray:8 5; rx:14; ry:14; }
+      .title { fill:#e6e1cf; font:700 26px 'Consolas', monospace; }
+      .label { fill:#e6e1cf; font:500 16px 'Consolas', monospace; }
+      .small { fill:#b7c5d3; font:500 14px 'Consolas', monospace; }
+      .box { fill:#0f1626; stroke:#6c8bd1; stroke-width:1.7; rx:10; ry:10; }
+      .pill { fill:#0f1626; stroke:#9ad1b6; stroke-width:1.7; rx:18; ry:18; }
+      .arrowA { stroke:#6c8bd1; stroke-width:2.2; marker-end:url(#ahA); fill:none; }
+      .arrowB { stroke:#9ad1b6; stroke-width:2.2; marker-end:url(#ahB); fill:none; }
+      .lane { stroke:#2a374f; stroke-width:1; stroke-dasharray:4 6; }
+      .step { fill:#0b0e14; stroke:#e9b96e; stroke-width:1.6; }
+      .stepText { fill:#e9b96e; font:700 13px 'Consolas', monospace; }
     ]]></style>
-    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#96a5c0" />
+
+    <marker id="ahA" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6c8bd1" />
+    </marker>
+    <marker id="ahB" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9ad1b6" />
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1200" height="560" />
-  <text class="title" x="30" y="40">TEE‑FL on 0G (Galileo) — Visual Overview</text>
+  <rect class="bg" x="0" y="0" width="1280" height="720" />
+  <text class="title" x="32" y="44">TEE-FL on 0G (Galileo) — Visual Overview</text>
 
   <!-- Groups -->
-  <rect class="group" x="30"  y="70"  width="330" height="200"/>
-  <text class="small" x="40" y="90">Client (encrypted)</text>
+  <rect class="group" x="28"  y="72"  width="360" height="240"/>
+  <text class="small" x="40" y="94">Client (encrypts locally)</text>
 
-  <rect class="group" x="390" y="70"  width="330" height="200"/>
-  <text class="small" x="400" y="90">Provider (TEE / TEE‑sim)</text>
+  <rect class="group" x="412" y="72"  width="360" height="240"/>
+  <text class="small" x="424" y="94">Provider (TEE / TEE-sim)</text>
 
-  <rect class="group" x="30"  y="300" width="330" height="220"/>
-  <text class="small" x="40" y="320">0G Storage</text>
+  <rect class="group" x="28"  y="344" width="360" height="330"/>
+  <text class="small" x="40" y="366">0G Storage (IPFS-compatible)</text>
 
-  <rect class="group" x="390" y="300" width="770" height="220"/>
-  <text class="small" x="400" y="320">0G Galileo (EVM)</text>
+  <rect class="group" x="412" y="344" width="840" height="330"/>
+  <text class="small" x="424" y="366">0G Galileo (EVM)</text>
 
-  <!-- Client path -->
-  <rect class="box" x="50" y="110" width="290" height="46"/>
-  <text class="label" x="65" y="140">Local data → Encrypt (X25519 + AES‑GCM)</text>
+  <!-- Boxes -->
+  <!-- Client -->
+  <rect class="box" x="56" y="116" width="304" height="50"/>
+  <text class="label" x="72" y="147">Local data → Encrypt (X25519 + AES-GCM)</text>
+  <circle class="step" cx="66" cy="116" r="12"/><text class="stepText" x="60" y="121">1</text>
 
-  <rect class="box" x="50" y="170" width="290" height="46"/>
-  <text class="label" x="65" y="200">client_update.enc.json + meta</text>
+  <rect class="box" x="56" y="184" width="304" height="50"/>
+  <text class="label" x="72" y="214">client_update.enc.json + meta</text>
+  <circle class="step" cx="66" cy="184" r="12"/><text class="stepText" x="60" y="189">2</text>
 
-  <!-- Provider TEE -->
-  <rect class="box" x="410" y="110" width="290" height="46"/>
-  <text class="label" x="425" y="140">Submit update + attestation.json</text>
+  <!-- Provider -->
+  <rect class="box" x="440" y="116" width="304" height="50"/>
+  <text class="label" x="456" y="147">Submit update + attestation.json</text>
+  <circle class="step" cx="450" cy="116" r="12"/><text class="stepText" x="444" y="121">3</text>
 
-  <rect class="box" x="410" y="170" width="290" height="46"/>
-  <text class="label" x="425" y="200">Access gating (AccessRegistry)</text>
-
-  <!-- Storage -->
-  <rect class="pill" x="50" y="350" width="290" height="46"/>
-  <text class="label" x="80" y="380">Add file → CID (bafy… / Qm…)</text>
-
-  <!-- Chain (Galileo) -->
-  <rect class="box" x="410" y="350" width="250" height="46"/>
-  <text class="label" x="425" y="380">EpochManager</text>
-
-  <rect class="box" x="680" y="350" width="220" height="46"/>
-  <text class="label" x="695" y="380">Score updates → scoresRoot</text>
-
-  <rect class="box" x="920" y="350" width="220" height="46"/>
-  <text class="label" x="935" y="380">FedAvg → Global model</text>
-
-  <rect class="box" x="920" y="410" width="220" height="46"/>
-  <text class="label" x="935" y="440">SHA‑256(global_model.json)</text>
-
-  <rect class="pill" x="680" y="410" width="220" height="46"/>
-  <text class="label" x="695" y="440">Upload global model → CID</text>
-
-  <rect class="pill" x="410" y="410" width="250" height="46"/>
-  <text class="label" x="425" y="440">publishModel(cid, hash, epoch)</text>
+  <rect class="box" x="440" y="184" width="304" height="50"/>
+  <text class="label" x="456" y="214">AccessRegistry.isProviderApproved</text>
+  <circle class="step" cx="450" cy="184" r="12"/><text class="stepText" x="444" y="189">4</text>
 
   <!-- Orchestrator -->
-  <rect class="box" x="750" y="110" width="390" height="46"/>
-  <text class="label" x="765" y="140">Orchestrator (round_controller.ps1)</text>
+  <rect class="box" x="800" y="116" width="420" height="50"/>
+  <text class="label" x="816" y="147">Orchestrator (round_controller.ps1)</text>
 
-  <!-- Arrows -->
-  <line class="arrowb" x1="195" y1="216" x2="195" y2="350"/>
-  <line class="arrow"  x1="340" y1="133" x2="410" y2="133"/>
-  <line class="arrow"  x1="340" y1="192" x2="410" y2="192"/>
-  <line class="arrow"  x1="700" y1="133" x2="750" y2="133"/>
-  <line class="arrow"  x1="945" y1="156" x2="945" y2="350"/>
-  <line class="arrow"  x1="195" y1="396" x2="410" y2="373"/>
-  <line class="arrow"  x1="660" y1="373" x2="680" y2="373"/>
-  <line class="arrow"  x1="900" y1="373" x2="920" y2="373"/>
-  <line class="arrow"  x1="1030" y1="396" x2="790"  y2="433"/>
-  <line class="arrow"  x1="790"  y1="433" x2="660"  y2="433"/>
-  <line class="arrow"  x1="660"  y1="433" x2="535"  y2="433"/>
-  <line class="arrow"  x1="535"  y1="433" x2="535"  y2="396"/>
-  <line class="arrow"  x1="845"  y1="156" x2="535"  y2="350"/>
+  <!-- Storage -->
+  <rect class="pill" x="56" y="392" width="304" height="50"/>
+  <text class="label" x="76" y="423">Add file → CID (bafy… / Qm…)</text>
+  <circle class="step" cx="66" cy="392" r="12"/><text class="stepText" x="60" y="397">5</text>
 
-  <text class="small" x="30" y="528">Notes: Only TEEs decrypt; scoresRoot + model hash/CID anchored on‑chain; storage may be 0G or IPFS‑compatible.</text>
+  <!-- Chain -->
+  <rect class="box" x="440" y="392" width="260" height="50"/>
+  <text class="label" x="456" y="423">EpochManager</text>
+
+  <rect class="box" x="724" y="392" width="240" height="50"/>
+  <text class="label" x="740" y="423">Score → scoresRoot</text>
+
+  <rect class="box" x="988" y="392" width="240" height="50"/>
+  <text class="label" x="1004" y="423">Aggregate (FedAvg) → Global model</text>
+
+  <rect class="box" x="988" y="458" width="240" height="50"/>
+  <text class="label" x="1004" y="489">SHA-256(global_model.json)</text>
+
+  <rect class="pill" x="724" y="458" width="240" height="50"/>
+  <text class="label" x="740" y="489">Upload global model → CID</text>
+
+  <rect class="pill" x="440" y="458" width="260" height="50"/>
+  <text class="label" x="456" y="489">publishModel(cid, hash, epoch)</text>
+
+  <!-- Routing lanes (visual guides, very light) -->
+  <line class="lane" x1="388" y1="96"  x2="388" y2="312"/>
+  <line class="lane" x1="408" y1="370" x2="408" y2="656"/>
+  <line class="lane" x1="700" y1="370" x2="700" y2="656"/>
+  <line class="lane" x1="972" y1="370" x2="972" y2="656"/>
+
+  <!-- Arrows (orthogonal, avoid labels) -->
+  <!-- 1: client encrypt -> provider submit (route across top gap) -->
+  <path class="arrowA" d="M 360 141 L 388 141 L 388 141 L 440 141" />
+  <!-- 2: client meta -> provider access check (route below first line) -->
+  <path class="arrowA" d="M 360 209 L 388 209 L 388 209 L 440 209" />
+  <!-- 3: provider -> orchestrator (straight) -->
+  <path class="arrowA" d="M 744 141 L 800 141" />
+  <!-- 4: orchestrator -> epoch (L shape down-left) -->
+  <path class="arrowA" d="M 1010 166 L 1010 376 L 570 376 L 570 392" />
+  <!-- 5: client meta -> storage (vertical outside boxes) -->
+  <path class="arrowB" d="M 208 234 L 208 392" />
+  <!-- 6: storage -> epoch (orthogonal, under labels) -->
+  <path class="arrowA" d="M 360 417 L 408 417 L 408 417 L 440 417" />
+  <!-- 7: epoch -> score -> agg (straight row) -->
+  <path class="arrowA" d="M 700 417 L 724 417" />
+  <path class="arrowA" d="M 964 417 L 988 417" />
+  <!-- 8: agg -> sha (down small) -->
+  <path class="arrowA" d="M 1108 442 L 1108 458" />
+  <!-- 9: sha -> upload (diagonal to the left, then horizontal) avoiding box text -->
+  <path class="arrowA" d="M 1108 508 L 860 508 L 860 483" />
+  <!-- 10: upload -> publish (left) -->
+  <path class="arrowA" d="M 724 483 L 700 483 L 700 483 L 700 483" />
+  <!-- 11: publish -> epoch (up) -->
+  <path class="arrowA" d="M 570 483 L 570 442" />
+
+  <!-- Footer -->
+  <text class="small" x="32" y="704">Only TEEs decrypt; anchors per epoch: scoresRoot, globalModelHash, globalModelCid.</text>
 </svg>
