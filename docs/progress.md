@@ -1,7 +1,7 @@
 # Project Progress — FLAI on 0G (TEE-based)
 
 <!-- OVERALL_START -->
-## Overall Project Completion
+### Overall Project Completion
 ![Completion](https://img.shields.io/badge/completion-40%25-orange)
 <!-- OVERALL_END -->
 
