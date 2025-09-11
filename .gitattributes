@@ -19,3 +19,6 @@ aggregated_model*.json -text
 # // Default: let Git auto-handle text for other files
 * text=auto
 
+*.md text eol=lf
+*.yml text eol=lf
+attestation*.json text eol=lf
