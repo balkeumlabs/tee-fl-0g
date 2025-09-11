@@ -1,4 +1,4 @@
-Last Updated: 2025-09-11 08:44:31 +05:00
+Last Updated: 2025-09-11 08:49:00 +05:00
 
 # Project Progress — FLAI on 0G (TEE-based)
 Then snapshot: 2025-09-10 18:00 +05:00  
@@ -25,3 +25,13 @@ Now snapshot:  2025-09-11 03:10 +05:00
 
 - 2025-09-11 07:13:53 +05:00 | policy: attestation example + allowlist aligned; pre-commit hook unblocked
 - 2025-09-11 07:16:21 +05:00 | ci: LF normalization + hook bootstrap committed
+
+
+// <!-- OVERALL_START -->
+// ## Overall Project Completion
+## Overall Project Completion
+// ![Completion](https://img.shields.io/badge/completion-40%25-orange)
+![Completion](https://img.shields.io/badge/completion-40%25-orange)
+// Last computed from the Milestones table: 2025-09-11 08:49:00 +05:00
+Last computed from the Milestones table: 2025-09-11 08:49:00 +05:00
+// <!-- OVERALL_END -->
