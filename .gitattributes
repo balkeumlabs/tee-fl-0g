@@ -13,3 +13,9 @@
 *.sh              text eol=lf
 .gitattributes    text eol=lf
 .gitattributes    export-ignore
+
+# // Preserve exact bytes of generated aggregate files (no EOL conversions)
+aggregated_model*.json -text
+# // Default: let Git auto-handle text for other files
+* text=auto
+
