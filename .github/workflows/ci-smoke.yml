@@ -8,17 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Set CI env
         run: |
-          echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> 
-          echo 'CI_LOOSE=1' >> 
-          echo 'Environment variables:'
-          echo 
-          echo 
-          echo 
+          echo "FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=" >> $GITHUB_ENV
+          echo "CI_LOOSE=1" >> $GITHUB_ENV
+
+      - name: Sanity print exported env
+        run: |
+          echo "GITHUB_ENV=$GITHUB_ENV"
+          node -e "const b=process.env.FL_TEE_PUBKEY_B64||''; console.log({PUBKEY_LEN:Buffer.from(b,'base64').length, CI_LOOSE:process.env.CI_LOOSE}); process.exit(0)"
+
       - name: Policy validate
         run: node ./scripts/policy_validate.js
