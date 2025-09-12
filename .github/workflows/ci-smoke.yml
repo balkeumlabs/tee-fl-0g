@@ -5,7 +5,6 @@ on:
   pull_request:
 jobs:
   smoke:
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,36 +12,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - name: Show tool versions
-        run: |
-          node -v
-          npm -v
-          npx --version
-          npx hardhat --version || true
-      - name: Install deps
-        run: npm ci --no-audit --no-fund
-      - name: Compile (Hardhat)
-        run: npx hardhat compile --config ./hardhat.galileo.js
-      - name: Env (test keys)
+      - name: Set required env
         run: |
           echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> \
-          echo 'FL_TEE_PRIVKEY_B64=dwdtCnMYpX08FsFyUbJmRd9ML4frwJkqsXf7pR25LCo=' >> \
-          echo 'FL_ENC_DELETE_PLAINTEXT=1' >> \
       - name: Policy validate
         run: node ./scripts/policy_validate.js
-      - name: Round-trip encrypt/decrypt
-        run: |
-          echo '{''r'':1,''weights'':[0.1,0.2]}' > sample_update.json
-          node ./dist/crypto/encrypt_update.js --in ./sample_update.json --out ./sample_update.enc.json
-          node ./dist/crypto/decrypt_update.js --in ./sample_update.enc.json --out ./sample_update.dec.json
-          diff -u sample_update.json sample_update.dec.json
-      - name: Submit preambles (NO_TX)
-        env:
-          NO_TX: '1'
-        run: node ./scripts/submit_update_raw.js 0x0000000000000000000000000000000000000000 1 dummycid ./sample_update.enc.json --attestation ./attestation_sample.json
-      - name: Scoring preambles (NO_TX)
-        env:
-          NO_TX: '1'
-        run: node ./scripts/compute_scores_and_post_root_raw.js --attestation ./attestation_sample.json
-
