@@ -12,8 +12,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Set required env
+      - name: Set CI env
         run: |
-          echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> \
+          echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> 
+          echo 'CI_LOOSE=1' >> 
       - name: Policy validate
         run: node ./scripts/policy_validate.js
