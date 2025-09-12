@@ -1,3 +1,52 @@
+// === SECURITY_ENFORCE_PREAMBLE (auto) ===
+const sec = require("./security_enforce");
+sec.requireEncEnv();
+(async () => {
+  try {
+    const argv = process.argv.slice(2);
+    const getArg = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i+1] : null; };
+    let inPath = getArg("--in") || getArg("--input") || getArg("-i");
+    if (!inPath) {
+      const guess = argv.find(a => /\.enc\.json$/i.test(a));
+      if (guess) inPath = guess;
+    }
+    if (inPath) { await sec.assertEncryptedJson(inPath); }
+    await sec.maybeScrubPlaintext({ fix: process.env.FL_ENC_DELETE_PLAINTEXT === "1" });
+  } catch (e) {
+    console.error("[enforce]", e && e.message ? e.message : e);
+    process.exit(1);
+  }
+})();
+// === /SECURITY_ENFORCE_PREAMBLE ===
+// === SEC_ENFORCE_FILEPATH (auto) ===
+(() => {
+  try {
+    const argv = process.argv.slice(2);
+    const attIdx = argv.indexOf("--attestation");
+    const core = attIdx >= 0 ? argv.slice(0, attIdx) : argv;
+    const cand = [...core].reverse().find(a => /\.json$/i.test(a));
+    if (cand && !/\.enc\.json$/i.test(cand)) {
+      throw new Error("Expected encrypted *.enc.json as filePath; got: " + cand);
+    }
+  } catch (e) { console.error("[enforce]", e && e.message ? e.message : e); process.exit(1); }
+})();
+// === /SEC_ENFORCE_FILEPATH ===
+//
+
+//
+// === ATTESTATION_ENFORCE_PREAMBLE (auto) ===
+const { spawnSync } = require("child_process");
+(function(){
+  const argv = process.argv.slice(2);
+  const getArg = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i+1] : null; };
+  const att = getArg("--attestation");
+  if (!att) { console.error("[attest] Missing --attestation <file>"); process.exit(1); }
+  const path = require("path");
+  const allow = process.env.TEE_ATTEST_MEAS_ALLOWLIST || path.join(__dirname, "attestation_allowlist.json");
+  const res = spawnSync(process.execPath, [path.join(__dirname,"attestation_enforce.js"), "--attestation", att, "--allowlist", allow], { stdio: "inherit" });
+  if (res.status !== 0) { console.error("[attest] enforcement failed"); process.exit(1); }
+})();
+// === /ATTESTATION_ENFORCE_PREAMBLE ===
 // scripts/submit_update_raw.js
 require('dotenv').config();
 const { ethers } = require('ethers');
@@ -35,3 +84,6 @@ const crypto = require('crypto');
   console.log('// submitUpdate tx:', tx.hash);
   await tx.wait();
 })();
+
+
+

@@ -1,3 +1,25 @@
+// === SECURITY_ENFORCE_PREAMBLE (auto) ===
+const sec = require("./security_enforce");
+sec.requireEncEnv();
+(async () => {
+  try {
+    const argv = process.argv.slice(2);
+    const getArg = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i+1] : null; };
+    let inPath = getArg("--in") || getArg("--input") || getArg("-i");
+    if (!inPath) {
+      const guess = argv.find(a => /\.enc\.json$/i.test(a));
+      if (guess) inPath = guess;
+    }
+    if (inPath) { await sec.assertEncryptedJson(inPath); }
+    await sec.maybeScrubPlaintext({ fix: process.env.FL_ENC_DELETE_PLAINTEXT === "1" });
+  } catch (e) {
+    console.error("[enforce]", e && e.message ? e.message : e);
+    process.exit(1);
+  }
+})();
+// === /SECURITY_ENFORCE_PREAMBLE ===
+const sec = require('./security_enforce');
+sec.requireEncEnv();
 /**
  * scripts/aggregate_and_publish_raw.js
  * Usage: node scripts/aggregate_and_publish_raw.js <EpochManager> <epochId> <outputJsonPath> <globalCid> <updateJson1> [updateJson2 ...]
@@ -47,3 +69,5 @@ function fedAvg(files) {                         // // Simple FedAvg: mean of ar
   console.log("// publishModel tx: " + tx.hash);
   await tx.wait();                                                // // Wait mined
 })();
+
+
