@@ -10,14 +10,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
       - name: Install
         run: npm ci
       - name: Compile
         run: npx hardhat compile --config ./hardhat.galileo.js
-      - name: Env
+      - name: Env (test keys)
         run: |
-          echo 'FL_TEE_PUBKEY_B64=dGVzdF9wdWJsa2V5X3B1YmtleQ==' >> \
+          echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> \
+          echo 'FL_TEE_PRIVKEY_B64=dwdtCnMYpX08FsFyUbJmRd9ML4frwJkqsXf7pR25LCo=' >> \
           echo 'FL_ENC_DELETE_PLAINTEXT=1' >> \
       - name: Policy validate
         run: node ./scripts/policy_validate.js
