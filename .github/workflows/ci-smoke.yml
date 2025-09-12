@@ -17,3 +17,4 @@ jobs:
           echo 'FL_TEE_PUBKEY_B64=3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08=' >> \
       - name: Policy validate
         run: node ./scripts/policy_validate.js
+
