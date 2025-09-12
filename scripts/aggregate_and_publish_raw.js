@@ -18,6 +18,10 @@ sec.requireEncEnv();
   }
 })();
 // === /SECURITY_ENFORCE_PREAMBLE ===
+if (process.env.NO_TX === '1') {
+  console.log('// NO_TX set; preambles passed (aggregate/publish).');
+  process.exit(0);
+}
 const sec = require('./security_enforce');
 sec.requireEncEnv();
 /**
@@ -69,5 +73,6 @@ function fedAvg(files) {                         // // Simple FedAvg: mean of ar
   console.log("// publishModel tx: " + tx.hash);
   await tx.wait();                                                // // Wait mined
 })();
+
 
 
