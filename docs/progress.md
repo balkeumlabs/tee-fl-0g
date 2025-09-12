@@ -1,19 +1,14 @@
-# Project Progress - tee-fl-0g
+# Project Progress — FLAI on 0G (TEE-based)
 
 <!-- OVERALL_START -->
-### Overall Project Completion
-![Completion](https://img.shields.io/badge/completion-47%25-orange)
+ ### Overall Project Completion !
+[Completion](https://img.shields.io/badge/completion-40%25-orange)
 <!-- OVERALL_END -->
 
-Then snapshot: 2025-09-12 12:00 +05
-Now snapshot:  2025-09-12 17:13 +05
 
-| Stage | % then | % now | Notes |
-|---|---:|---:|---|
-| 1) Real 0G Storage CIDs | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Blocked on 0G write path/API; we will update once uploader returns real CIDs. |
-| 2) Client-side encryption enforcement | ![50%](https://img.shields.io/badge/-50%25-yellow) | ![85%](https://img.shields.io/badge/-85%25-yellowgreen) | Sync Windows-safe guard; *.enc.json enforcement; dotenv before preambles; quarantine verified. |
-| 3) Attestation gating | ![20%](https://img.shields.io/badge/-20%25-red) | ![50%](https://img.shields.io/badge/-50%25-yellow) | Submit path requires --attestation and allow-list; scoring path enforcement next. |
-| 4) Repo hygiene & safety guards | ![60%](https://img.shields.io/badge/-60%25-yellow) | ![85%](https://img.shields.io/badge/-85%25-yellowgreen) | Plaintext guard + quarantine patterns confirmed; Windows path/argv handling fixed. |
-| 5) CI smoke hardening (no CID) | ![20%](https://img.shields.io/badge/-20%25-red) | ![20%](https://img.shields.io/badge/-20%25-red) | Planned next: policy validator + NO_TX preambles in CI. |
-| 6) On-chain interactions baseline | ![0%](https://img.shields.io/badge/-0%25-red) | ![10%](https://img.shields.io/badge/-10%25-red) | submitUpdate exercised; receipts/events + reader still pending. |
-| 7) Docs polish | ![70%](https://img.shields.io/badge/-70%25-yellow) | ![80%](https://img.shields.io/badge/-80%25-yellowgreen) | Static SVG diagram in repo; README cleaned; links stable. |
+Then snapshot: 2025-09-10 18:00 +05:00
+Now snapshot: 2025-09-11 03:10 +05:00
+
+
+| Stage | % then | % now | Notes | |---|---:|---:|---|
+| 1) Data Upload → Encrypted datasets to 0G Storage | ![40%](https://img.shields.io/badge/-40%25-orange) | ![60%](https://img.shields.io/badge/-60%25-yellow) | Local encryption + envelope done; uploader + dry-run meta in place; 0G Storage maintenance blocks end-to-end. | | 2) Access Grant → On-chain keys to approved TEE | ![20%](https://img.shields.io/badge/-20%25-red) | ![40%](https://img.shields.io/badge/-40%25-orange) | AccessRegistry deployed + off-chain gating flow; key grant + model ACL wiring TBD. | | 3) Local Training [TEE] | ![20%](https://img.shields.io/badge/-20%25-red) | ![40%](https://img.shields.io/badge/-40%25-orange) | Local training + encrypted update envelopes; no enclave yet; unwrap-to-temp path validated. | | 4) Update Submission (chain + storage) | ![40%](https://img.shields.io/badge/-40%25-orange) | ![80%](https://img.shields.io/badge/-80%25-yellowgreen) | On-chain submit working; artifacts hashed; storage CID pending maintenance. | | 5) Scoring [TEE] | ![30%](https://img.shields.io/badge/-30%25-orange) | ![70%](https://img.shields.io/badge/-70%25-yellow) | Deterministic dummy scoring; scoresRoot posted on-chain; enclave attestation placeholders exist. | | 6) Aggregation [TEE] | ![10%](https://img.shields.io/badge/-10%25-red) | ![70%](https://img.shields.io/badge/-70%25-yellow) | FedAvg working; aggregated model + SHA-256; publishModel emits; not inside TEE yet. | | 7) Iteration | ![20%](https://img.shields.io/badge/-20%25-red) | ![60%](https://img.shields.io/badge/-60%25-yellow) | Multi-round orchestration runs; reproducible workspaces + logs. | | 8) Final Model → Sealed + versioned + marketplace | ![10%](https://img.shields.io/badge/-10%25-red) | ![50%](https://img.shields.io/badge/-50%25-yellow) | Aggregated model + storage meta; Marketplace submission not wired. | | 9) Inference [TEE] via Marketplace | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not started; needs hosted model + marketplace SDK alignment. | | 10) Revenue Split | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not implemented; requires additional on-chain logic. |
