@@ -66,3 +66,10 @@ aggregated_model.json
 .quarantine/
 client_update*.json
 !client_update*.enc.json
+*.old
+*.orig
+*.tmp
+*~
+aggregated_model_round*.json
+docs/visual_overview.mmd
+previous-readme.md
