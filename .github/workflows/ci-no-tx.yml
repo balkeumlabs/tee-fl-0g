@@ -60,16 +60,17 @@ jobs:
           JSON
           cat attestation_sample.json
 
-      - name: Prepare update + encrypt
+            - name: Prepare update + encrypt
         shell: bash
         run: |
           set -euxo pipefail
-          node -p "process.versions"
+          echo "Node versions:"; node -p "process.versions"
           echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+          echo "Listing dist/crypto:"; ls -la dist/crypto || true
+          head -n 40 dist/crypto/encrypt_update.js || true
           node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
-          ls -la u*.json
-
-      - name: Submit (NO_TX)
+          echo "u*.json listing:"; ls -la u*.json
+      - name: Submit (NO_TX) (NO_TX)
         run: node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
 
       - name: Score (NO_TX)
@@ -77,3 +78,4 @@ jobs:
 
       - name: Aggregate/Publish (NO_TX)
         run: node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
+
