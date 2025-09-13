@@ -1,39 +1,3 @@
-// === /ATTEST_ARGV_PREP ===
-(() => {
-  try {
-    const path = require("node:path");
-    const argv = process.argv;
-
-    // Pick path from env or argv; ensure argv has a *string* value (never boolean)
-    let attPath = process.env.TEE_ATTEST_FILE || null;
-    const idx = argv.indexOf("--attestation");
-    let needsInject = false;
-
-    if (idx !== -1) {
-      const next = argv[idx + 1];
-      const bad =
-        next === undefined ||
-        next === true ||
-        next === "true" ||
-        (typeof next === "string" && next.startsWith("-"));
-      if (bad) needsInject = true; else attPath = attPath || String(next);
-    } else {
-      needsInject = true;
-    }
-
-    if (!attPath) attPath = "attestation_sample.json";
-    const resolved = path.resolve(attPath);
-    process.env.TEE_ATTEST_FILE = resolved;
-
-    if (needsInject) {
-      if (idx === -1) argv.push("--attestation", resolved);
-      else            argv.splice(idx + 1, 0, resolved);
-    }
-  } catch (e) {
-    console.error("[attest-argv-prep] failed:", (e && e.message) || e);
-  }
-})();
-// === /ATTEST_ARGV_PREP ===
 // === SECURITY_ENFORCE_PREAMBLE (auto) ===
 const sec = require("./security_enforce");
 sec.requireEncEnv();
@@ -54,13 +18,6 @@ sec.requireEncEnv();
   }
 })();
 // === /SECURITY_ENFORCE_PREAMBLE ===
-if (argv && typeof argv.attestation === 'string') {
-    argv.attestation = path.resolve(argv.attestation);
-  }
-} catch (e) {
-  console.error('[attest] normalization failed:', e?.message || e);
-  process.exit(1);
-}
 if (process.env.NO_TX === '1') {
   console.log('// NO_TX set; preambles passed (submit).');
   process.exit(0);
@@ -131,8 +88,6 @@ const crypto = require('crypto');
   console.log('// submitUpdate tx:', tx.hash);
   await tx.wait();
 })();
-
-
 
 
 

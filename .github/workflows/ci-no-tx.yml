@@ -85,11 +85,12 @@ jobs:
           ls -la u*.json
 
       - name: Submit (NO_TX)
-        run: node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
+        run: node -r scripts/_argv_prep.cjs scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
 
       - name: Score (NO_TX)
-        run: node scripts/compute_scores_and_post_root_raw.js --attestation attestation_sample.json
+        run: node -r scripts/_argv_prep.cjs scripts/compute_scores_and_post_root_raw.js --attestation attestation_sample.json
 
       - name: Aggregate/Publish (NO_TX)
-        run: node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
+        run: node -r scripts/_argv_prep.cjs scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
+
 
