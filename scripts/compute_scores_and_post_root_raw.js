@@ -1,14 +1,4 @@
-function resolveAttPath(argv, env) {
-  const path = require('node:path');
-  let p = argv && typeof argv.attestation === 'string' ? argv.attestation : null;
-  if (!p && env && typeof env.TEE_ATTEST_FILE === 'string') p = env.TEE_ATTEST_FILE;
-  if (!p) p = 'attestation_sample.json';
-  if (p === true || p === 'true') {
-    // boolean leak from parser; treat as missing -> fallback
-    p = env && env.TEE_ATTEST_FILE ? env.TEE_ATTEST_FILE : 'attestation_sample.json';
-  }
-  return path.resolve(String(p));
-}// === /ATTEST_ARGV_PREP ===
+// === /ATTEST_ARGV_PREP ===
 (() => {
   try {
     const path = require("node:path");
@@ -39,24 +29,43 @@ function resolveAttPath(argv, env) {
       if (idx === -1) argv.push("--attestation", resolved);
       else            argv.splice(idx + 1, 0, resolved);
     }
+
+    // Debug: Log attestation flag before resolve
+    console.log('attestation before resolve:', argv.attestation);
+
+    // Debug: Log the resolved path value
+    console.log('attestation final path:', resolved);
+
   } catch (e) {
     console.error("[attest-argv-prep] failed:", (e && e.message) || e);
   }
 })();
 // === /ATTEST_ARGV_PREP ===
+
 // === ATTESTATION_ENFORCE_PREAMBLE (auto) ===
 const { spawnSync } = require('child_process');
 (function(){
   const argv = process.argv.slice(2);
   const getArg = (n) => { const i = argv.indexOf(n); return i>=0 ? argv[i+1] : null; };
-  const att = getArg('--attestation');
-  if (!att) { console.error('[attest] Missing --attestation <file>'); process.exit(1); }
   const path = require('path');
+
+  // Normalize attestation to a string path (never boolean/undefined)
+  let att = getArg('--attestation');
+  if (!att || att === true || att === 'true' || (typeof att === 'string' && att.startsWith('-'))) {
+    att = process.env.TEE_ATTEST_FILE || 'attestation_sample.json';
+  }
+  att = path.resolve(String(att));
+
   const allow = process.env.TEE_ATTEST_MEAS_ALLOWLIST || path.join(__dirname,'attestation_allowlist.json');
-  const res = spawnSync(process.execPath,[path.join(__dirname,'attestation_enforce.js'),'--attestation',att,'--allowlist',allow],{stdio:'inherit'});
+  const res = spawnSync(
+    process.execPath,
+    [ path.join(__dirname,'attestation_enforce.js'), '--attestation', att, '--allowlist', allow ],
+    { stdio: 'inherit' }
+  );
   if (res.status !== 0) { console.error('[attest] enforcement failed'); process.exit(1); }
 })();
 // === /ATTESTATION_ENFORCE_PREAMBLE ===
+
 /**
  * scripts/compute_scores_and_post_root_raw.js
  * Usage: node scripts/compute_scores_and_post_root_raw.js <EpochManager> <epochId> [fromBlock=0]
@@ -123,8 +132,4 @@ function merkleRoot(leavesHex) {                 // // Simple SHA-256 Merkle roo
   console.log("// postScoresRoot tx: " + tx.hash);
   await tx.wait();                                       // // Wait mined
 })();
-
-
-
-
 
