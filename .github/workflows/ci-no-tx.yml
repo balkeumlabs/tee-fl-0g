@@ -67,29 +67,32 @@ jobs:
           test -f dist/crypto/encrypt_update.js || true
 
       - name: Prepare update + encrypt
-        shell: bash
-        run: |
-          set -euxo pipefail
-          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
-          : > ci.log
-          : > enc.out.json
-          TOOL="dist/crypto/encrypt_update.js"
-          # Fallback to source tree if dist wasn't produced
-          if [ ! -f "\" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
-            TOOL="scripts/crypto/encrypt_update.js"
-          fi
-          node "\" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
-          test -f u.enc.json
-          node -e "console.log(JSON.stringify({out:'u.enc.json', ok:true}))" > enc.out.json
+  shell: bash
+  run: |
+    set -euxo pipefail
+    echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+    : > ci.log
+    : > enc.out.json
 
-      - name: Upload CI log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-no-tx-log-${{ github.run_attempt }}
-          path: |
-            ci.log
-            enc.out.json
+    TOOL="dist/crypto/encrypt_update.js"
+    if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
+      TOOL="scripts/crypto/encrypt_update.js"
+    fi
+    echo "Using tool: $TOOL" | tee -a ci.log
+
+    node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
+    test -f u.enc.json
+    node -e 'console.log(JSON.stringify({out:"u.enc.json", ok:true}))' > enc.out.json
+
+- name: Upload CI log
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: ci-no-tx-log-${{ github.run_attempt }}
+    path: |
+      ci.log
+      enc.out.json
+    if-no-files-found: ignore
       - name: Submit (NO_TX)
         run: |
           set -euxo pipefail
@@ -112,17 +115,3 @@ jobs:
           grep -F "// NO_TX set; preambles passed (scoring)." ci.log
           grep -F "// NO_TX set; preambles passed (aggregate/publish)." ci.log
           echo "All preambles passed."
-
-      - name: Upload CI log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-no-tx-log-${{ github.run_attempt }}
-          path: |
-            ci.log
-            enc.out.json
-          if-no-files-found: warn
-
-
-
-
