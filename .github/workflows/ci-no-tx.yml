@@ -5,7 +5,7 @@ on:
     branches: [ rao ]
     paths:
       - "scripts/**"
-      - "dist/crypto/**"
+      - "dist/**"
       - ".github/workflows/ci-no-tx.yml"
       - "hardhat.galileo.js"
       - "package-lock.json"
@@ -23,30 +23,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (22.x)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "22"
+          cache: ""
+
+      - name: Print env
+        run: |
+          node -v
+          npm -v
+          pwd
+          ls -la
 
       - name: Install deps
         run: npm ci
 
+      - name: Build dist (if present)
+        run: npm run build --if-present
+
       - name: Build (Hardhat)
         run: npx hardhat compile --config hardhat.galileo.js
+
+      - name: Sanity: dist presence
+        run: |
+          ls -la dist || true
+          ls -la dist/crypto || true
+          test -f dist/crypto/encrypt_update.js || { echo "::error::missing dist/crypto/encrypt_update.js"; exit 1; }
 
       - name: Write attestation file (self-contained)
         shell: bash
         run: |
           set -euo pipefail
           cat > attestation_sample.json <<'JSON'
-          {
-            "ok": true,
-            "measurement": "SIM-TEE-DEMO-1",
-            "enclave_id": "SIM-TEE",
-            "nonce": "demo"
-          }
+          { "ok": true, "measurement": "SIM-TEE-DEMO-1", "enclave_id": "SIM-TEE", "nonce": "demo" }
           JSON
+          cat attestation_sample.json
 
       - name: Prepare update + encrypt
         shell: bash
@@ -54,6 +66,7 @@ jobs:
           set -euo pipefail
           echo '{"r":1,"weights":[0.1,0.2]}' > u.json
           node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
+          ls -la u*.json
 
       - name: Submit (NO_TX)
         run: node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
