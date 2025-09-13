@@ -1,0 +1,51 @@
+name: ci-no-tx
+
+on:
+  push:
+    branches: [ rao ]
+    paths:
+      - "scripts/**"
+      - "dist/crypto/**"
+      - ".github/workflows/ci-no-tx.yml"
+      - "hardhat.galileo.js"
+      - "package-lock.json"
+      - "package.json"
+      - "attestation_sample.json"
+  pull_request:
+    branches: [ rao ]
+
+jobs:
+  round-no-tx:
+    runs-on: ubuntu-latest
+    env:
+      NO_TX: "1"
+      FL_TEE_PUBKEY_B64: "3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08="
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build (Hardhat)
+        run: npx hardhat compile --config hardhat.galileo.js
+
+      - name: Prepare update + encrypt
+        run: |
+          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+          node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
+
+      - name: Submit (NO_TX)
+        run: node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
+
+      - name: Score (NO_TX)
+        run: node scripts/compute_scores_and_post_root_raw.js --attestation attestation_sample.json
+
+      - name: Aggregate/Publish (NO_TX)
+        run: node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
