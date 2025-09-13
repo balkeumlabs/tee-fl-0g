@@ -31,11 +31,7 @@
     }
 
     // Debug: Log attestation flag before resolve
-    console.log('attestation before resolve:', argv.attestation);
-
     // Debug: Log the resolved path value
-    console.log('attestation final path:', resolved);
-
   } catch (e) {
     console.error("[attest-argv-prep] failed:", (e && e.message) || e);
   }
@@ -142,6 +138,7 @@ function merkleRoot(leavesHex) {                 // // Simple SHA-256 Merkle roo
   console.log("// postScoresRoot tx: " + tx.hash);
   await tx.wait();                                       // // Wait mined
 })();
+
 
 
 
