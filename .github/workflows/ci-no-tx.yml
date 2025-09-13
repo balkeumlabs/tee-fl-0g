@@ -86,7 +86,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-no-tx-log
+          name: ci-no-tx-log-${{ github.run_attempt }}
           path: |
             ci.log
             enc.out.json
@@ -117,11 +117,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-no-tx-log
+          name: ci-no-tx-log-${{ github.run_attempt }}
           path: |
             ci.log
             enc.out.json
           if-no-files-found: warn
+
 
 
 
