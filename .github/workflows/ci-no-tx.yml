@@ -4,16 +4,16 @@ on:
   push:
     branches: [ rao ]
     paths:
-      - "scripts/**"
-      - "dist/crypto/**"
-      - ".github/workflows/ci-no-tx.yml"
-      - "hardhat.galileo.js"
-      - "package-lock.json"
-      - "package.json"
-      - "attestation_sample.json"
+      - scripts/**
+      - dist/crypto/**
+      - .github/workflows/ci-no-tx.yml
+      - hardhat.galileo.js
+      - package-lock.json
+      - package.json
+      - attestation_sample.json
   pull_request:
     branches: [ rao ]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   round-no-tx:
@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: npm
 
       - name: Install deps
         run: npm ci
@@ -42,11 +42,7 @@ jobs:
       - name: Ensure attestation file
         run: |
           set -euxo pipefail
-          if [ ! -f attestation_sample.json ]; then
-            cat > attestation_sample.json <<'JSON'
-{"ok":true,"measurement":"SIM-TEE-DEMO-1","enclave_id":"SIM-TEE","nonce":"demo"}
-JSON
-          fi
+          echo '{"ok":true,"measurement":"SIM-TEE-DEMO-1","enclave_id":"SIM-TEE","nonce":"demo"}' > attestation_sample.json
 
       - name: Prepare update + encrypt
         run: |
