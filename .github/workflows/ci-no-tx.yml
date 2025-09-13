@@ -2,15 +2,9 @@ name: ci-no-tx
 
 on:
   push:
-    branches: [ rao ]
-    paths:
-      - "scripts/**"
-      - "dist/**"
-      - ".github/workflows/ci-no-tx.yml"
-      - "hardhat.galileo.js"
-      - "package-lock.json"
-      - "package.json"
-  pull_request:
+
+
+  workflow_dispatch:
     branches: [ rao ]
 
 jobs:
@@ -92,5 +86,6 @@ jobs:
 
       - name: Aggregate/Publish (NO_TX)
         run: node -r scripts/_argv_prep.cjs scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
+
 
 
