@@ -18,7 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NO_TX: "1"
+      # guard pubkey for security preambles
       FL_TEE_PUBKEY_B64: "3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08="
+      # attestation gating envs — strings, not booleans
+      TEE_ATTEST_MEAS_ALLOWLIST: '["SIM-TEE-DEMO-1"]'
+      TEE_ATTEST_ENCLAVE_ID: "SIM-TEE"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,17 +64,27 @@ jobs:
           JSON
           cat attestation_sample.json
 
-            - name: Prepare update + encrypt
+      - name: Debug: module resolution (non-fatal)
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node -p "process.versions"
+          npm ls libsodium-wrappers || true
+          npm ls tweetnacl || true
+          node -p "require.resolve('libsodium-wrappers')" || true
+          node -p "require.resolve('tweetnacl')" || true
+          head -n 30 dist/crypto/encrypt_update.js || true
+
+      - name: Prepare update + encrypt
         shell: bash
         run: |
-          set -euxo pipefail
-          echo "Node versions:"; node -p "process.versions"
+          set -euo pipefail
           echo '{"r":1,"weights":[0.1,0.2]}' > u.json
-          echo "Listing dist/crypto:"; ls -la dist/crypto || true
-          head -n 40 dist/crypto/encrypt_update.js || true
           node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
-          echo "u*.json listing:"; ls -la u*.json
-      - name: Submit (NO_TX) (NO_TX)
+          ls -la u*.json
+
+      - name: Submit (NO_TX)
         run: node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation attestation_sample.json
 
       - name: Score (NO_TX)
@@ -78,4 +92,3 @@ jobs:
 
       - name: Aggregate/Publish (NO_TX)
         run: node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
-

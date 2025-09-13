@@ -18,6 +18,24 @@ sec.requireEncEnv();
   }
 })();
 // === /SECURITY_ENFORCE_PREAMBLE ===
+const path = require('node:path');
+// Normalize attestation: boolean true/undefined -> fallback path (env or sample)
+try {
+  if (argv && (argv.attestation === true || argv.attestation === undefined || argv.attestation === null)) {
+    const fallback = process.env.TEE_ATTEST_FILE || 'attestation_sample.json';
+    argv.attestation = fallback;
+  }
+  if (argv && typeof argv.attestation !== 'string') {
+    console.error('[attest] invalid --attestation; expected path string, got', typeof argv.attestation);
+    process.exit(1);
+  }
+  if (argv && typeof argv.attestation === 'string') {
+    argv.attestation = path.resolve(argv.attestation);
+  }
+} catch (e) {
+  console.error('[attest] normalization failed:', e?.message || e);
+  process.exit(1);
+}
 if (process.env.NO_TX === '1') {
   console.log('// NO_TX set; preambles passed (submit).');
   process.exit(0);
@@ -88,6 +106,7 @@ const crypto = require('crypto');
   console.log('// submitUpdate tx:', tx.hash);
   await tx.wait();
 })();
+
 
 
 
