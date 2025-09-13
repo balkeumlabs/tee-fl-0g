@@ -1,3 +1,16 @@
+// === ATTESTATION_ENFORCE_PREAMBLE (auto) ===
+const { spawnSync } = require('child_process');
+(function(){
+  const argv = process.argv.slice(2);
+  const getArg = (n) => { const i = argv.indexOf(n); return i>=0 ? argv[i+1] : null; };
+  const att = getArg('--attestation');
+  if (!att) { console.error('[attest] Missing --attestation <file>'); process.exit(1); }
+  const path = require('path');
+  const allow = process.env.TEE_ATTEST_MEAS_ALLOWLIST || path.join(__dirname,'attestation_allowlist.json');
+  const res = spawnSync(process.execPath,[path.join(__dirname,'attestation_enforce.js'),'--attestation',att,'--allowlist',allow],{stdio:'inherit'});
+  if (res.status !== 0) { console.error('[attest] enforcement failed'); process.exit(1); }
+})();
+// === /ATTESTATION_ENFORCE_PREAMBLE ===
 /**
  * scripts/compute_scores_and_post_root_raw.js
  * Usage: node scripts/compute_scores_and_post_root_raw.js <EpochManager> <epochId> [fromBlock=0]
@@ -23,6 +36,7 @@ function merkleRoot(leavesHex) {                 // // Simple SHA-256 Merkle roo
 }
 
 (async () => {
+  if (process.env.NO_TX === '1') { console.log('// NO_TX set; preambles passed (scoring).'); process.exit(0); }
   const rpc = process.env.RPC_ENDPOINT;          // // RPC endpoint
   const pk  = process.env.PRIVATE_KEY;           // // Admin signer (secret)
   const addr = process.argv[2];                  // // EpochManager address
@@ -63,3 +77,4 @@ function merkleRoot(leavesHex) {                 // // Simple SHA-256 Merkle roo
   console.log("// postScoresRoot tx: " + tx.hash);
   await tx.wait();                                       // // Wait mined
 })();
+
