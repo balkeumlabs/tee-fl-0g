@@ -73,3 +73,4 @@ client_update*.json
 aggregated_model_round*.json
 docs/visual_overview.mmd
 previous-readme.md
+.tmp

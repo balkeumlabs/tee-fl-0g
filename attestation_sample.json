@@ -1,1 +1,6 @@
-{"measurement":"SIM-TEE-DEMO-1"}
+{
+  "ok": true,
+  "measurement": "SIM-TEE-DEMO-1",
+  "enclave_id": "SIM-TEE",
+  "nonce": "demo"
+}
