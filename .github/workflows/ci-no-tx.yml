@@ -39,6 +39,16 @@ jobs:
       - name: Build (Hardhat)
         run: npx hardhat compile --config hardhat.galileo.js
 
+      - name: Dependency sanity (non-fatal)
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          node -p "process.versions"
+          npm ls libsodium-wrappers || true
+          npm ls tweetnacl || true
+          node -e "console.log(require.resolve(\"libsodium-wrappers\"))" || true
+          node -e "console.log(require.resolve(\"tweetnacl\"))" || true
+
       - name: Ensure attestation file
         run: |
           set -euxo pipefail
@@ -83,3 +93,4 @@ jobs:
             ci.log
             enc.out.json
           if-no-files-found: warn
+
