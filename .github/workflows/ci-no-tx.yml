@@ -10,7 +10,6 @@ on:
       - "hardhat.galileo.js"
       - "package-lock.json"
       - "package.json"
-      - "attestation_sample.json"
   pull_request:
     branches: [ rao ]
 
@@ -36,8 +35,23 @@ jobs:
       - name: Build (Hardhat)
         run: npx hardhat compile --config hardhat.galileo.js
 
-      - name: Prepare update + encrypt
+      - name: Write attestation file (self-contained)
+        shell: bash
         run: |
+          set -euo pipefail
+          cat > attestation_sample.json <<'JSON'
+          {
+            "ok": true,
+            "measurement": "SIM-TEE-DEMO-1",
+            "enclave_id": "SIM-TEE",
+            "nonce": "demo"
+          }
+          JSON
+
+      - name: Prepare update + encrypt
+        shell: bash
+        run: |
+          set -euo pipefail
           echo '{"r":1,"weights":[0.1,0.2]}' > u.json
           node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
 
