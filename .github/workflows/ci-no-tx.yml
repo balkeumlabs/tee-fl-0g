@@ -1,119 +1,294 @@
 name: ci-no-tx
 
+
+
+
+
 on:
+
+
   push:
+
+
     branches: [ rao ]
+
+
     paths:
+
+
       - scripts/**
+
+
       - dist/crypto/**
+
+
       - .github/workflows/ci-no-tx.yml
+
+
       - hardhat.galileo.js
+
+
       - package-lock.json
+
+
       - package.json
+
+
       - attestation_sample.json
+
+
   pull_request:
+
+
     branches: [ rao ]
+
+
   workflow_dispatch: {}
 
+
+
+
+
 jobs:
+
+
   round-no-tx:
+
+
     runs-on: ubuntu-latest
+
+
     env:
+
+
       NO_TX: "1"
+
+
       FL_TEE_PUBKEY_B64: "3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08="
+
+
       TEE_ATTEST_MEAS_ALLOWLIST: '["SIM-TEE-DEMO-1"]'
+
+
       TEE_ATTEST_ENCLAVE_ID: "SIM-TEE"
+
+
     steps:
+
+
       - name: Checkout
+
+
         uses: actions/checkout@v4
 
+
+
+
+
       - name: Setup Node
+
+
         uses: actions/setup-node@v4
+
+
         with:
+
+
           node-version: "20"
+
+
           cache: npm
 
+
+
+
+
       - name: Install deps
+
+
         run: npm ci
 
+
+
+
+
       - name: Build (Hardhat)
+
+
         run: npx hardhat compile --config hardhat.galileo.js
 
+
+
+
+
       - name: Dependency sanity (non-fatal)
+
+
         continue-on-error: true
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           node -p "process.versions"
+
+
           npm ls libsodium-wrappers || true
+
+
           npm ls tweetnacl || true
+
+
           node -e "console.log(require.resolve(\"libsodium-wrappers\"))" || true
+
+
           node -e "console.log(require.resolve(\"tweetnacl\"))" || true
 
+
+
+
+
       - name: Ensure attestation file
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           echo '{"ok":true,"measurement":"SIM-TEE-DEMO-1","enclave_id":"SIM-TEE","nonce":"demo"}' > attestation_sample.json
+
+
       - name: Build JS tools (dist)
+
+
+        shell: bash
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          # Try common build scripts; don't hard-fail if a name doesn't exist
+
+
+          if [ ! -f dist/crypto/encrypt_update.js ]; then
+
+
+            npm run build || npm run build:tools || npm run build:dist || true
+
+
+          fi
+
+
+          ls -la dist || true
+
+
+          ls -la dist/crypto || true
+
+
+          # If still missing, try to fall back to source script path later
+
+
+          test -f dist/crypto/encrypt_update.js || true
+
+
+
+
+
+      - name: Prepare update + encrypt
         shell: bash
         run: |
           set -euxo pipefail
-          # Try common build scripts; don't hard-fail if a name doesn't exist
-          if [ ! -f dist/crypto/encrypt_update.js ]; then
-            npm run build || npm run build:tools || npm run build:dist || true
+          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+          : > ci.log
+          : > enc.out.json
+
+          TOOL="dist/crypto/encrypt_update.js"
+          if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
+            TOOL="scripts/crypto/encrypt_update.js"
           fi
-          ls -la dist || true
-          ls -la dist/crypto || true
-          # If still missing, try to fall back to source script path later
-          test -f dist/crypto/encrypt_update.js || true
+          echo "Using tool: $TOOL" | tee -a ci.log
 
-      - name: Prepare update + encrypt
-  shell: bash
-  run: |
-    set -euxo pipefail
-    echo '{"r":1,"weights":[0.1,0.2]}' > u.json
-    : > ci.log
-    : > enc.out.json
-
-    TOOL="dist/crypto/encrypt_update.js"
-    if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
-      TOOL="scripts/crypto/encrypt_update.js"
-    fi
-    echo "Using tool: $TOOL" | tee -a ci.log
-
-    node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
-    test -f u.enc.json
-    node -e 'console.log(JSON.stringify({out:"u.enc.json", ok:true}))' > enc.out.json
-
-- name: Upload CI log
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: ci-no-tx-log-${{ github.run_attempt }}
-    path: |
-      ci.log
-      enc.out.json
-    if-no-files-found: ignore
+          node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
+          test -f u.enc.json
+          node -e 'console.log(JSON.stringify({out:"u.enc.json", ok:true}))' > enc.out.json
       - name: Submit (NO_TX)
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation ./attestation_sample.json | tee -a ci.log
 
+
+
+
+
       - name: Score (NO_TX)
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           node scripts/compute_scores_and_post_root_raw.js --attestation ./attestation_sample.json | tee -a ci.log
 
+
+
+
+
       - name: Aggregate/Publish (NO_TX)
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json | tee -a ci.log
 
+
+
+
+
       - name: Validate pass-lines
+
+
         run: |
+
+
           set -euxo pipefail
+
+
           grep -F "// NO_TX set; preambles passed (submit)." ci.log
+
+
           grep -F "// NO_TX set; preambles passed (scoring)." ci.log
+
+
           grep -F "// NO_TX set; preambles passed (aggregate/publish)." ci.log
+
+
           echo "All preambles passed."
+
+
+
+
+
+
+
 
 
