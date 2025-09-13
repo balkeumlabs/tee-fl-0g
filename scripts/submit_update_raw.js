@@ -18,6 +18,10 @@ sec.requireEncEnv();
   }
 })();
 // === /SECURITY_ENFORCE_PREAMBLE ===
+if (process.env.NO_TX === '1') {
+  console.log('// NO_TX set; preambles passed (submit).');
+  process.exit(0);
+}
 // === SEC_ENFORCE_FILEPATH (auto) ===
 (() => {
   try {
@@ -84,6 +88,7 @@ const crypto = require('crypto');
   console.log('// submitUpdate tx:', tx.hash);
   await tx.wait();
 })();
+
 
 
 
