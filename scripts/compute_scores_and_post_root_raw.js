@@ -1,4 +1,14 @@
-// === /ATTEST_ARGV_PREP ===
+function resolveAttPath(argv, env) {
+  const path = require('node:path');
+  let p = argv && typeof argv.attestation === 'string' ? argv.attestation : null;
+  if (!p && env && typeof env.TEE_ATTEST_FILE === 'string') p = env.TEE_ATTEST_FILE;
+  if (!p) p = 'attestation_sample.json';
+  if (p === true || p === 'true') {
+    // boolean leak from parser; treat as missing -> fallback
+    p = env && env.TEE_ATTEST_FILE ? env.TEE_ATTEST_FILE : 'attestation_sample.json';
+  }
+  return path.resolve(String(p));
+}// === /ATTEST_ARGV_PREP ===
 (() => {
   try {
     const path = require("node:path");
@@ -113,5 +123,6 @@ function merkleRoot(leavesHex) {                 // // Simple SHA-256 Merkle roo
   console.log("// postScoresRoot tx: " + tx.hash);
   await tx.wait();                                       // // Wait mined
 })();
+
 
 
