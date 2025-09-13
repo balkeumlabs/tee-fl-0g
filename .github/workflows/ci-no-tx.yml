@@ -41,7 +41,7 @@ jobs:
           ls -la
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Build dist (if present)
         run: npm run build --if-present
@@ -92,3 +92,4 @@ jobs:
 
       - name: Aggregate/Publish (NO_TX)
         run: node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json
+
