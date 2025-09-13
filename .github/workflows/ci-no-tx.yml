@@ -63,7 +63,8 @@ jobs:
       - name: Prepare update + encrypt
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
+          node -p "process.versions"
           echo '{"r":1,"weights":[0.1,0.2]}' > u.json
           node dist/crypto/encrypt_update.js --in u.json --out u.enc.json
           ls -la u*.json
