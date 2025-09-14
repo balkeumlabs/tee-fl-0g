@@ -1,4 +1,6 @@
-# Project Progress — FLAI on 0G (TEE-based)
+# Project Progress — FLAI on 0G (TEE-based)
+
+<sub>Last update: 2025-09-14 19:42:20 UTC</sub>
 
 <!-- OVERALL_START -->
 ### Overall Project Completion
@@ -6,7 +8,8 @@
 <!-- OVERALL_END -->
 
 Then snapshot: 2025-09-10 18:00 +05:00
-Now snapshot:  2025-09-11 03:10 +05:00
+
+Now snapshot: 2025-09-11 03:10 +05:00
 
 | Stage | % then | % now | Notes |
 |---|---:|---:|---|
@@ -20,4 +23,6 @@ Now snapshot:  2025-09-11 03:10 +05:00
 | 8) Final Model → Sealed + versioned + marketplace | ![10%](https://img.shields.io/badge/-10%25-red) | ![50%](https://img.shields.io/badge/-50%25-yellow) | Aggregated model + storage meta; Marketplace submission not wired. |
 | 9) Inference [TEE] via Marketplace | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not started; needs hosted model + marketplace SDK alignment. |
 | 10) Revenue Split | ![0%](https://img.shields.io/badge/-0%25-red) | ![0%](https://img.shields.io/badge/-0%25-red) | Not implemented; requires additional on-chain logic. |
+
+
 
