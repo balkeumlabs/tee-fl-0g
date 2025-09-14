@@ -390,3 +390,42 @@ node .\dist\upload_to_0g_storage.js --file .\aggregated_model.json --cid bafy...
 
 
 
+
+
+
+<!-- BEGIN:LOCAL_NOTX_SMOKE -->
+
+### Quick local smoke test (NO_TX)
+
+```powershell
+$env:FL_TEE_PUBKEY_B64 = '3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08='
+$env:TEE_ATTEST_MEAS_ALLOWLIST = '["SIM-TEE-DEMO-1"]'
+$env:TEE_ATTEST_ENCLAVE_ID = 'SIM-TEE'
+$env:NO_TX = '1'
+
+New-Item -ItemType Directory -Force -Path .tmp | Out-Null
+'{"r":1,"weights":[0.1,0.2]}' | Set-Content -Encoding UTF8 .tmp\u.json
+node dist\crypto\encrypt_update.js --in .tmp\u.json --out .tmp\u.enc.json
+
+# three stages (preambles run; on-chain calls are short-circuited by NO_TX)
+node scripts\submit_update_raw.js 0x0 1 dummycid .tmp\u.enc.json --attestation attestation_sample.json
+node scripts\compute_scores_and_post_root_raw.js --attestation attestation_sample.json
+node scripts\aggregate_and_publish_raw.js 0x0 1 .tmp\agg.json dummyGlobalCid .tmp\u.enc.json
+```
+
+<!-- END:LOCAL_NOTX_SMOKE -->
+
+
+
+<!-- BEGIN:CI_TROUBLESHOOT -->
+
+### CI quick troubleshooting (non-interactive GH CLI)
+
+```powershell
+$repo = 'balkeumlabs/tee-fl-0g'
+$rid  = gh run list -R $repo --workflow ".github/workflows/ci-no-tx.yml" --branch rao --limit 1 --json databaseId -q ".[0].databaseId"
+gh run watch -R $repo $rid --exit-status
+gh run view  -R $repo $rid --log-failed 2>$null  || gh run view -R $repo $rid --log
+```
+
+<!-- END:CI_TROUBLESHOOT -->

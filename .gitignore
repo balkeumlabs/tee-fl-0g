@@ -74,3 +74,13 @@ aggregated_model_round*.json
 docs/visual_overview.mmd
 previous-readme.md
 .tmp
+# local/dev
+.env.local
+ci.log
+enc.out.json
+.tmp/
+# scratch updates
+u*.json
+*update*.json
+*.enc.json
+*.dec.json
