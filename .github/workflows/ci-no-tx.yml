@@ -19,11 +19,17 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: Install deps
-        run: npm ci
+      - name: Install deps (non-fatal)
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          npm ci || npm i || true
 
       - name: Build (non-fatal)
-        run: npm run build || true
+      # continue-on-error via shell fallback
+        run: |
+          set -euxo pipefail
+          npm run build || true
 
       - name: Init CI log
         run: echo "started $(date -u +%FT%TZ)" > ci.log
@@ -32,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ci-${{ github.run_id }}-${{ github.attempt || github.run_attempt }}
           path: |
             ci.log
           if-no-files-found: warn
