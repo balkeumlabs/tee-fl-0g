@@ -292,19 +292,18 @@ jobs:
 
 
 
-      - name: Validate manifest integrity (NO_TX)
+            - name: Validate manifest integrity (NO_TX)
         if: env.NO_TX == '1'
         shell: pwsh
         run: |
-          \Continue = 'Stop'
+          $ErrorActionPreference = 'Stop'
           if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
-          \ = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
-          if (-not \.file -or -not \.sha256_hex) { throw 'manifest tail missing fields' }
-          \ = (Get-FileHash -Algorithm SHA256 -LiteralPath \.file).Hash.ToLower()
-          "manifest sha: \"
-          "file sha: \"
-          if (\ -ne \.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' }
-      - name: Validate manifest integrity (NO_TX)
+          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
+          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
+          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
+          "manifest sha: $($line.sha256_hex)"
+          "file sha: $calc"
+          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' } - name: Validate manifest integrity (NO_TX)
         if: env.NO_TX == '1'
         shell: pwsh
         run: |
@@ -316,3 +315,16 @@ jobs:
           "manifest sha: $($line.sha256_hex)"
           "file sha: $calc"
           if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' }
+      - name: A5 - Attestation policy preview
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
+          node scripts/attestation_policy_preview.js attestation/policy.json
+      - name: A5 - Attestation policy preview
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
+          node scripts/attestation_policy_preview.js attestation/policy.json
+
