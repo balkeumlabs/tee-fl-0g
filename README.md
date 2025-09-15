@@ -10,6 +10,7 @@
 [![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/rao/docs/progress.md)
 
 # tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
+Last updated: 2025-09-15 20:56:16Z
 
 <sub>Last update: 2025-09-14 19:42:19 UTC</sub>
 
@@ -413,4 +414,5 @@ This workflow exercises the update path without hitting live networks:
 - Preview attestation policy (A5)
 
 Artifacts include \ci.log\ and \rtifacts/manifest.jsonl\.
+
 

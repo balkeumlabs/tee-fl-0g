@@ -1,3 +1,5 @@
+[![ci-no-tx](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-no-tx.yml/badge.svg?branch=rao)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-no-tx.yml?query=branch%3Arao)
+
 <!-- CI & Docs badges (rao) -->
 [![ci-smoke](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml/badge.svg?branch=rao)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
@@ -8,6 +10,7 @@
 [![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/rao/docs/progress.md)
 
 # tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
+Last updated: 2025-09-15 20:56:16Z
 
 <sub>Last update: 2025-09-14 19:42:19 UTC</sub>
 
@@ -401,8 +404,15 @@ System.Func`2[System.Text.RegularExpressions.Match,System.String]
 
 System.Func`2[System.Text.RegularExpressions.Match,System.String]
 
+### Dry-run CI (NO_TX)
 
+This workflow exercises the update path without hitting live networks:
 
+- Encrypt sample update
+- Append to NO_TX manifest
+- Verify file hash === manifest hash
+- Preview attestation policy (A5)
 
+Artifacts include \ci.log\ and \rtifacts/manifest.jsonl\.
 
 
