@@ -1,344 +1,344 @@
-name: ci-no-tx
-
+name: ci-no-tx
 
+
+
 
-
+
+on:
 
-on:
-
+
+  workflow_dispatch:
+    inputs:
+      NO_TX:
+        description: 'Dry-run (1) vs live (0)'
+        required: false
+        default: '1'
+  push:
 
-  workflow_dispatch:
-    inputs:
-      NO_TX:
-        description: 'Dry-run (1) vs live (0)'
-        required: false
-        default: '1'
-  push:
-
+
+    branches: [ rao ]
 
-    branches: [ rao ]
-
+
+    paths:
 
-    paths:
-
+
+      - scripts/**
 
-      - scripts/**
-
+
+      - dist/crypto/**
 
-      - dist/crypto/**
-
+
+      - .github/workflows/ci-no-tx.yml
 
-      - .github/workflows/ci-no-tx.yml
-
+
+      - hardhat.galileo.js
 
-      - hardhat.galileo.js
-
+
+      - package-lock.json
 
-      - package-lock.json
-
+
+      - package.json
 
-      - package.json
-
+
+      - attestation_sample.json
 
-      - attestation_sample.json
-
+
+  pull_request:
 
-  pull_request:
-
+
+    branches: [ rao ]
 
-    branches: [ rao ]
-
+
+  workflow_dispatch: {}
 
-  workflow_dispatch: {}
-
+
+
 
+
+jobs:
 
-
+
+  round-no-tx:
 
-jobs:
-
+
+    runs-on: ubuntu-latest
 
-  round-no-tx:
-
+
+    env:
 
-    runs-on: ubuntu-latest
-
+
+      NO_TX: "1"
 
-    env:
-
+
+      FL_TEE_PUBKEY_B64: "3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08="
 
-      NO_TX: "1"
-
+
+      TEE_ATTEST_MEAS_ALLOWLIST: '["SIM-TEE-DEMO-1"]'
 
-      FL_TEE_PUBKEY_B64: "3p7bfXt9wbTTW2HC7OQ1Nz+DQ8hbeGdNrfx+FG+IK08="
-
+
+      TEE_ATTEST_ENCLAVE_ID: "SIM-TEE"
 
-      TEE_ATTEST_MEAS_ALLOWLIST: '["SIM-TEE-DEMO-1"]'
-
+
+    steps:
 
-      TEE_ATTEST_ENCLAVE_ID: "SIM-TEE"
-
+
+      - name: Checkout
 
-    steps:
-
+
+        uses: actions/checkout@v4
 
-      - name: Checkout
-
+
+
 
-        uses: actions/checkout@v4
-
+
+      - name: Setup Node
 
+
+        uses: actions/setup-node@v4
 
-
+
+        with:
 
-      - name: Setup Node
-
+
+          node-version: "20"
 
-        uses: actions/setup-node@v4
-
+
+          cache: npm
 
-        with:
-
+
+
 
-          node-version: "20"
-
+
+      - name: Install deps
 
-          cache: npm
-
+
+        run: npm ci
 
+
+
 
-
+
+      - name: Build (Hardhat)
 
-      - name: Install deps
-
+
+        run: npx hardhat compile --config hardhat.galileo.js
 
-        run: npm ci
-
+
+
 
+
+      - name: Dependency sanity (non-fatal)
 
-
+
+        continue-on-error: true
 
-      - name: Build (Hardhat)
-
+
+        run: |
 
-        run: npx hardhat compile --config hardhat.galileo.js
-
+
+          set -euxo pipefail
 
+
+          node -p "process.versions"
 
-
+
+          npm ls libsodium-wrappers || true
 
-      - name: Dependency sanity (non-fatal)
-
+
+          npm ls tweetnacl || true
 
-        continue-on-error: true
-
+
+          node -e "console.log(require.resolve(\"libsodium-wrappers\"))" || true
 
+
+          node -e "console.log(require.resolve(\"tweetnacl\"))" || true
+
+
+
+
+
+      - name: Ensure attestation file
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          echo '{"ok":true,"measurement":"SIM-TEE-DEMO-1","enclave_id":"SIM-TEE","nonce":"demo"}' > attestation_sample.json
+
+
+      - name: Build JS tools (dist)
+
+
+        shell: bash
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          # Try common build scripts; don't hard-fail if a name doesn't exist
+
+
+          if [ ! -f dist/crypto/encrypt_update.js ]; then
+
+
+            npm run build || npm run build:tools || npm run build:dist || true
+
+
+          fi
+
+
+          ls -la dist || true
+
+
+          ls -la dist/crypto || true
+
+
+          # If still missing, try to fall back to source script path later
+
+
+          test -f dist/crypto/encrypt_update.js || true
+
+
+
+
+
+      - name: Prepare update + encrypt
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+          : > ci.log
+          : > enc.out.json
+
+          TOOL="dist/crypto/encrypt_update.js"
+          if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
+            TOOL="scripts/crypto/encrypt_update.js"
+          fi
+          echo "Using tool: $TOOL" | tee -a ci.log
+
+          node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
+          test -f u.enc.json
+          node -e 'console.log(JSON.stringify({out:"u.enc.json", ok:true}))' > enc.out.json
+      - name: Submit (NO_TX)
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation ./attestation_sample.json | tee -a ci.log
+
+
+
+
+
+      - name: Score (NO_TX)
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          node scripts/compute_scores_and_post_root_raw.js --attestation ./attestation_sample.json | tee -a ci.log
+
+
+
+
+
+      - name: Aggregate/Publish (NO_TX)
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json | tee -a ci.log
+
+
+
+
+
+      - name: Validate pass-lines
+
+
+        run: |
+
+
+          set -euxo pipefail
+
+
+          grep -F "// NO_TX set; preambles passed (submit)." ci.log
+
+
+          grep -F "// NO_TX set; preambles passed (scoring)." ci.log
+
+
+          grep -F "// NO_TX set; preambles passed (aggregate/publish)." ci.log
+
+
+          echo "All preambles passed."
+
+
+
+
+
+
+
+
+
+            - name: Validate manifest integrity (NO_TX)
+        if: env.NO_TX == '1'
+        shell: pwsh
         run: |
-
-
-          set -euxo pipefail
-
-
-          node -p "process.versions"
-
-
-          npm ls libsodium-wrappers || true
-
-
-          npm ls tweetnacl || true
-
-
-          node -e "console.log(require.resolve(\"libsodium-wrappers\"))" || true
-
-
-          node -e "console.log(require.resolve(\"tweetnacl\"))" || true
-
-
-
-
-
-      - name: Ensure attestation file
-
-
+          $ErrorActionPreference = 'Stop'
+          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
+          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
+          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
+          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
+          "manifest sha: $($line.sha256_hex)"
+          "file sha: $calc"
+          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' } - name: Validate manifest integrity (NO_TX)
+        if: env.NO_TX == '1'
+        shell: pwsh
         run: |
-
-
-          set -euxo pipefail
-
-
-          echo '{"ok":true,"measurement":"SIM-TEE-DEMO-1","enclave_id":"SIM-TEE","nonce":"demo"}' > attestation_sample.json
-
-
-      - name: Build JS tools (dist)
-
-
-        shell: bash
-
-
+          $ErrorActionPreference = 'Stop'
+          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
+          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
+          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
+          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
+          "manifest sha: $($line.sha256_hex)"
+          "file sha: $calc"
+          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' }
+      - name: A5 - Attestation policy preview
+        shell: pwsh
         run: |
-
-
-          set -euxo pipefail
-
-
-          # Try common build scripts; don't hard-fail if a name doesn't exist
-
-
-          if [ ! -f dist/crypto/encrypt_update.js ]; then
-
-
-            npm run build || npm run build:tools || npm run build:dist || true
-
-
-          fi
-
-
-          ls -la dist || true
-
-
-          ls -la dist/crypto || true
-
-
-          # If still missing, try to fall back to source script path later
-
-
-          test -f dist/crypto/encrypt_update.js || true
-
-
-
-
-
-      - name: Prepare update + encrypt
-        shell: bash
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
+          node scripts/attestation_policy_preview.js attestation/policy.json
+      - name: A5 - Attestation policy preview
+        shell: pwsh
         run: |
-          set -euxo pipefail
-          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
-          : > ci.log
-          : > enc.out.json
-
-          TOOL="dist/crypto/encrypt_update.js"
-          if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
-            TOOL="scripts/crypto/encrypt_update.js"
-          fi
-          echo "Using tool: $TOOL" | tee -a ci.log
-
-          node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
-          test -f u.enc.json
-          node -e 'console.log(JSON.stringify({out:"u.enc.json", ok:true}))' > enc.out.json
-      - name: Submit (NO_TX)
-
-
-        run: |
-
-
-          set -euxo pipefail
-
-
-          node scripts/submit_update_raw.js 0x0 1 dummycid u.enc.json --attestation ./attestation_sample.json | tee -a ci.log
-
-
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
+          node scripts/attestation_policy_preview.js attestation/policy.json
+
+
+
+
 
 
-
-      - name: Score (NO_TX)
-
-
-        run: |
-
-
-          set -euxo pipefail
-
-
-          node scripts/compute_scores_and_post_root_raw.js --attestation ./attestation_sample.json | tee -a ci.log
-
-
-
-
-
-      - name: Aggregate/Publish (NO_TX)
-
-
-        run: |
-
-
-          set -euxo pipefail
-
-
-          node scripts/aggregate_and_publish_raw.js 0x0 1 agg.json dummyGlobalCid u.enc.json | tee -a ci.log
-
-
-
-
-
-      - name: Validate pass-lines
-
-
-        run: |
-
-
-          set -euxo pipefail
-
-
-          grep -F "// NO_TX set; preambles passed (submit)." ci.log
-
-
-          grep -F "// NO_TX set; preambles passed (scoring)." ci.log
-
-
-          grep -F "// NO_TX set; preambles passed (aggregate/publish)." ci.log
-
-
-          echo "All preambles passed."
-
-
-
-
-
-
-
-
-
-            - name: Validate manifest integrity (NO_TX)
-        if: env.NO_TX == '1'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
-          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
-          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
-          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
-          "manifest sha: $($line.sha256_hex)"
-          "file sha: $calc"
-          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' } - name: Validate manifest integrity (NO_TX)
-        if: env.NO_TX == '1'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
-          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
-          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
-          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
-          "manifest sha: $($line.sha256_hex)"
-          "file sha: $calc"
-          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' }
-      - name: A5 - Attestation policy preview
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
-          node scripts/attestation_policy_preview.js attestation/policy.json
-      - name: A5 - Attestation policy preview
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
-          node scripts/attestation_policy_preview.js attestation/policy.json
-
-
-
-
-
-
       - name: Upload CI logs (always)
         if: always()
         uses: actions/upload-artifact@v4
@@ -348,6 +348,8 @@ jobs:
             ci.log
             artifacts/**
             attestation/policy.json
-          if-no-files-found: warn
+          if-no-files-found: warn
 
 # nudge 2025-09-15T19:27:32Z
+
+# nudge 2025-09-15T19:32:39Z
