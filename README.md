@@ -1,3 +1,5 @@
+[![ci-no-tx](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-no-tx.yml/badge.svg?branch=rao)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-no-tx.yml?query=branch%3Arao)
+
 <!-- CI & Docs badges (rao) -->
 [![ci-smoke](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml/badge.svg?branch=rao)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-smoke.yml)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
@@ -401,8 +403,14 @@ System.Func`2[System.Text.RegularExpressions.Match,System.String]
 
 System.Func`2[System.Text.RegularExpressions.Match,System.String]
 
+### Dry-run CI (NO_TX)
 
+This workflow exercises the update path without hitting live networks:
 
+- Encrypt sample update
+- Append to NO_TX manifest
+- Verify file hash === manifest hash
+- Preview attestation policy (A5)
 
-
+Artifacts include \ci.log\ and \rtifacts/manifest.jsonl\.
 
