@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "Node16",
     "outDir": "./dist",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node16",
     "esModuleInterop": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
-    "upload_to_0g_storage.ts"
+    "upload_to_0g_storage.ts",
+    "types/**/*"
   ]
 }
