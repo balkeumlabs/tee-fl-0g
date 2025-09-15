@@ -690,7 +690,11 @@ jobs:
 
 
     steps:
-
+      - name: Init CI log
+        shell: bash
+        run: |
+          set -euxo pipefail
+          : > ci.log
 
 
 
@@ -2730,6 +2734,16 @@ jobs:
 
 
 
+      - name: Upload CI logs (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ci.log
+            artifacts/**
+            attestation/policy.json
+          if-no-files-found: warn
 # nudge 2025-09-15T19:27:32Z
 
 
@@ -2747,6 +2761,9 @@ jobs:
 
 
 # nudge 2025-09-15T19:37:52Z
+
+
+
 
 
 
