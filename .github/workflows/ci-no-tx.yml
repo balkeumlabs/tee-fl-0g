@@ -292,3 +292,15 @@ jobs:
 
 
 
+      - name: Validate manifest integrity (NO_TX)
+        if: env.NO_TX == '1'
+        shell: pwsh
+        run: |
+          \Continue = 'Stop'
+          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
+          \ = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
+          if (-not \.file -or -not \.sha256_hex) { throw 'manifest tail missing fields' }
+          \ = (Get-FileHash -Algorithm SHA256 -LiteralPath \.file).Hash.ToLower()
+          "manifest sha: \"
+          "file sha: \"
+          if (\ -ne \.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' }
