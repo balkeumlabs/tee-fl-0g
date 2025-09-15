@@ -26,7 +26,6 @@ jobs:
           npm ci || npm i || true
 
       - name: Build (non-fatal)
-      # continue-on-error via shell fallback
         run: |
           set -euxo pipefail
           npm run build || true
@@ -34,11 +33,62 @@ jobs:
       - name: Init CI log
         run: echo "started $(date -u +%FT%TZ)" > ci.log
 
+      - name: Prepare update + encrypt (NO_TX)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '{"r":1,"weights":[0.1,0.2]}' > u.json
+          mkdir -p artifacts
+          # primary path (TS build) then fallback if missing
+          TOOL="dist/crypto/encrypt_update.js"
+          if [ ! -f "$TOOL" ] && [ -f "scripts/crypto/encrypt_update.js" ]; then
+            TOOL="scripts/crypto/encrypt_update.js"
+          fi
+          echo "Using tool: $TOOL" | tee -a ci.log
+          node "$TOOL" --in u.json --out u.enc.json 2>&1 | tee -a ci.log
+          test -f u.enc.json
+
+      - name: Append to manifest (NO_TX)
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          node scripts/upload_no_tx.js --file u.enc.json --kind update --note "ci-no-tx" | tee -a ci.log
+          tail -n +1 artifacts/manifest.jsonl | tee -a ci.log
+
+      - name: Validate manifest integrity (NO_TX)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!(Test-Path artifacts/manifest.jsonl)) { throw 'manifest.jsonl missing' }
+          $line = Get-Content artifacts/manifest.jsonl -Tail 1 | ConvertFrom-Json
+          if (-not $line.file -or -not $line.sha256_hex) { throw 'manifest tail missing fields' }
+          $calc = (Get-FileHash -Algorithm SHA256 -LiteralPath $line.file).Hash.ToLower()
+          "manifest sha: $($line.sha256_hex)" | Tee-Object -FilePath ci.log -Append
+          "file sha: $calc" | Tee-Object -FilePath ci.log -Append
+          if ($calc -ne $line.sha256_hex) { throw 'Mismatch: file hash != manifest' } else { 'OK: file hash matches manifest' | Tee-Object -FilePath ci.log -Append }
+
+      - name: A5 - Attestation policy preview (NO_TX)
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          node scripts/attestation_policy_preview.js attestation/policy.json | tee -a ci.log
+          # If samples exist, preview them too (non-fatal)
+          if [ -f attestation/samples/accept.dev.json ]; then
+            node scripts/attestation_policy_preview.js attestation/policy.json attestation/samples/accept.dev.json | tee -a ci.log
+          fi
+          if [ -f attestation/samples/reject.bad.json ]; then
+            node scripts/attestation_policy_preview.js attestation/policy.json attestation/samples/reject.bad.json | tee -a ci.log
+          fi
+
       - name: Upload CI logs (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-${{ github.run_id }}-${{ github.attempt || github.run_attempt }}
+          name: ci-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ci.log
+            artifacts/**
+            attestation/policy.json
           if-no-files-found: warn
