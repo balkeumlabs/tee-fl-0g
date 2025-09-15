@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "enclave_type": "SIMULATED",
+  "enforce_debug": false,
+  "allowed_signers": ["SIM-TEE"],
+  "allowed_measurements": ["SIM-TEE-DEMO-1"],
+  "min_isvsvn": 0,
+  "allow_when_NO_TX": true,
+  "notes": "Dev-mode placeholder. Replace with real platform claims when moving to live."
+}
