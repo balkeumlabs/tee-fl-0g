@@ -7,6 +7,12 @@ name: ci-no-tx
 on:
 
 
+  workflow_dispatch:
+    inputs:
+      NO_TX:
+        description: 'Dry-run (1) vs live (0)'
+        required: false
+        default: '1'
   push:
 
 
@@ -327,4 +333,6 @@ jobs:
           $ErrorActionPreference = "Stop"
           if (!(Test-Path scripts/attestation_policy_preview.js)) { throw "preview tool missing" }
           node scripts/attestation_policy_preview.js attestation/policy.json
+
+
 
