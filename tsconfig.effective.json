@@ -1,0 +1,37 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "node16",
+        "outDir": "./dist",
+        "moduleResolution": "node16",
+        "esModuleInterop": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "moduleDetection": "force",
+        "resolvePackageJsonExports": true,
+        "resolvePackageJsonImports": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "strictBuiltinIteratorReturn": true,
+        "alwaysStrict": true,
+        "useUnknownInCatchVariables": true
+    },
+    "files": [
+        "./upload_to_0g_storage.ts",
+        "./types/0g-sdk.d.ts"
+    ],
+    "include": [
+        "upload_to_0g_storage.ts",
+        "types/**/*"
+    ],
+    "exclude": [
+        "C:/Users/raoah/flai-0g-test/tee-fl-0g/dist"
+    ]
+}
+

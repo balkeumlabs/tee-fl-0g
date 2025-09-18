@@ -9,10 +9,10 @@
 ![Version](https://img.shields.io/badge/version-0.2.0--poc-important)
 [![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/rao/docs/progress.md)
 
-# tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
-Last updated: 2025-09-15 20:56:16Z
+# tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
 
-<sub>Last update: 2025-09-14 19:42:19 UTC</sub>
+
+<sub>Last update: 2025-09-15 20:56:16Z UTC</sub>
 
 **Quick links:** [Install](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-Dive](#engineering-deep-dive) · [Roadmap](#roadmap-and-milestones)
 
