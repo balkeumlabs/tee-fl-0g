@@ -12,7 +12,7 @@
 # tee-fl-0g — Federated Learning on 0G (Galileo) with Access-Gated Updates, On-Chain Anchoring, and FedAvg
 
 
-<sub>Last update: 2025-09-15 20:56:16Z UTC</sub>
+> <sub>Last update: 2025-09-15 20:56:16Z UTC</sub>
 
 **Quick links:** [Install](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-Dive](#engineering-deep-dive) · [Roadmap](#roadmap-and-milestones)
 
@@ -20,7 +20,7 @@
 
 ## Summary
 
-> This repo ships a privacy-preserving federated-learning pipeline on the 0G Galileo testnet. Providers submit encrypted, access-gated updates; our diagnostics lane verifies integrity and policy decisions; contributions are scored and aggregated with FedAvg; and we anchor epoch/model hashes on-chain, publishing one model per round and listing it in the 0G Model Service Marketplace. Next: native 0G Storage CIDs, client-side encryption loaders, and richer attestation metadata.
+This repo ships a privacy-preserving federated-learning pipeline on the 0G Galileo testnet. Providers submit encrypted, access-gated updates; our diagnostics lane verifies integrity and policy decisions; contributions are scored and aggregated with FedAvg; and we anchor epoch/model hashes on-chain, publishing one model per round and listing it in the 0G Model Service Marketplace. Next: native 0G Storage CIDs, client-side encryption loaders, and richer attestation metadata.
 
 
 
@@ -108,7 +108,7 @@ AccessRegistry (gate) ◀────────────┤
 
 ## Quick Start
 
-> Minimal, limitation-free path to a green end-to-end demo on 0G Galileo. Windows PowerShell first; Bash is optional.
+Minimal, limitation-free path to a green end-to-end demo on 0G Galileo. Windows PowerShell first; Bash is optional.
 
 ### Prerequisites
 
@@ -197,7 +197,7 @@ node .\scripts\compute_scores_and_post_root_raw.js --epoch 3
 node .\scripts\aggregate_and_publish_raw.js --epoch 3 --force-path '$.weights'
 ```
 
-> Expected output:
+Expected output:
 - Logs include scoresRoot, globalModelHash, globalModelCid
 - (CID is simulated unless a Storage CID is provided/configured).
 
@@ -269,7 +269,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\dist\round_secure.ps1 `
   -WorkDir .
 ```
 
-> What it enforces:
+What it enforces:
 - Uses encryption helpers, refuses plaintext leaks.
 - Leaves a small audit trail (hashes/paths) in the working dir.
 
@@ -285,7 +285,7 @@ Get-ChildItem . | Where-Object Name -match 'round|enc|meta|hash|log'
 
 ## Configuration
 
-> Set values in a local `.env` (never commit real secrets). Keys are grouped by purpose with sensible defaults.
+Set values in a local `.env` (never commit real secrets). Keys are grouped by purpose with sensible defaults.
 
 ### Required
 
@@ -333,7 +333,7 @@ Get-ChildItem . | Where-Object Name -match 'round|enc|meta|hash|log'
 | `DRY_RUN`                 | `0`                            | Execute write paths instead of printing only    |
 | `LOCAL_UPLOAD`            | `0`                            | Use remote/real upload paths if configured      |
 
-> Booleans accept `0/1`. Unset keys fall back to the defaults above.
+Booleans accept `0/1`. Unset keys fall back to the defaults above.
 
 
 ### Example `.env`
@@ -397,7 +397,7 @@ $kv | Where-Object { $show -contains $_.Key } | ForEach-Object {
 
 ## Deployment
 
-> Target: **0G Galileo** (chainId **16601**). Contracts are immutable—treat deploys as one-way and record addresses.
+Target: **0G Galileo** (chainId **16601**). Contracts are immutable—treat deploys as one-way and record addresses.
 
 ### Network & Signer
 
@@ -409,7 +409,7 @@ $kv | Where-Object { $show -contains $_.Key } | ForEach-Object {
 - **AccessRegistry**: `0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e`
 - **EpochManager**:  `0x9341619f6B889A12bbb90BbE366405ce363Ab779`
 
-> Keep these in a tracked JSON (e.g., `deploy.out.json`) that scripts import at runtime.
+Keep these in a tracked JSON (e.g., `deploy.out.json`) that scripts import at runtime.
 
 
 ### One-Shot Deploy
@@ -460,7 +460,7 @@ node .\scripts\compute_scores_and_post_root_raw.js --epoch 3
 
 ## Observability
 
-> Quick ways to see what happened this epoch: on-chain state, approvals, hashes, and CI artifacts.
+Quick ways to see what happened this epoch: on-chain state, approvals, hashes, and CI artifacts.
 
 ### Scripted queries (Windows PowerShell)
 
@@ -564,7 +564,7 @@ $calc = (Get-FileHash $raw.file -Algorithm SHA256).Hash.ToLower()
 - Epoch 1: `scoresRoot=0x3606…bb157`; `globalModelCid=cid://simulated/global-1757444721`; `hash=0x5e47…38fc`; **published**  
 - Epoch 2: `scoresRoot=0x391a…94fb`; `weights≈[0.01,-0.01,0.025]`; `globalModelCid=cid://simulated/global-1757446457`; `hash=0x2031…7278e`; **published**
 
-> Tip: keep a machine-readable `evidence.jsonl` appending `{ epoch, commit, scoresRoot, globalModelHash, globalModelCid, timestamp }` for audits and Marketplace listings.
+Tip: keep a machine-readable `evidence.jsonl` appending `{ epoch, commit, scoresRoot, globalModelHash, globalModelCid, timestamp }` for audits and Marketplace listings.
 
 
 
