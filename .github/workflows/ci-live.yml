@@ -92,3 +92,10 @@ jobs:
           pwd
           ls -la
           find . -maxdepth 3 -type f -printf "%p %k KB\n" 2>/dev/null | head -n 200
+
+      - name: Workspace listing
+        if: always()
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -type f -printf "%p %k KB\n" 2>/dev/null | head -n 200
