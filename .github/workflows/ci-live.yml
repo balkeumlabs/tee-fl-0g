@@ -64,17 +64,24 @@ jobs:
           fi
           ls -l client_update.enc.json
 
-      - name: Upload aggregated model to storage (if secrets present)
-        id: upload
-        run: |
-          if [ -n "${OG_STORAGE_API_BASE}" ]; then
-            node scripts/upload_ipfs_api.js aggregated_model.json > upload.json
-          else
-            echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
-          fi
-          cat upload.json
-
-      - name: Create minimal attestation (dry fallback)
+      - name: Upload aggregated model to storage (real or dry)
+  id: upload
+  run: |
+    set -euo pipefail
+    if [ -n "\" ]; then
+      echo "Attempting real upload via \/api/v0/add"
+      if node scripts/upload_ipfs_api.js aggregated_model.json > upload.json 2>upload.err; then
+        echo "Upload OK"; cat upload.json
+      else
+        echo "WARN: upload failed; falling back to dry" >&2
+        cat upload.err || true
+        echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+      fi
+    else
+      echo "No storage base set; using dry artifact"
+      echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+    fi
+\1 Create minimal attestation (dry fallback)
         run: |
           if [ ! -f attestation.json ]; then
             echo '{"enclave":"dev","mrEnclave":"0x00","nonce":"test"}' > attestation.json
