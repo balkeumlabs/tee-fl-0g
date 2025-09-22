@@ -50,7 +50,7 @@ jobs:
       - name: Encrypt sample client update (smoke)
         run: |
           echo '{"round":${{ github.event.inputs.epoch }}, "weights":[0.01,0.02]}' > client_update.json
-          node dist/crypto/encrypt_update_loader.js client_update.json --out client_update.enc.json
+          node scripts/encrypt_update_loader.js client_update.json --out client_update.enc.json
           test -f client_update.enc.json
 
       - name: Upload aggregated model to storage (if secrets present)
@@ -75,8 +75,8 @@ jobs:
           URL=$(jq -r .url upload.json)
           node scripts/make_market_manifest.js --epoch ${{ github.event.inputs.epoch }} --globalModelPath aggregated_model.json --cid "$CID" --url "$URL" --attestation attestation.json --out market_manifest.json
           cat market_manifest.json | head -n 50
-
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  # v4.3.4
         with:
           name: ci-live-${{ github.run_attempt }}
@@ -86,3 +86,9 @@ jobs:
             client_update.enc.json
             attestation.json
             market_manifest.json
+      - name: Workspace listing
+        if: always()
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -type f -printf "%p %k KB\n" 2>/dev/null | head -n 200
