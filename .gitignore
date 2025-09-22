@@ -84,3 +84,5 @@ u*.json
 *update*.json
 *.enc.json
 *.dec.json
+Progress.md
+Progress-Backup.md
