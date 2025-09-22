@@ -47,6 +47,11 @@ jobs:
           fi
           ls -l aggregated_model.json
 
+      - name: Assert encryptor exists (non-fatal)
+        continue-on-error: true
+        run: |
+          test -f dist/crypto/encrypt_update.js && echo "encryptor present" || echo "encryptor missing on CI"
+
       - name: Encrypt sample client update (smoke)
         continue-on-error: true
         run: |
