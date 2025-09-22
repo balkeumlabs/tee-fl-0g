@@ -63,17 +63,23 @@ jobs:
             echo 'WARN: dist/crypto/encrypt_update.js missing; emitted placeholder client_update.enc.json'
           fi
           ls -l client_update.enc.json
-
-      - name: Upload aggregated model to storage (if secrets present)
+      - name: Upload aggregated model to storage (real or dry)
         id: upload
         run: |
+          set -euo pipefail
           if [ -n "${OG_STORAGE_API_BASE}" ]; then
-            node scripts/upload_ipfs_api.js aggregated_model.json > upload.json
+            echo "Attempting real upload via ${OG_STORAGE_API_BASE}/api/v0/add"
+            if node scripts/upload_ipfs_api.js aggregated_model.json > upload.json 2>upload.err; then
+              echo "Upload OK"; cat upload.json
+            else
+              echo "WARN: upload failed; falling back to dry" >&2
+              cat upload.err || true
+              echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+            fi
           else
+            echo "No storage base set; using dry artifact"
             echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
           fi
-          cat upload.json
-
       - name: Create minimal attestation (dry fallback)
         run: |
           if [ ! -f attestation.json ]; then
