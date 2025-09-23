@@ -1,7 +1,8 @@
-# Text files normalize to CRLF on Windows
+# Normalize text EOLs (Windows devs, Linux CI)
 *.ps1   text eol=crlf
 *.cmd   text eol=crlf
 *.bat   text eol=crlf
 *.md    text eol=crlf
 *.json  text eol=crlf
-*.yml   text eol=lf   # YAML often shared with Linux runners; keep LF if you prefer
+# Keep YAML LF-only for Linux runners/workflows
+*.yml   text eol=lf
