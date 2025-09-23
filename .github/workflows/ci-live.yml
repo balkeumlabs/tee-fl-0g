@@ -67,9 +67,24 @@ jobs:
         continue-on-error: true
         run: |
           echo "OG_STORAGE_API_BASE set? $([ -n "${OG_STORAGE_API_BASE}" ] && echo yes || echo no)"
-          echo "OG_GATEWAY_BASE set?    $([ -n "${OG_GATEWAY_BASE}" ] && echo yes || echo no)"
+          echo "OG_GATEWAY_BASE set?    $([ -n "${OG_GATEWAY_BASE}" ] && echo yes || echo no)"      - name: Storage sanity (non-fatal)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if [ -n "" ]; then
+            echo "Probing \/api/v0/version"
+            if [ -n "" ]; then
+              curl -s -H "Authorization: Bearer \" "\/api/v0/version" | tee storage_sanity.json >/dev/null
+              curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer \" "\/api/v0/version" | tee storage_sanity.code
+            else
+              curl -s "\/api/v0/version" | tee storage_sanity.json >/dev/null
+              curl -s -o /dev/null -w "%{http_code}\n" "\/api/v0/version" | tee storage_sanity.code
+            fi
+          else
+            echo "OG_STORAGE_API_BASE is empty"
+          fi
 
-      - name: Upload aggregated model to storage (real or dry)
+
         id: upload
         run: |
           set -euo pipefail
