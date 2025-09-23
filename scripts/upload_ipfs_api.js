@@ -1,65 +1,66 @@
-/* eslint-disable no-console */
-// scripts/upload_ipfs_api.js
-// Node >=18 required (global fetch/FormData/Blob via undici)
-// Usage: node scripts/upload_ipfs_api.js <filePath> [--name <fname>]
-import { readFileSync } from "node:fs";               // // read file bytes
-import { basename } from "node:path";                 // // filename default
-import process from "node:process";                   // // read env/args
+/* Kubo-compatible uploader: supports Bearer or Basic Authorization.
+   Env:
+     OG_STORAGE_API_BASE   (e.g., https://ipfs.infura.io:5001 or https://<host>)
+     OG_STORAGE_API_TOKEN  (optional; if starts with "Basic " uses Basic, else Bearer)
+     OG_GATEWAY_BASE       (e.g., https://infura-ipfs.io/ipfs)
+*/
+import { readFile } from "node:fs/promises";
 
-// // Env configuration (see .env.example)
-const API_BASE = (process.env.OG_STORAGE_API_BASE ?? "").replace(/\/$/, "");
-const API_TOKEN = process.env.OG_STORAGE_API_TOKEN ?? "";             // // optional Bearer
-const GATEWAY_BASE = (process.env.OG_GATEWAY_BASE ?? "").replace(/\/$/, "");
+const base   = process.env.OG_STORAGE_API_BASE || "";
+const token  = (process.env.OG_STORAGE_API_TOKEN || "").trim();
+const gwBase = process.env.OG_GATEWAY_BASE || "";
 
-if (!API_BASE) {
-  console.error("OG_STORAGE_API_BASE is required");
+if (!base) {
+  console.error("OG_STORAGE_API_BASE is empty");
   process.exit(2);
 }
 
-// // CLI parsing
-const args = process.argv.slice(2);
-if (!args[0]) {
-  console.error("Usage: node scripts/upload_ipfs_api.js <filePath> [--name <fname>]");
-  process.exit(2);
+const authHeader = token
+  ? (token.toLowerCase().startsWith("basic ") ? token : `Bearer ${token}`)
+  : null;
+
+async function main() {
+  const filePath = process.argv[2];
+  if (!filePath) {
+    console.error("Usage: node scripts/upload_ipfs_api.js <file>");
+    process.exit(2);
+  }
+  const buf = await readFile(filePath);
+  const form = new FormData();
+  form.append("file", new Blob([buf]), filePath);
+
+  const headers = {};
+  if (authHeader) headers["Authorization"] = authHeader;
+
+  const url = new URL("/api/v0/add", base).toString();
+  const res = await fetch(url, { method: "POST", headers, body: form });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Upload failed: ${res.status} ${res.statusText}\n${body}`);
+  }
+
+  const text = await res.text();
+  // Kubo may return one or more NDJSON lines; take the last JSON line
+  const lastLine = text.trim().split(/\r?\n/).filter(Boolean).pop() || "{}";
+  let cid = null;
+
+  try {
+    const j = JSON.parse(lastLine);
+    cid = j.Hash || (j.Cid && (j.Cid["/"] || j.Cid["/cid"]));
+  } catch (_) { /* fallthrough */ }
+
+  if (!cid) throw new Error(`No CID in response: ${lastLine}`);
+
+  const out = {
+    cid,
+    size: buf.byteLength,
+    url: gwBase ? `${gwBase.replace(/\/+$/,"")}/${cid}` : `ipfs://${cid}`
+  };
+  console.log(JSON.stringify(out));
 }
-const filePath = args[0];
-const nameArgIdx = args.indexOf("--name");
-const fileName = nameArgIdx >= 0 && args[nameArgIdx+1] ? args[nameArgIdx+1] : basename(filePath);
 
-// // Build endpoint: accept both ".../api/v0" and base roots
-const addPath = /\/api\/v0$/.test(API_BASE) ? `${API_BASE}/add` : `${API_BASE}/api/v0/add`;
-
-// // Construct multipart with undici FormData/Blob (Node 18+)
-const bytes = readFileSync(filePath);
-const form = new FormData();
-form.set("file", new Blob([bytes], { type: "application/octet-stream" }), fileName);
-form.set("pin", "true");
-
-// // Auth header only if token provided
-const headers = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
-
-const resp = await fetch(addPath, { method: "POST", headers, body: form });
-// // Some IPFS APIs return NDJSON/text; try JSON first, then parse text
-let cid = "", size = 0;
-const text = await resp.text();
-try {
-  const j = JSON.parse(text);
-  cid = j.Hash || j.Cid || j.cid || "";
-  size = Number(j.Size || j.size || 0) || 0;
-} catch {
-  // // Fallback: regex extract Hash:"<cid>"
-  const m = text.match(/"?(Hash|Cid|cid)"?\s*[:=]\s*"?([a-zA-Z0-9]+)"?/);
-  if (m) cid = m[2];
-  const s = text.match(/"?(Size|size)"?\s*[:=]\s*"?(\d+)"?/);
-  if (s) size = Number(s[2]);
-}
-
-if (!resp.ok || !cid) {
-  console.error("Upload failed:", resp.status, resp.statusText, text.slice(0, 2000));
+main().catch((e) => {
+  console.error(e.stack || String(e));
   process.exit(1);
-}
-
-// // Gateway URL if provided
-const url = GATEWAY_BASE ? `${GATEWAY_BASE}/ipfs/${cid}` : `ipfs://${cid}`;
-
-console.log(JSON.stringify({ cid, size, url }, null, 2));
+});
