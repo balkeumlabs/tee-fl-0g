@@ -1,0 +1,34 @@
+name: ci-dry
+
+on:
+  workflow_dispatch:
+    inputs:
+      epoch:
+        description: "Epoch number to anchor/artifact"
+        required: true
+        default: "1"
+
+jobs:
+  live_or_dry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hello
+        run: |
+          echo "hello from ci-dry; epoch=${{ github.event.inputs.epoch }}"
+          echo '{"weights":[0.1,0.2,0.3]}' > aggregated_model.json
+          echo '{}' > client_update.enc.json
+          echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+          echo '{"enclave":"dev","mrEnclave":"0x00","nonce":"test"}' > attestation.json
+          echo "{\"artifacts\":{\"globalModelHash\":\"0x00\",\"globalModelCid\":\"drycid\",\"globalModelUrl\":\"ipfs://drycid\"},\"provenance\":{\"attestationHash\":\"0x00\",\"commit\":\"HEAD\",\"mode\":\"dry\"},\"epoch\":${{ github.event.inputs.epoch }},\"network\":{\"chainId\":\"16601\"}}" > market_manifest.json
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-dry-${{ github.run_attempt }}
+          path: |
+            upload.json
+            aggregated_model.json
+            client_update.enc.json
+            attestation.json
+            market_manifest.json
