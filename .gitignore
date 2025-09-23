@@ -86,3 +86,10 @@ u*.json
 *.dec.json
 Progress.md
 Progress-Backup.md
+# Local artifacts / backups (dev-only)
+attestation.json
+market_manifest.json
+probe.json
+docs/audio/
+.github/workflows/ci-live.yml.bak*
+.github/workflows/ci-live.yml.backup-parse
