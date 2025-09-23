@@ -1,7 +1,7 @@
-* text=auto
-*.yml text eol=lf
-*.yaml text eol=lf
-*.sh text eol=lf
-*.ts text eol=lf
-*.js text eol=lf
-*.ps1 text eol=crlf
+# Text files normalize to CRLF on Windows
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+*.md    text eol=crlf
+*.json  text eol=crlf
+*.yml   text eol=lf   # YAML often shared with Linux runners; keep LF if you prefer
