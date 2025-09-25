@@ -95,6 +95,8 @@ This repo implements a privacy-preserving federated-learning pipeline on the **0
 - [Observability](#observability)
   - [Scripted queries (Windows PowerShell)](#scripted-queries-windows-powershell)
   - [Local Artifacts & Hashes](#local-artifacts--hashes)
+  - [Enhanced Storage Integration](#enhanced-storage-integration)
+  - [0G Service Marketplace Integration](#0g-service-marketplace-integration)
   - [CI artifacts (dry or live runs)](#ci-artifacts-dry-or-live-runs)
 - [Engineering Deep-Dive](#engineering-deep-dive)
   - [System Model & Assumptions](#system-model--assumptions)
@@ -630,6 +632,68 @@ node .\scripts\attach_merkle_to_manifest.js .\market_manifest.json .\bundle.merk
 ```
 
 CI workflows automatically build, verify, and attach Merkle roots to manifests. The `bundle.merkle.json` artifact contains per-file proofs for independent verification.
+
+### 0G Service Marketplace Integration
+
+The system now includes comprehensive integration with the 0G Service Marketplace for model serving and monetization:
+
+**Marketplace Components:**
+- **Service Registration**: Register trained models as inference services
+- **Inference Processing**: TEE-based inference execution with encrypted inputs/outputs
+- **Client Interface**: Pay-per-inference requests with automatic result retrieval
+- **Revenue Management**: Automated payment processing and revenue distribution
+
+**Marketplace Commands:**
+```powershell
+# Register a model service from manifest
+node scripts/marketplace_service_manager.js create-from-manifest market_manifest.json
+
+# Update service with new model version
+node scripts/marketplace_service_manager.js update <serviceId> <modelCid> <price>
+
+# Request inference from client perspective
+node scripts/marketplace_client.js run <serviceId> '{"features":[1,2,3,4]}'
+
+# Process inference requests (TEE simulation)
+node scripts/marketplace_inference_processor.js process-and-complete <requestId>
+
+# Test complete marketplace integration
+node scripts/test_marketplace_integration.js
+```
+
+**Marketplace Configuration (.env):**
+```bash
+# 0G Service Marketplace Integration
+OG_MARKETPLACE_RPC=https://evmrpc-testnet.0g.ai
+OG_MARKETPLACE_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+OG_MARKETPLACE_CONTRACT_ADDRESS=0xMARKETPLACE_CONTRACT_ADDRESS
+OG_MARKETPLACE_SERVICE_ID=1
+```
+
+**Features:**
+- ✅ Service registration with model metadata and pricing
+- ✅ Encrypted inference processing in TEE simulation
+- ✅ Pay-per-inference billing with automatic payment handling
+- ✅ Client-side inference requests with result polling
+- ✅ Service discovery and metadata management
+- ✅ Revenue distribution and fee management
+- ✅ Integration with federated learning pipeline
+
+**Workflow Integration:**
+The marketplace integration seamlessly connects with the federated learning pipeline:
+1. **Model Training** → FedAvg aggregation produces global model
+2. **Service Registration** → Model automatically registered as inference service
+3. **Inference Serving** → Clients can request predictions via marketplace
+4. **Revenue Sharing** → Contributors receive rewards based on model usage
+
+**TEE Simulation:**
+While 0G Compute generic TEE services are currently unavailable, the system includes comprehensive TEE simulation for:
+- Encrypted model loading and inference execution
+- Secure input/output handling
+- Attestation verification and logging
+- Privacy-preserving computation guarantees
+
+This provides a complete PoC that demonstrates the full 0G stack integration once TEE services become available.
 
 ### CI artifacts (dry or live runs)
 
