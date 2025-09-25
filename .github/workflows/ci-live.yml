@@ -30,17 +30,19 @@ jobs:
           bytes=$(wc -c < aggregated_model.json | tr -d ' ')
           sha=$(sha256sum aggregated_model.json | cut -d' ' -f1)
           printf '{"file":"aggregated_model.json","size":%s,"sha256":"0x%s"}' "$bytes" "$sha" > aggregated_model.storage_meta.json
-      - name: Conditional upload to IPFS (dry if no creds)
+      - name: Enhanced storage upload (IPFS/0G Storage with fallback)
         env:
           OG_STORAGE_MODE: ${{ secrets.OG_STORAGE_MODE }}
           OG_STORAGE_API_BASE: ${{ secrets.OG_STORAGE_API_BASE }}
           OG_STORAGE_API_TOKEN: ${{ secrets.OG_STORAGE_API_TOKEN }}
           OG_GATEWAY_BASE: ${{ secrets.OG_GATEWAY_BASE }}
+          OG_STORAGE_RPC: ${{ secrets.OG_STORAGE_RPC }}
+          OG_STORAGE_PRIVATE_KEY: ${{ secrets.OG_STORAGE_PRIVATE_KEY }}
         run: |
-          if [ "${OG_STORAGE_MODE:-manual}" = "ipfs-api" ] && [ -f ./scripts/upload_ipfs_api.js ]; then
-            node ./scripts/upload_ipfs_api.js --file ./aggregated_model.json > upload.json
+          if [ -f ./scripts/ci_storage_upload.js ]; then
+            node ./scripts/ci_storage_upload.js ./aggregated_model.json > upload.json
           else
-            echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+            echo '{"cid":"drycid","size":0,"url":"ipfs://drycid","provider":"fallback","mode":"manual"}' > upload.json
           fi
       - name: Make market manifest
         run: |

@@ -1,6 +1,7 @@
 {
   "name": "flai-0g-test",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "upload": "ts-node --esm upload_to_0g_storage.ts",

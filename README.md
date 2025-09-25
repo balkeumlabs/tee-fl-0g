@@ -564,9 +564,52 @@ node .\scripts\is_approved_raw.js --provider 0xYOUR_ADDRESS
 ```
 > Tip: you can also browse the chain state in an explorer; plug your contract address into your team’s preferred Galileo explorer
 
-### Integrity Verification
+### Enhanced Storage Integration
 
-The system provides cryptographic integrity verification for gradient bundles using Merkle trees:
+The system now supports comprehensive storage integration with multiple providers:
+
+**Storage Modes:**
+- `manual` (default): Dry-run mode with SHA256-based pseudo-CIDs
+- `ipfs-api`: Upload to IPFS via API (Infura, Pinata, etc.)
+- `0g-storage`: Upload to 0G Storage using native SDK
+
+**Storage Commands:**
+```powershell
+# Test storage configuration
+node scripts/test_storage_simple.cjs
+
+# Upload file with enhanced storage manager
+node scripts/storage_manager.js upload aggregated_model.json
+
+# Download and verify file
+node scripts/verify_download_enhanced.js <cid> [expected-hash] [output-path]
+
+# CI-compatible upload
+node scripts/ci_storage_upload.js aggregated_model.json
+```
+
+**Storage Configuration (.env):**
+```bash
+# Storage mode: manual | ipfs-api | 0g-storage
+OG_STORAGE_MODE=manual
+
+# IPFS API configuration
+OG_STORAGE_API_BASE=https://ipfs.infura.io:5001
+OG_STORAGE_API_TOKEN=Bearer YOUR_TOKEN
+OG_GATEWAY_BASE=https://ipfs.io/ipfs/
+
+# 0G Storage configuration
+OG_STORAGE_RPC=https://rpc.0g-chain.dev
+OG_STORAGE_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+```
+
+**Features:**
+- ✅ Automatic fallback to dry-run on upload failure
+- ✅ Integrity verification with SHA-256 hashing
+- ✅ Retry logic with exponential backoff
+- ✅ Support for both IPFS and 0G Storage
+- ✅ CI integration with enhanced error handling
+- ✅ Download verification and content validation
 
 **Build Merkle bundle** (hashes all `*.enc.json` files, generates proofs):
 ```powershell
