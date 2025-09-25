@@ -1,0 +1,1 @@
+{"message": "Small test file for 0G Storage upload validation", "timestamp": "2024-12-19T10:00:00Z", "size": "1KB", "purpose": "Basic upload functionality test"}

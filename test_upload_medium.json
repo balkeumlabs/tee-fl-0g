@@ -1,0 +1,25 @@
+{
+  "testData": {
+    "message": "Medium test file for 0G Storage upload validation",
+    "timestamp": "2024-12-19T10:00:00Z",
+    "size": "10KB",
+    "purpose": "JSON data upload functionality test",
+    "features": [
+      "Encrypted gradient storage",
+      "Merkle proof generation",
+      "Content addressing",
+      "Integrity verification"
+    ],
+    "metadata": {
+      "epoch": 1,
+      "modelHash": "0x1234567890abcdef1234567890abcdef12345678",
+      "participants": 5,
+      "accuracy": 0.95
+    },
+    "encryption": {
+      "algorithm": "XChaCha20-Poly1305",
+      "keyExchange": "X25519",
+      "integrity": "SHA-256"
+    }
+  }
+}
