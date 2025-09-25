@@ -13,15 +13,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Hello
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Setup Node
+        uses: actions/setup-node@1e60f620b9541e4c90f5a1f3df1d2f9540be5e59
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Aggregate and emit meta
         run: |
-          echo "hello from ci-live; epoch=${{ github.event.inputs.epoch }}"
-          # Produce DRY artifacts (no secrets / network)
-          echo '{"weights":[0.1,0.2,0.3]}' > aggregated_model.json
-          echo '{}' > client_update.enc.json
-          echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
-          echo '{"enclave":"dev","mrEnclave":"0x00","nonce":"test"}' > attestation.json
-          echo "{\"artifacts\":{\"globalModelHash\":\"0x00\",\"globalModelCid\":\"drycid\",\"globalModelUrl\":\"ipfs://drycid\"},\"provenance\":{\"attestationHash\":\"0x00\",\"commit\":\"HEAD\",\"mode\":\"dry\"},\"epoch\":${{ github.event.inputs.epoch }},\"network\":{\"chainId\":\"16601\"}}" > market_manifest.json
+          node ./dist/local_normalize_and_aggregate.js --in-dir . --out-dir . --on-mismatch pad --force-path '$.weights'
+          bytes=$(wc -c < aggregated_model.json | tr -d ' ')
+          sha=$(sha256sum aggregated_model.json | cut -d' ' -f1)
+          printf '{"file":"aggregated_model.json","size":%s,"sha256":"0x%s"}' "$bytes" "$sha" > aggregated_model.storage_meta.json
+      - name: Conditional upload to IPFS (dry if no creds)
+        env:
+          OG_STORAGE_MODE: ${{ secrets.OG_STORAGE_MODE }}
+          OG_STORAGE_API_BASE: ${{ secrets.OG_STORAGE_API_BASE }}
+          OG_STORAGE_API_TOKEN: ${{ secrets.OG_STORAGE_API_TOKEN }}
+          OG_GATEWAY_BASE: ${{ secrets.OG_GATEWAY_BASE }}
+        run: |
+          if [ "${OG_STORAGE_MODE:-manual}" = "ipfs-api" ] && [ -f ./scripts/upload_ipfs_api.js ]; then
+            node ./scripts/upload_ipfs_api.js --file ./aggregated_model.json > upload.json
+          else
+            echo '{"cid":"drycid","size":0,"url":"ipfs://drycid"}' > upload.json
+          fi
+      - name: Make market manifest
+        run: |
+          if [ -f ./scripts/make_market_manifest.js ]; then
+            node ./scripts/make_market_manifest.js --epoch "${{ github.event.inputs.epoch }}" --upload ./upload.json > market_manifest.json
+          else
+            echo '{"artifacts":{"globalModelHash":"0x00","globalModelCid":"drycid","globalModelUrl":"ipfs://drycid"},"provenance":{"attestationHash":"0x00","commit":"HEAD","mode":"dry"},"epoch":'"${{ github.event.inputs.epoch }}"',"network":{"chainId":"16601"}}' > market_manifest.json
+          fi
+      - name: Build Merkle bundle
+        run: |
+          node ./scripts/build_merkle_bundle.js . .enc.json bundle.merkle.json
+          echo "bundle root: $(cat bundle.merkle.json | jq -r .root)"
+      - name: Verify Merkle bundle
+        run: |
+          node ./scripts/verify_merkle_bundle.js ./bundle.merkle.json .
+          echo "bundle verification: OK"
+      - name: Attach merkleRoot to manifest
+        run: |
+          node ./scripts/attach_merkle_to_manifest.js ./market_manifest.json ./bundle.merkle.json
+          echo "manifest updated with merkleRoot"
+      - name: Attach attestation sample (diagnostic)
+        run: cp ./attestation/samples/accept.dev.json attestation.json || echo '{"enclave":"dev"}' > attestation.json
 
       - name: Upload artifacts
         if: always()
@@ -34,3 +75,5 @@ jobs:
             client_update.enc.json
             attestation.json
             market_manifest.json
+            aggregated_model.storage_meta.json
+            bundle.merkle.json

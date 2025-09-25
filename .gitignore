@@ -93,3 +93,4 @@ probe.json
 docs/audio/
 .github/workflows/ci-live.yml.bak*
 .github/workflows/ci-live.yml.backup-parse
+ai_prompt.md

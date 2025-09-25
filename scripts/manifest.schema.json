@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["epoch", "artifacts", "provenance", "network"],
+  "properties": {
+    "epoch": { "type": "integer", "minimum": 0 },
+    "artifacts": {
+      "type": "object",
+      "required": ["globalModelHash", "globalModelCid", "globalModelUrl"],
+      "properties": {
+        "globalModelHash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "globalModelCid": { "type": "string", "minLength": 10 },
+        "globalModelUrl": { "type": "string", "minLength": 10 }
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["commit", "mode"],
+      "properties": {
+        "attestationHash": { "type": "string" },
+        "commit": { "type": "string" },
+        "mode": { "type": "string", "enum": ["dry", "live"] }
+      },
+      "additionalProperties": true
+    },
+    "network": {
+      "type": "object",
+      "required": ["chainId"],
+      "properties": { "chainId": { "type": "string" } },
+      "additionalProperties": true
+    },
+    "createdAt": { "type": "string" },
+    "merkleRoot": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" }
+  },
+  "additionalProperties": true
+}
+
