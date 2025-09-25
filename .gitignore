@@ -86,3 +86,4 @@ u*.json
 *.dec.json
 Progress.md
 Progress-Backup.md
+ai_prompt.md

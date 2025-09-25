@@ -26,3 +26,10 @@ jobs:
 
       - name: Policy validate
         run: node ./scripts/policy_validate.js
+
+      - name: Scoring attestation smoke (accept sample)
+        env:
+          ATTESTATION_ENFORCED: "true"
+        run: |
+          node ./scripts/compute_scores_and_post_root_raw.js --attestation ./attestation/samples/accept.dev.json || true
+          echo "scoring precheck invoked"

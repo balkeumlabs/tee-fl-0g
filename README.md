@@ -338,6 +338,7 @@ What it enforces:
 
 
 ### CI demo (no secrets required)
+Manifest is validated against `scripts/manifest.schema.json` in both dry and live workflows.
 
 Kick a dry run that produces round artifacts (upload.json, market_manifest.json, etc.):
 
@@ -563,21 +564,29 @@ node .\scripts\is_approved_raw.js --provider 0xYOUR_ADDRESS
 ```
 > Tip: you can also browse the chain state in an explorer; plug your contract address into your team’s preferred Galileo explorer
 
-### Local Artifacts & Hashes
+### Integrity Verification
 
+The system provides cryptographic integrity verification for gradient bundles using Merkle trees:
+
+**Build Merkle bundle** (hashes all `*.enc.json` files, generates proofs):
 ```powershell
-# List aggregation outputs and metadata (created by local or CI runs)
-Get-ChildItem -Name .\aggregated_model*.json
-
-# Recompute and compare SHA-256
-$raw  = Get-Content .\aggregated_model.storage_meta.json -Raw | ConvertFrom-Json
-$calc = (Get-FileHash $raw.file -Algorithm SHA256).Hash.ToLower()
-"{0} (meta) vs {1} (recalc)" -f $raw.sha256, $calc
-
-# Expected
-# Filenames like aggregated_model.json and aggregated_model.storage_meta.json
-# Printed line ends with identical hashes.
+node .\scripts\build_merkle_bundle.js . .enc.json bundle.merkle.json
+# Output: Merkle root hash (0x...)
 ```
+
+**Verify bundle integrity** (rehashes files, validates proofs):
+```powershell
+node .\scripts\verify_merkle_bundle.js .\bundle.merkle.json .
+# Expected: bundle: OK <root-hash>
+```
+
+**Attach root to manifest** (injects `merkleRoot` into market manifest):
+```powershell
+node .\scripts\attach_merkle_to_manifest.js .\market_manifest.json .\bundle.merkle.json
+# Expected: manifest updated with merkleRoot <root-hash>
+```
+
+CI workflows automatically build, verify, and attach Merkle roots to manifests. The `bundle.merkle.json` artifact contains per-file proofs for independent verification.
 
 ### CI artifacts (dry or live runs)
 
