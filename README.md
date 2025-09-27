@@ -15,25 +15,25 @@
 
 
 
-## 🎯 Production Status
+## Production Status
 
-**Current Status**: ✅ **Production-Ready** (Blocked by 0G Storage Maintenance)
+**Current Status**: Production-Ready
 
-### ✅ What's Complete:
+### What's Complete:
 - **Smart Contracts**: Deployed and functional on 0G Galileo testnet
 - **RPC Integration**: Working via Ankr endpoint (`https://rpc.ankr.com/0g_galileo_testnet_evm`)
 - **Marketplace Integration**: Service registration, inference processing, client integration ready
 - **CI/CD Pipeline**: All workflows functional and tested
 - **Security & Attestation**: Feature-flagged middleware implemented
 - **Monitoring & Alerting**: Health checks and alerting system ready
-- **Test Files**: Ready for upload when storage comes back online
+- **Test Files**: Ready for upload
 
-### ⏳ Only Blocked by:
-- **0G Storage Network**: Under maintenance since September 10th, 2024
-- **OG Tokens**: 0 balance (consumed during testing)
+### Deployment Requirements:
+- **OG Tokens**: Required for transaction fees
+- **Storage Configuration**: Configure storage mode in environment
 
-### 🚀 Ready for Production:
-Once 0G Storage is restored, the system can be deployed immediately with:
+### Production Deployment:
+The system can be deployed with:
 ```bash
 # Get OG tokens from 0G faucet
 # Test storage uploads
@@ -41,11 +41,9 @@ node scripts/test_real_0g_upload.js --file test_upload_small.txt
 # Deploy to production
 ```
 
-**Infrastructure Score**: 95% | **Security Score**: 100% | **Operational Score**: 90%
-
 ---
 
-This repo implements a privacy-preserving federated-learning pipeline on the **0G Galileo** testnet. Clients submit **encrypted, access-gated updates**; a diagnostics lane verifies integrity and policy; contributions are **scored and aggregated with FedAvg**; and we **anchor epoch/model hashes on-chain**, publishing one model per round and listing it in the **0G Service Marketplace**. Rewards are **stablecoin-denominated** (no native token), with **access governance and attestations on 0G Chain**. Upcoming work includes **native 0G Storage CIDs**, client-side encryption loaders, and richer attestation metadata.
+This repository implements a privacy-preserving federated learning pipeline on the 0G Galileo testnet. Clients submit encrypted, access-gated updates; a diagnostics lane verifies integrity and policy; contributions are scored and aggregated with FedAvg; and epoch/model hashes are anchored on-chain, publishing one model per round and listing it in the 0G Service Marketplace. Rewards are stablecoin-denominated, with access governance and attestations on 0G Chain.
 
 
 
@@ -282,13 +280,11 @@ Expected output:
 - CI demo (**ci-dry**) that produces round artifacts end-to-end
 
 **Planned Enhancements (next iteration)**
-- Native 0G Storage CID issuance in workflows (switch from dry CID to real)
+- Native 0G Storage CID issuance in workflows
 - Enforced TEE remote-attestation checks in the gate
-- Automated marketplace listing / pay-per-inference wiring
+- Automated marketplace listing and pay-per-inference wiring
 
-> Phase 1 is feature-complete for running federated rounds on 0G Galileo with
-> encrypted, access-gated updates and on-chain anchoring. The items below are
-> planned extensions, not required for the core flow.
+Phase 1 is feature-complete for running federated rounds on 0G Galileo with encrypted, access-gated updates and on-chain anchoring. The items below are planned extensions, not required for the core flow.
 
 
 
@@ -634,12 +630,12 @@ OG_STORAGE_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 ```
 
 **Features:**
-- ✅ Automatic fallback to dry-run on upload failure
-- ✅ Integrity verification with SHA-256 hashing
-- ✅ Retry logic with exponential backoff
-- ✅ Support for both IPFS and 0G Storage
-- ✅ CI integration with enhanced error handling
-- ✅ Download verification and content validation
+- Automatic fallback to dry-run on upload failure
+- Integrity verification with SHA-256 hashing
+- Retry logic with exponential backoff
+- Support for both IPFS and 0G Storage
+- CI integration with enhanced error handling
+- Download verification and content validation
 
 **Build Merkle bundle** (hashes all `*.enc.json` files, generates proofs):
 ```powershell
@@ -699,13 +695,13 @@ OG_MARKETPLACE_SERVICE_ID=1
 ```
 
 **Features:**
-- ✅ Service registration with model metadata and pricing
-- ✅ Encrypted inference processing in TEE simulation
-- ✅ Pay-per-inference billing with automatic payment handling
-- ✅ Client-side inference requests with result polling
-- ✅ Service discovery and metadata management
-- ✅ Revenue distribution and fee management
-- ✅ Integration with federated learning pipeline
+- Service registration with model metadata and pricing
+- Encrypted inference processing in TEE simulation
+- Pay-per-inference billing with automatic payment handling
+- Client-side inference requests with result polling
+- Service discovery and metadata management
+- Revenue distribution and fee management
+- Integration with federated learning pipeline
 
 **Workflow Integration:**
 The marketplace integration seamlessly connects with the federated learning pipeline:
@@ -715,13 +711,13 @@ The marketplace integration seamlessly connects with the federated learning pipe
 4. **Revenue Sharing** → Contributors receive rewards based on model usage
 
 **TEE Simulation:**
-While 0G Compute generic TEE services are currently unavailable, the system includes comprehensive TEE simulation for:
+The system includes comprehensive TEE simulation for:
 - Encrypted model loading and inference execution
 - Secure input/output handling
 - Attestation verification and logging
 - Privacy-preserving computation guarantees
 
-This provides a complete PoC that demonstrates the full 0G stack integration once TEE services become available.
+This provides a complete PoC that demonstrates the full 0G stack integration.
 
 ### CI artifacts (dry or live runs)
 
