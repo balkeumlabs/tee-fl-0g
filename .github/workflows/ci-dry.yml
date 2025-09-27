@@ -23,6 +23,7 @@ jobs:
 
       - name: Build Merkle bundle
         run: |
+          ls -la scripts/
           node scripts/build_merkle_bundle.js . .enc.json bundle.merkle.json
           echo "bundle root: $(cat bundle.merkle.json | jq -r .root)"
 
