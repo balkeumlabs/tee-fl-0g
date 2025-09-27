@@ -23,7 +23,9 @@ jobs:
 
       - name: Build Merkle bundle
         run: |
-          ls -la scripts/
+          pwd
+          ls -la
+          ls -la scripts/ || echo "scripts directory not found"
           node scripts/build_merkle_bundle.js . .enc.json bundle.merkle.json
           echo "bundle root: $(cat bundle.merkle.json | jq -r .root)"
 
