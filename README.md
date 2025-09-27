@@ -5,11 +5,11 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Last commit](https://img.shields.io/github/last-commit/balkeumlabs/tee-fl-0g)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
-[![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/main/docs/Progress.md)
+[![Docs](https://img.shields.io/badge/docs-index-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/main/docs/README.md)
 
 # TEE-FL-0G — Federated Learning on 0G (Galileo) with access-gated updates, on-chain anchoring, and FedAvg
 
-<sub>Last update: 2024-12-19 20:00:00Z UTC</sub>
+<sub>Last update: 2024-12-19 21:00:00Z UTC</sub>
 
 **Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Roadmap](#roadmap-and-milestones)
 
