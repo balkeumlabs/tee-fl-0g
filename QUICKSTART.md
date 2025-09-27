@@ -4,7 +4,7 @@
 **Target**: Developers integrating with FLAI Protocol  
 **Status**: Production-ready
 
-## 🚀 Quick Setup
+## Quick Setup
 
 ### 1. Clone and Install
 ```bash
@@ -34,7 +34,7 @@ node scripts/test_corrected_contract.js
 node scripts/health_check.js
 ```
 
-## 🔧 Core Operations
+## Core Operations
 
 ### Submit Encrypted Update
 ```bash
@@ -66,7 +66,7 @@ node scripts/marketplace_inference_processor.js --request-id 123
 node scripts/marketplace_client.js --service-id 456
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 ### Health Checks
 ```bash
@@ -86,7 +86,7 @@ node scripts/test_storage_simple.cjs
 node scripts/test_real_0g_upload.js --file test_upload_small.txt
 ```
 
-## 🛠️ Development
+## Development
 
 ### Contract Testing
 ```bash
@@ -109,7 +109,7 @@ npm run ci:smoke
 npm run ci:live
 ```
 
-## 🔐 Security
+## Security
 
 ### Attestation Enforcement
 ```bash
@@ -129,7 +129,7 @@ node scripts/grant_access_raw.js --provider 0x... --dataset-cid bafy...
 node scripts/is_approved_raw.js --provider 0x...
 ```
 
-## 📈 Production Deployment
+## Production Deployment
 
 ### Pre-deployment Checklist
 - [ ] OG tokens available
@@ -150,7 +150,7 @@ npx hardhat deploy --network galileo
 node scripts/health_check.js
 ```
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -177,7 +177,7 @@ echo $OG_STORAGE_MODE
 export OG_STORAGE_MODE=manual
 ```
 
-## 📞 Support
+## Support
 
 - **Documentation**: README.md, ai_prompt.md
 - **Issues**: GitHub Issues

@@ -4,7 +4,7 @@
 **Target**: Developers integrating with FLAI Protocol  
 **Status**: Production-ready
 
-## 📋 Scripts Overview
+## Scripts Overview
 
 ### Core Operations
 | Script | Purpose | Input | Output |
@@ -36,7 +36,7 @@
 | `test_storage_simple.cjs` | Test storage integration | None | Storage status |
 | `health_check.js` | System health monitoring | None | Health report |
 
-## 🔧 Environment Variables
+## Environment Variables
 
 ### Required Variables
 ```bash
@@ -70,7 +70,7 @@ OG_MARKETPLACE_CONTRACT_ADDRESS=0x...
 OG_MARKETPLACE_SERVICE_ID=123
 ```
 
-## 📊 Data Structures
+## Data Structures
 
 ### Update Submission
 ```json
@@ -108,7 +108,7 @@ OG_MARKETPLACE_SERVICE_ID=123
 }
 ```
 
-## 🔐 Security Functions
+## Security Functions
 
 ### Attestation Enforcement
 ```javascript
@@ -137,7 +137,7 @@ const encrypted = await encryptGradients(gradients, publicKey);
 const decrypted = await decryptGradients(encrypted, privateKey);
 ```
 
-## 📈 Monitoring Functions
+## Monitoring Functions
 
 ### Health Check
 ```javascript
@@ -157,7 +157,7 @@ alerts.forEach(alert => {
 });
 ```
 
-## 🛠️ Utility Functions
+## Utility Functions
 
 ### Merkle Proof Generation
 ```javascript
@@ -181,7 +181,7 @@ const isValid = await verifyFileHash(fileData, expectedHash);
 console.log(`Valid: ${isValid}`);
 ```
 
-## 🔄 CI/CD Integration
+## CI/CD Integration
 
 ### GitHub Actions
 ```yaml
@@ -209,7 +209,7 @@ const verified = await downloadAndVerify(artifact.cid);
 console.log(`Verified: ${verified}`);
 ```
 
-## 📞 Error Handling
+## Error Handling
 
 ### Common Error Codes
 - `INSUFFICIENT_FUNDS`: Need OG tokens

@@ -1,7 +1,7 @@
 name: ci-smoke
 on:
   push:
-    branches: [ rao ]
+    branches: [ main, rao ]
   pull_request:
 jobs:
   smoke:

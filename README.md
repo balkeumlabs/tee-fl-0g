@@ -4,8 +4,8 @@
 [![ci-live](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-live.yml/badge.svg?branch=main)](https://github.com/balkeumlabs/tee-fl-0g/actions/workflows/ci-live.yml?query=branch%3Amain)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Last commit](https://img.shields.io/github/last-commit/balkeumlabs/tee-fl-0g)
-![Version](https://img.shields.io/badge/version-1.0.0--production-ready-success)
-[![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/rao/docs/progress.md)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+[![Docs](https://img.shields.io/badge/docs-progress-blue)](https://github.com/balkeumlabs/tee-fl-0g/blob/main/docs/Progress.md)
 
 # TEE-FL-0G — Federated Learning on 0G (Galileo) with access-gated updates, on-chain anchoring, and FedAvg
 

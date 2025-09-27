@@ -23,21 +23,21 @@ jobs:
 
       - name: Build Merkle bundle
         run: |
-          node ./scripts/build_merkle_bundle.js . .enc.json bundle.merkle.json
+          node scripts/build_merkle_bundle.js . .enc.json bundle.merkle.json
           echo "bundle root: $(cat bundle.merkle.json | jq -r .root)"
 
       - name: Verify Merkle bundle
         run: |
-          node ./scripts/verify_merkle_bundle.js ./bundle.merkle.json .
+          node scripts/verify_merkle_bundle.js bundle.merkle.json .
           echo "bundle verification: OK"
 
       - name: Attach merkleRoot to manifest
         run: |
-          node ./scripts/attach_merkle_to_manifest.js ./market_manifest.json ./bundle.merkle.json
+          node scripts/attach_merkle_to_manifest.js market_manifest.json bundle.merkle.json
           echo "manifest updated with merkleRoot"
 
       - name: Validate manifest
-        run: node ./scripts/validate_manifest.js ./market_manifest.json
+        run: node scripts/validate_manifest.js market_manifest.json
 
       - name: Upload artifacts
         if: always()

@@ -58,7 +58,7 @@ async function checkStorageHealth() {
   }
   
   // Add real storage health checks here when 0G Storage is available
-  return { status: 'pending', message: '0G Storage under maintenance' };
+  return { status: 'pending', message: '0G Storage configuration required' };
 }
 
 async function runHealthCheck() {
