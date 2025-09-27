@@ -12,7 +12,7 @@ This repository contains comprehensive documentation for the TEE-FL-0G federated
 - **[README.md](../README.md)** - Main project documentation and user guide
 - **[QUICKSTART.md](../QUICKSTART.md)** - Quick start guide for developers
 - **[API_REFERENCE.md](../API_REFERENCE.md)** - Complete API documentation
-- **[Progress.md](Progress.md)** - Project progress and completion status
+- **[Progress.md](../Progress.md)** - Project progress and completion status
 
 ### Technical Documentation
 - **[ai_prompt.md](../ai_prompt.md)** - Project working prompt and technical details
@@ -28,7 +28,7 @@ This repository contains comprehensive documentation for the TEE-FL-0G federated
 ### Getting Started
 1. Read the [README.md](../README.md) for project overview
 2. Follow the [QUICKSTART.md](../QUICKSTART.md) for setup
-3. Check [Progress.md](Progress.md) for current status
+3. Check [Progress.md](../Progress.md) for current status
 
 ### Development
 1. Review [API_REFERENCE.md](../API_REFERENCE.md) for available scripts
