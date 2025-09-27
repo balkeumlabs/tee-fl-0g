@@ -1,77 +1,123 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+#!/usr/bin/env node
+'use strict';
 
-function sha256Hex(buf){ return crypto.createHash('sha256').update(buf).digest('hex'); }
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 
-function buildLeaves(files){
-  return files.map(fp => {
-    const data = fs.readFileSync(fp);
-    const sha = sha256Hex(data).toLowerCase();
-    const leaf = Buffer.from(sha, 'hex');
-    return { file: fp, sha256: sha, leaf };
-  });
+function fail(message) {
+  console.error(message);
+  process.exit(1);
 }
 
-function merkleTree(leaves){
-  if (leaves.length === 0) return { root: Buffer.from('0'.repeat(64), 'hex'), levels: [] };
-  const toPairs = (arr) => arr.map((_,i)=>i).filter(i=>i%2===0).map(i=>[arr[i], arr[i+1] ?? arr[i]]);
-  const levels = [];
-  let level = leaves.map(x=>x.leaf);
-  levels.push(level);
-  while(level.length > 1){
-    const pairs = toPairs(level);
-    level = pairs.map(([a,b]) => crypto.createHash('sha256').update(Buffer.concat([a,b])).digest());
-    levels.push(level);
+function sha256(data) {
+  return '0x' + crypto.createHash('sha256').update(data).digest('hex');
+}
+
+function buildMerkleTree(items) {
+  if (items.length === 0) return null;
+  if (items.length === 1) return items[0];
+
+  const nextLevel = [];
+  for (let i = 0; i < items.length; i += 2) {
+    const left = items[i];
+    const right = items[i + 1] || left; // Duplicate last item if odd number
+    const combined = left + right;
+    nextLevel.push(sha256(combined));
   }
-  return { root: level[0], levels };
+
+  return buildMerkleTree(nextLevel);
 }
 
-function buildProofs(leaves, levels){
-  const proofs = [];
-  for(let idx=0; idx<leaves.length; idx++){
-    const pathItems = [];
-    let i = idx;
-    for(let depth=0; depth<levels.length-1; depth++){
-      const level = levels[depth];
-      const isRight = (i % 2) === 1;
-      const sibIndex = isRight ? i - 1 : (i + 1 >= level.length ? i : i + 1);
-      const sibling = level[sibIndex];
-      pathItems.push({
-        position: isRight ? 'left' : 'right',
-        sibling: '0x' + sibling.toString('hex')
+function generateProof(items, targetIndex) {
+  const proof = [];
+  let currentItems = [...items];
+  let currentIndex = targetIndex;
+
+  while (currentItems.length > 1) {
+    const nextLevel = [];
+    const isLeft = currentIndex % 2 === 0;
+    const siblingIndex = isLeft ? currentIndex + 1 : currentIndex - 1;
+    
+    if (siblingIndex < currentItems.length) {
+      proof.push({
+        position: isLeft ? 'right' : 'left',
+        sibling: currentItems[siblingIndex]
       });
-      i = Math.floor(i/2);
     }
-    proofs.push(pathItems);
+
+    for (let i = 0; i < currentItems.length; i += 2) {
+      const left = currentItems[i];
+      const right = currentItems[i + 1] || left;
+      const combined = left + right;
+      nextLevel.push(sha256(combined));
+    }
+
+    currentItems = nextLevel;
+    currentIndex = Math.floor(currentIndex / 2);
   }
-  return proofs;
+
+  return proof;
 }
 
-function main(){
-  const dir = process.argv[2] || '.';
-  const pattern = process.argv[3] || '.enc.json';
-  const out = process.argv[4] || 'bundle.merkle.json';
-  const base = path.resolve(dir);
-  const all = fs.readdirSync(base).filter(f=>f.endsWith(pattern)).map(f=>path.join(base,f));
-  if(all.length === 0){
-    console.error('no bundle files found matching', pattern, 'in', base);
+function main() {
+  const args = process.argv.slice(2);
+  if (args.length !== 3) {
+    fail('Usage: node build_merkle_bundle.js <directory> <pattern> <output>');
   }
-  const leaves = buildLeaves(all);
-  const tree = merkleTree(leaves);
-  const proofs = buildProofs(leaves, tree.levels);
-  const rootHex = '0x' + tree.root.toString('hex');
-  const outJson = {
+
+  const [dir, pattern, output] = args;
+  
+  if (!fs.existsSync(dir)) {
+    fail(`Directory does not exist: ${dir}`);
+  }
+
+  const files = fs.readdirSync(dir)
+    .filter(file => file.includes(pattern.replace('*', '')))
+    .sort();
+
+  if (files.length === 0) {
+    fail(`No files found matching pattern: ${pattern}`);
+  }
+
+  const items = [];
+  const bundle = {
     createdAt: new Date().toISOString(),
-    baseDir: base,
-    pattern,
-    root: rootHex,
-    items: leaves.map((l, i)=>({ file: path.relative(base, l.file), sha256: '0x'+l.sha256, leaf: '0x'+l.leaf.toString('hex'), proof: proofs[i] }))
+    baseDir: path.resolve(dir),
+    pattern: pattern,
+    root: null,
+    items: []
   };
-  fs.writeFileSync(out, JSON.stringify(outJson, null, 2), 'utf8');
-  console.log(rootHex);
+
+  // Read files and create hashes
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const content = fs.readFileSync(filePath);
+    const hash = sha256(content);
+    
+    items.push(hash);
+    bundle.items.push({
+      file: file,
+      sha256: hash,
+      leaf: hash,
+      proof: []
+    });
+  }
+
+  // Build Merkle tree
+  const root = buildMerkleTree(items);
+  bundle.root = root;
+
+  // Generate proofs for each item
+  for (let i = 0; i < bundle.items.length; i++) {
+    bundle.items[i].proof = generateProof(items, i);
+  }
+
+  // Write bundle
+  fs.writeFileSync(output, JSON.stringify(bundle, null, 2));
+  console.log(`Merkle bundle created: ${output}`);
+  console.log(`Root: ${root}`);
+  console.log(`Items: ${items.length}`);
 }
 
 main();
-
-

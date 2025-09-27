@@ -1,50 +1,94 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+#!/usr/bin/env node
+'use strict';
 
-function sha256Hex(buf){ return crypto.createHash('sha256').update(buf).digest('hex'); }
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 
-function hashPairHex(aHex, bHex){
-  const a = Buffer.from(aHex.replace(/^0x/,''), 'hex');
-  const b = Buffer.from(bHex.replace(/^0x/,''), 'hex');
-  return '0x' + crypto.createHash('sha256').update(Buffer.concat([a,b])).digest('hex');
+function fail(message) {
+  console.error(message);
+  process.exit(1);
 }
 
-function verifyProof(leafHex, proof, rootHex){
-  let acc = leafHex.toLowerCase();
-  for(const step of proof){
-    if(step.position === 'left'){
-      acc = hashPairHex(step.sibling, acc);
+function sha256(data) {
+  return '0x' + crypto.createHash('sha256').update(data).digest('hex');
+}
+
+function verifyProof(leaf, proof, root) {
+  let current = leaf;
+  
+  for (const step of proof) {
+    if (step.position === 'left') {
+      current = sha256(step.sibling + current);
     } else {
-      acc = hashPairHex(acc, step.sibling);
+      current = sha256(current + step.sibling);
     }
   }
-  return acc.toLowerCase() === rootHex.toLowerCase();
+  
+  return current === root;
 }
 
-function main(){
-  const bundlePath = process.argv[2] || 'bundle.merkle.json';
-  const base = process.argv[3] || '.';
-  const bundle = JSON.parse(fs.readFileSync(bundlePath, 'utf8'));
-  const baseDir = path.resolve(base);
-  let ok = true;
-  for(const it of bundle.items){
-    const abs = path.join(baseDir, it.file);
-    const data = fs.readFileSync(abs);
-    const sha = '0x' + sha256Hex(data).toLowerCase();
-    if(sha !== it.sha256.toLowerCase()){
-      console.error('sha256 mismatch for', it.file);
-      ok = false; continue;
-    }
-    if(!verifyProof(it.leaf, it.proof, bundle.root)){
-      console.error('proof invalid for', it.file);
-      ok = false; continue;
-    }
+function main() {
+  const args = process.argv.slice(2);
+  if (args.length !== 2) {
+    fail('Usage: node verify_merkle_bundle.js <bundle.json> <directory>');
   }
-  if(!ok){ process.exit(1); }
-  console.log('bundle: OK', bundle.root);
+
+  const [bundleFile, dir] = args;
+  
+  if (!fs.existsSync(bundleFile)) {
+    fail(`Bundle file does not exist: ${bundleFile}`);
+  }
+
+  if (!fs.existsSync(dir)) {
+    fail(`Directory does not exist: ${dir}`);
+  }
+
+  const bundle = JSON.parse(fs.readFileSync(bundleFile, 'utf8'));
+  
+  if (!bundle.root || !bundle.items) {
+    fail('Invalid bundle format');
+  }
+
+  console.log(`Verifying bundle with root: ${bundle.root}`);
+  console.log(`Items to verify: ${bundle.items.length}`);
+
+  let allValid = true;
+
+  for (const item of bundle.items) {
+    const filePath = path.join(dir, item.file);
+    
+    if (!fs.existsSync(filePath)) {
+      console.error(`File not found: ${item.file}`);
+      allValid = false;
+      continue;
+    }
+
+    const content = fs.readFileSync(filePath);
+    const actualHash = sha256(content);
+    
+    if (actualHash !== item.sha256) {
+      console.error(`Hash mismatch for ${item.file}: expected ${item.sha256}, got ${actualHash}`);
+      allValid = false;
+      continue;
+    }
+
+    if (!verifyProof(item.leaf, item.proof, bundle.root)) {
+      console.error(`Proof verification failed for ${item.file}`);
+      allValid = false;
+      continue;
+    }
+
+    console.log(`✓ ${item.file} verified`);
+  }
+
+  if (allValid) {
+    console.log(`bundle: OK ${bundle.root}`);
+    process.exit(0);
+  } else {
+    console.error('bundle: FAILED');
+    process.exit(1);
+  }
 }
 
 main();
-
-
