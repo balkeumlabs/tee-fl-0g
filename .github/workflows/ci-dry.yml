@@ -12,6 +12,9 @@ jobs:
   live_or_dry:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Hello
         run: |
           echo "hello from ci-dry; epoch=${{ github.event.inputs.epoch }}"
