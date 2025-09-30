@@ -26,7 +26,7 @@ const globalModelHash = "0x" + crypto.createHash("sha256").update(modelBytes).di
 // // Contracts (defaults; override by env if needed)
 const AccessRegistry = process.env.ACCESS_REGISTRY ?? "0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e";
 const EpochManager  = process.env.EPOCH_MANAGER  ?? "0x9341619f6B889A12bbb90BbE366405ce363Ab779";
-const chainId = Number(process.env.CHAIN_ID ?? 16601);
+const chainId = Number(process.env.CHAIN_ID ?? 16602);
 
 // // Commit SHA
 let commit = "";

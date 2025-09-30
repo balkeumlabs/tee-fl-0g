@@ -35,7 +35,7 @@ async function testRealUpload() {
         // Create provider with ENS disabled
         const provider = new JsonRpcProvider(OG_STORAGE_RPC, {
           name: "0g-galileo",
-          chainId: 16601,
+          chainId: 16602,
           ensAddress: null // Disable ENS
         });
         

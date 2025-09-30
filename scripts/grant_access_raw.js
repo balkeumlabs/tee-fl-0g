@@ -44,7 +44,7 @@ async function main() {
     // Initialize provider and signer
     const rpcProvider = new JsonRpcProvider(RPC_ENDPOINT, {
       name: "0g-galileo",
-      chainId: 16601
+      chainId: 16602
     });
     const signer = new Wallet(PRIVATE_KEY, rpcProvider);
 

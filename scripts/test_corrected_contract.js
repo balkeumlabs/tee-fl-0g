@@ -2,7 +2,7 @@
 import { JsonRpcProvider, Wallet, ethers } from 'ethers';
 import { readFile } from 'node:fs/promises';
 
-const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://rpc.ankr.com/0g_galileo_testnet_evm';
+const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://evmrpc-testnet.0g.ai';
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '0x1234567890123456789012345678901234567890123456789012345678901234';
 
 // Correct AccessRegistry ABI based on the actual contract
@@ -26,7 +26,7 @@ async function testCorrectedContract() {
     // Create provider with explicit network config
     const provider = new JsonRpcProvider(RPC_ENDPOINT, {
       name: "0g-galileo",
-      chainId: 16601
+      chainId: 16602
     });
 
     console.log("Provider created, testing connection...");

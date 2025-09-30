@@ -36,7 +36,7 @@ async function test0GStorage() {
         // Test provider connection
         const provider = new JsonRpcProvider(OG_STORAGE_RPC, {
           name: "0g-galileo",
-          chainId: 16601
+          chainId: 16602
         });
         
         const blockNumber = await provider.getBlockNumber();

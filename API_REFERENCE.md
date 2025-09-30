@@ -41,7 +41,7 @@
 ### Required Variables
 ```bash
 # Blockchain Configuration
-CHAIN_RPC=https://rpc.ankr.com/0g_galileo_testnet_evm
+CHAIN_RPC=https://evmrpc-testnet.0g.ai
 CHAIN_ID=5167003
 ACCESS_REGISTRY_ADDR=0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e
 EPOCH_MANAGER_ADDR=0x...

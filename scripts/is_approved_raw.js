@@ -36,7 +36,7 @@ async function main() {
     // Initialize provider and signer with explicit network
     const rpcProvider = new JsonRpcProvider(RPC_ENDPOINT, {
       name: "0g-galileo",
-      chainId: 16601
+      chainId: 16602
     });
     
     // Test connection first

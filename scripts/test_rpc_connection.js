@@ -1,7 +1,7 @@
 // scripts/test_rpc_connection.js
 import { JsonRpcProvider } from 'ethers';
 
-const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://rpc.ankr.com/0g_galileo_testnet_evm';
+const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://evmrpc-testnet.0g.ai';
 
 async function testRPCConnection() {
   console.log(`Testing RPC connection to: ${RPC_ENDPOINT}`);
@@ -10,7 +10,7 @@ async function testRPCConnection() {
     // Create provider with explicit network config
     const provider = new JsonRpcProvider(RPC_ENDPOINT, {
       name: "0g-galileo",
-      chainId: 16601
+      chainId: 16602
     });
 
     console.log("Provider created, testing connection...");

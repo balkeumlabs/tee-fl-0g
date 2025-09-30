@@ -157,7 +157,7 @@ node scripts/health_check.js
 **RPC Connection Failed**
 ```bash
 # Try fallback endpoint
-export CHAIN_RPC=https://rpc.ankr.com/0g_galileo_testnet_evm
+export CHAIN_RPC=https://evmrpc-testnet.0g.ai
 ```
 
 **Insufficient Funds**

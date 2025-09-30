@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 
 const CONFIG = {
-  rpc: process.env.CHAIN_RPC || 'https://rpc.ankr.com/0g_galileo_testnet_evm',
+  rpc: process.env.CHAIN_RPC || 'https://evmrpc-testnet.0g.ai',
   accessRegistry: process.env.ACCESS_REGISTRY_ADDR || '0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e',
   epochManager: process.env.EPOCH_MANAGER_ADDR || '0x...',
   timeout: 10000

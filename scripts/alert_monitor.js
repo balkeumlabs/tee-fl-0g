@@ -5,7 +5,7 @@ import fs from 'fs';
 import { ethers } from 'ethers';
 
 const ALERT_CONFIG = {
-  rpc: process.env.CHAIN_RPC || 'https://rpc.ankr.com/0g_galileo_testnet_evm',
+  rpc: process.env.CHAIN_RPC || 'https://evmrpc-testnet.0g.ai',
   accessRegistry: process.env.ACCESS_REGISTRY_ADDR || '0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e',
   thresholds: {
     responseTime: 30000, // 30 seconds

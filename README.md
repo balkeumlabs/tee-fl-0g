@@ -21,7 +21,7 @@
 
 ### What's Complete:
 - **Smart Contracts**: Deployed and functional on 0G Galileo testnet
-- **RPC Integration**: Working via Ankr endpoint (`https://rpc.ankr.com/0g_galileo_testnet_evm`)
+- **RPC Integration**: Working via 0G endpoint (`https://evmrpc-testnet.0g.ai`)
 - **Marketplace Integration**: Service registration, inference processing, client integration ready
 - **CI/CD Pipeline**: All workflows functional and tested
 - **Security & Attestation**: Feature-flagged middleware implemented
@@ -156,7 +156,7 @@ Minimal, limitation-free path to a green end-to-end demo on 0G Galileo. Windows 
 ### Prerequisites
 
 - Windows 10/11, **PowerShell 7+**, **Node.js ≥ 18** (Node 20/22 OK), **npm ≥ 9**, **Git**
-- Funded EVM key on **0G Galileo** (chainId **16601**)
+- Funded EVM key on **0G Galileo** (chainId **16602**)
 - RPC endpoint: `https://evmrpc-testnet.0g.ai`
 
 
@@ -315,7 +315,7 @@ node .\scripts\deploy_epoch_raw.js
 
 # Verify addresses were written
 Get-Content .\deploy.out.json
-# Expect: { "AccessRegistry":"0x...", "EpochManager":"0x...", "chainId":"16601", ... }
+# Expect: { "AccessRegistry":"0x...", "EpochManager":"0x...", "chainId":"16602", ... }
 ```
 
 **2) Approve your provider address (allow-list on AccessRegistry)**
@@ -499,7 +499,7 @@ $kv | Where-Object { $show -contains $_.Key } | ForEach-Object {
 
 ## Deployment
 
-Target: **0G Galileo** (chainId **16601**). Contracts are immutable—treat deploys as one-way and record addresses.
+Target: **0G Galileo** (chainId **16602**). Contracts are immutable—treat deploys as one-way and record addresses.
 
 ### Network & Signer
 
@@ -532,7 +532,7 @@ node .\scripts\deploy_epoch_raw.js       | Tee-Object -FilePath .\deploy_epoch.l
 # Persist addresses snapshot
 $addr = @{
   network        = "0g-galileo"
-  chainId        = 16601
+  chainId        = 16602
   rpc            = "https://evmrpc-testnet.0g.ai"
   deployer       = "0x9Ed57870379e28E32cb627bE365745dc184950dF"
   AccessRegistry = "0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e"
@@ -783,7 +783,7 @@ Get-Content $mf.FullName -Raw | ConvertFrom-Json |
 5. **Discover** → Prepare listing metadata for the **0G Model Service Marketplace**.
 
 ### On-Chain Integration (0G/EVM)
-- **Network**: chainId **16601**; RPC `https://evmrpc-testnet.0g.ai`.
+- **Network**: chainId **16602**; RPC `https://evmrpc-testnet.0g.ai`.
 - **Per-epoch anchors**: `scoresRoot`, `globalModelHash`, `globalModelCid`.
 - **Contracts**: `AccessRegistry` (gating) and `EpochManager` (windows, anchoring, publish).
 
