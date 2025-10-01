@@ -15,304 +15,75 @@ This is a **Federated Learning system** built on the 0G blockchain that allows m
 ### Phase 1: System Initialization
 
 #### Step 1: Environment Setup
-```bash
-# Load environment variables
-dotenv.config()
-
-# Configure blockchain connection
-RPC_ENDPOINT = "https://evmrpc-testnet.0g.ai"
-CHAIN_ID = 16602
-PRIVATE_KEY = "0x355e36f8e6017637a5428d5d3e8c7bae747deb44f858ae4de55d6fb176c6e2b5"
-
-# Initialize wallet and provider
-provider = new JsonRpcProvider(RPC_ENDPOINT, { chainId: 16602 })
-wallet = new Wallet(PRIVATE_KEY, provider)
-walletAddress = "0x9Ed57870379e28E32cb627bE365745dc184950dF"
-```
+The system begins by loading environment variables and configuring the blockchain connection. This includes setting up the RPC endpoint for the 0G Galileo testnet, configuring the chain ID, and initializing the wallet with the private key. The provider and wallet are then created to enable blockchain interactions.
 
 #### Step 2: Smart Contract Deployment
-```bash
-# Deploy AccessRegistry contract
-node scripts/deploy_access_raw.js
-# Output: AccessRegistry deployed at 0x29029882D92d91024dBA05A43739A397AC1d9557
-
-# Deploy EpochManager contract  
-node scripts/deploy_epoch_raw.js
-# Output: EpochManager deployed at 0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e
-```
+Two critical smart contracts are deployed to the 0G blockchain. The AccessRegistry contract manages participant permissions and access control, while the EpochManager contract handles the federated learning round lifecycle. Both contracts are deployed with unique addresses that are stored for future interactions.
 
 #### Step 3: System Health Verification
-```bash
-node scripts/health_check.js
-# Verifies:
-# - RPC connection to 0G Galileo testnet
-# - Contract addresses are accessible
-# - Wallet balance (5.0 0G tokens)
-# - All components healthy
-```
+A comprehensive health check is performed to verify that all system components are functioning correctly. This includes testing the RPC connection, confirming contract addresses are accessible, checking wallet balance, and ensuring all components report healthy status.
 
 ### Phase 2: Federated Learning Round Setup
 
 #### Step 4: Participant Access Control
-```bash
-# Grant access to a participant
-node scripts/grant_access_raw.js 0x9Ed57870379e28E32cb627bE365745dc184950dF
-
-# Process:
-# 1. Check if participant is already approved
-# 2. If not, call AccessRegistry.grantAccess()
-# 3. Set expiry (1 year from now)
-# 4. Use test dataset CID: "QmTestDataset123456789"
-# 5. Use test model hash: "0x1234567890abcdef..."
-# 6. Transaction confirmed on blockchain
-# 7. Verify access was granted
-```
+Before participants can join the federated learning process, they must be granted access through the AccessRegistry contract. This involves checking if the participant is already approved, and if not, calling the grantAccess function with appropriate parameters including dataset CID, model hash, and expiry time. The access grant is recorded on the blockchain.
 
 #### Step 5: Epoch Initialization
-```bash
-# Start a new training epoch
-epochManager.startEpoch(epochId=1, modelHash="0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54")
-
-# Process:
-# 1. Check if epoch already exists
-# 2. Set epoch model hash
-# 3. Emit EpochStarted event
-# 4. Transaction confirmed: 0x8f3a93f0a88ac12965a90daaf1cf17be8ad92110fb6dd0f67c079521ba9ce71d
-```
+A new training epoch is started by calling the startEpoch function on the EpochManager contract. This sets the initial model hash for the epoch and emits an EpochStarted event. The epoch ID and model hash are recorded on-chain to track the training round.
 
 ### Phase 3: Model Update Creation and Encryption
 
 #### Step 6: Local Model Training
-```javascript
-// Participant trains model locally on their private data
-const modelUpdate = {
-  round: 1,
-  weights: [0.1, 0.2, 0.3, 0.4, 0.5],
-  bias: 0.1,
-  timestamp: "2025-09-28T01:00:00Z",
-  provider: "0x9Ed57870379e28E32cb627bE365745dc184950dF"
-}
-
-// Save to file
-await writeFile('test_model_update.json', JSON.stringify(modelUpdate, null, 2))
-// File size: 198 bytes
-```
+Each participant trains their model locally on their private data. This process happens entirely on the participant's device, ensuring data privacy. The trained model update includes weights, bias, round information, timestamp, and provider identification. The model update is saved locally before encryption.
 
 #### Step 7: Model Hash Calculation
-```javascript
-// Calculate SHA-256 hash of the model update
-const modelUpdateJson = JSON.stringify(modelUpdate, null, 2)
-const modelHash = createHash('sha256').update(modelUpdateJson).digest('hex')
-// Result: 0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54
-```
+A SHA-256 hash is calculated for the model update to ensure integrity and provide a unique identifier. This hash will be used for verification throughout the process and will be stored on the blockchain for transparency and auditability.
 
 #### Step 8: TEE Encryption Simulation
-```javascript
-// Simulate TEE encryption (X25519 + XChaCha20-Poly1305)
-const encryptedUpdate = {
-  round: modelUpdate.round,
-  ciphertext: Buffer.from(modelUpdateJson).toString('base64'),
-  nonce: 'test-nonce-123',
-  timestamp: modelUpdate.timestamp,
-  provider: modelUpdate.provider
-}
-
-// Save encrypted version
-await writeFile('test_model_update.enc.json', JSON.stringify(encryptedUpdate, null, 2))
-// File size: 432 bytes (encrypted)
-```
+The model update is encrypted using TEE simulation with X25519 key exchange and XChaCha20-Poly1305 encryption. This creates an encrypted version of the model update that can only be decrypted by approved TEEs. The encryption includes a nonce for security and maintains the original metadata.
 
 #### Step 9: TEE Attestation Verification
-```bash
-# Verify TEE attestation
-node scripts/attestation_check.js --attestation attestation/samples/accept.dev.json --allowlist scripts/attestation_allowlist.json
-
-# Process:
-# 1. Load attestation data:
-#    {
-#      "provider": "0x9Ed57870379e28E32cb627bE365745dc184950dF",
-#      "epochId": 1,
-#      "enclave": {
-#        "tee": "SIM-TEE",
-#        "mrenclave": "SIM-TEE-DEMO-1",
-#        "mrsigner": "SIM-TEE-SIGNER",
-#        "productId": 1,
-#        "svn": 1
-#      },
-#      "nonce": "test-nonce-123",
-#      "issuedAt": "2025-09-28T01:00:00Z",
-#      "evidenceCid": "QmTestEvidence123",
-#      "signature": "0x1234567890abcdef"
-#    }
-# 2. Check against allowlist
-# 3. Verify TEE measurement
-# 4. Result: {"ok": true, "provider": "0x9Ed57870379e28E32cb627bE365745dc184950dF", "epochId": 1, "tee": "SIM-TEE"}
-```
+The TEE attestation is verified to ensure that only approved trusted execution environments can participate in the federated learning process. This involves checking the TEE measurement against an allowlist, verifying the enclave configuration, and confirming the attestation signature.
 
 ### Phase 4: Blockchain Submission
 
 #### Step 10: Access Control Verification
-```javascript
-// Check if participant is approved for this dataset and model
-const isApproved = await accessRegistry.isProviderApproved(
-  owner: "0x9Ed57870379e28E32cb627bE365745dc184950dF",
-  provider: "0x9Ed57870379e28E32cb627bE365745dc184950dF", 
-  datasetCid: "QmTestDataset123456789",
-  modelHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54"
-)
-// Result: true (approved)
-```
+Before submitting the model update, the system verifies that the participant is approved for the specific dataset and model combination. This is done by calling the isProviderApproved function on the AccessRegistry contract, which checks the participant's permissions against the current epoch requirements.
 
 #### Step 11: Model Update Submission
-```javascript
-// Submit encrypted model update to blockchain
-const updateCid = "QmTestUpdate123456789" // Would be real CID from 0G Storage
-const submitTx = await epochManager.submitUpdate(
-  epochId: 1,
-  updateCid: "QmTestUpdate123456789",
-  updateHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54"
-)
-
-// Process:
-# 1. Verify epoch exists
-# 2. Add update CID to epochUpdateCids[epochId]
-# 3. Add update hash to epochUpdateHashes[epochId] 
-# 4. Add submitter address to epochSubmitters[epochId]
-# 5. Emit UpdateSubmitted event
-# 6. Transaction confirmed: 0x094f3b4f624b66ce57ceea4ddab15226d1d7dc6e34c007fc8d961cd3f25ad4b4
-```
+The encrypted model update is submitted to the blockchain through the EpochManager contract. This involves providing the epoch ID, update CID (from 0G Storage), and update hash. The submission is recorded on-chain with the submitter's address, and an UpdateSubmitted event is emitted.
 
 ### Phase 5: Scoring and Aggregation
 
 #### Step 12: Scoring Process
-```javascript
-// TEE processes all submitted updates and calculates scores
-const scoresRoot = createHash('sha256').update('test-scores').digest('hex')
-// Result: 0xee018c598516e68882a1a2919daf1210b225e8a944faaa70b98f476601fc6ec6
-
-// Post scores root to blockchain
-const scoresTx = await epochManager.postScoresRoot(
-  epochId: 1,
-  scoresRoot: "0xee018c598516e68882a1a2919daf1210b225e8a944faaa70b98f476601fc6ec6"
-)
-
-// Process:
-# 1. Verify epoch exists
-# 2. Set epochs[epochId].scoresRoot
-# 3. Emit ScoresRootPosted event
-# 4. Transaction confirmed: 0x895c188beec1eb2f8c6c8fea7be608f6914d4bdb0eb81d3ea10cdcc607e2793f
-```
+The TEE processes all submitted updates and calculates scores for each participant's contribution. This scoring process evaluates the quality and relevance of each update. The scores are compiled into a Merkle tree, and the root hash is posted to the blockchain for transparency and verification.
 
 #### Step 13: Model Aggregation (FedAvg)
-```javascript
-// TEE performs Federated Averaging on approved updates
-// 1. Download all approved encrypted updates from 0G Storage
-// 2. Decrypt updates inside TEE
-// 3. Apply FedAvg algorithm:
-//    - Average weights: (w1 + w2 + ... + wn) / n
-//    - Average bias: (b1 + b2 + ... + bn) / n
-// 4. Create new global model
-// 5. Encrypt global model
-// 6. Upload to 0G Storage (get CID)
-// 7. Calculate hash of global model
-```
+The TEE performs Federated Averaging on all approved updates. This involves downloading the encrypted updates from 0G Storage, decrypting them inside the TEE, applying the FedAvg algorithm to average the weights and bias, creating a new global model, encrypting it, and uploading it back to storage.
 
 ### Phase 6: Model Publication
 
 #### Step 14: Global Model Publication
-```javascript
-// Publish the aggregated global model
-const globalModelCid = "QmGlobalModel123456789" // Real CID from 0G Storage
-const globalModelHash = "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54"
-
-const publishTx = await epochManager.publishModel(
-  epochId: 1,
-  globalModelCid: "QmGlobalModel123456789",
-  globalModelHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54"
-)
-
-// Process:
-# 1. Check if model already published
-# 2. Set epochs[epochId].globalModelCid
-# 3. Set epochs[epochId].globalModelHash
-# 4. Set epochs[epochId].published = true
-# 5. Emit ModelPublished event
-# 6. Transaction confirmed: 0x315e3660276b9e475f7ebc7e0a9082028f07076d72311355d34a0835f0eeea85
-```
+The aggregated global model is published to the blockchain through the EpochManager contract. This involves providing the epoch ID, global model CID, and global model hash. The publication marks the epoch as complete and makes the global model available for use.
 
 #### Step 15: Epoch Verification
-```javascript
-// Verify the epoch was completed successfully
-const epochData = await epochManager.epochs(1)
-
-// Result:
-# {
-#   modelHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54",
-#   scoresRoot: "0xee018c598516e68882a1a2919daf1210b225e8a944faaa70b98f476601fc6ec6",
-#   globalModelCid: "QmGlobalModel123456789",
-#   globalModelHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54",
-#   published: true
-# }
-```
+The completed epoch is verified by checking the epoch data on the blockchain. This confirms that the model hash, scores root, global model CID, and global model hash are all properly recorded, and that the epoch is marked as published.
 
 ### Phase 7: Marketplace Integration
 
 #### Step 16: Service Registration
-```javascript
-// Register the trained model in the 0G Service Marketplace
-const manifest = {
-  epochId: 1,
-  globalModelCid: "QmGlobalModel123456789",
-  globalModelHash: "0xc4eb18694b6f38977b67aa82d36a9e97ca4fc72fe279a3730901f461180b1f54",
-  attestationHash: "0x1234567890abcdef",
-  timestamp: "2025-09-28T01:00:00Z"
-}
-
-// Process:
-# 1. Create marketplace manifest
-# 2. Upload manifest to 0G Storage
-# 3. Register service in marketplace
-# 4. Set up inference endpoints
-# 5. Configure pay-per-inference billing
-```
+The trained global model is registered in the 0G Service Marketplace. This involves creating a marketplace manifest with the model information, uploading it to 0G Storage, registering the service in the marketplace, setting up inference endpoints, and configuring pay-per-inference billing.
 
 #### Step 17: Inference Processing
-```javascript
-// Process inference requests using the trained model
-// 1. Receive inference request from client
-// 2. Download global model from 0G Storage
-// 3. Decrypt model inside TEE
-// 4. Run inference on encrypted input
-// 5. Encrypt inference result
-// 6. Upload result to 0G Storage
-// 7. Return result CID to client
-// 8. Process payment
-```
+Inference requests are processed using the trained global model. This involves receiving requests from clients, downloading the global model from 0G Storage, decrypting it inside the TEE, running inference on encrypted input, encrypting the result, uploading it to storage, and returning the result CID to the client.
 
 ### Phase 8: Continuous Learning
 
 #### Step 18: Next Round Preparation
-```javascript
-// Prepare for next federated learning round
-// 1. Update global model with new round
-// 2. Notify all participants of new round
-// 3. Start new epoch with updated model
-// 4. Repeat process from Step 5
-```
+The system prepares for the next federated learning round by updating the global model, notifying all participants of the new round, starting a new epoch with the updated model, and repeating the process from the epoch initialization step.
 
 #### Step 19: Monitoring and Maintenance
-```bash
-# Continuous system monitoring
-node scripts/health_check.js
-
-# Monitor:
-# - Blockchain connectivity
-# - Contract health
-# - Storage availability
-# - TEE attestation status
-# - Participant activity
-# - Model performance
-```
+Continuous system monitoring ensures that all components remain healthy and functional. This includes monitoring blockchain connectivity, contract health, storage availability, TEE attestation status, participant activity, and model performance.
 
 ### Complete Data Flow Summary
 
