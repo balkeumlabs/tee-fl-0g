@@ -1,0 +1,5 @@
+This is a test file for 0G Storage integration.
+Timestamp: 2025-09-28T01:45:00Z
+Project: TEE-FL-0G Federated Learning
+Purpose: Testing 0G Storage upload functionality
+Content: Hello from 0G Galileo testnet!

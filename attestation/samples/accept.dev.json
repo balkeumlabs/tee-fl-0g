@@ -1,1 +1,15 @@
-{ "signer": "SIM-TEE", "measurement": "SIM-TEE-DEMO-1", "isvsvn": 0, "debug": false }
+{
+  "provider": "0x9Ed57870379e28E32cb627bE365745dc184950dF",
+  "epochId": 1,
+  "enclave": {
+    "tee": "SIM-TEE",
+    "mrenclave": "SIM-TEE-DEMO-1",
+    "mrsigner": "SIM-TEE-SIGNER",
+    "productId": 1,
+    "svn": 1
+  },
+  "nonce": "test-nonce-123",
+  "issuedAt": "2025-09-28T01:00:00Z",
+  "evidenceCid": "QmTestEvidence123",
+  "signature": "0x1234567890abcdef"
+}

@@ -1,1 +1,11 @@
-{"allow":["SIM-TEE-DEMO-1"]}
+{
+  "measurementAllowlist": [
+    {
+      "tee": "SIM-TEE",
+      "mrenclave": "SIM-TEE-DEMO-1",
+      "mrsigner": "SIM-TEE-SIGNER",
+      "productId": 1,
+      "minSvn": 1
+    }
+  ]
+}

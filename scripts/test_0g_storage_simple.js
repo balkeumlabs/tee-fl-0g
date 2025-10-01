@@ -1,6 +1,9 @@
 // scripts/test_0g_storage_simple.js
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const OG_STORAGE_MODE = process.env.OG_STORAGE_MODE || 'manual';
 const OG_STORAGE_RPC = process.env.OG_STORAGE_RPC || '';
@@ -36,7 +39,8 @@ async function test0GStorage() {
         // Test provider connection
         const provider = new JsonRpcProvider(OG_STORAGE_RPC, {
           name: "0g-galileo",
-          chainId: 16602
+          chainId: 16602,
+          ensAddress: null // Disable ENS
         });
         
         const blockNumber = await provider.getBlockNumber();

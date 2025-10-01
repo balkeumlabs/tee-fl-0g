@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-10-01T08:40:59.892Z",
+  "timestamp": "2025-10-01T08:51:34.387Z",
   "rpc": {
     "status": "healthy",
-    "blockNumber": 729040,
+    "blockNumber": 729908,
     "chainId": "16602",
-    "responseTime": 1759308061228
+    "responseTime": 1759308695746
   },
   "contracts": {
     "status": "healthy",

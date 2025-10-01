@@ -1,5 +1,5 @@
 // scripts/attestation_check.js
-const fs = require("fs");
+import fs from 'fs';
 function arg(k){ const i=process.argv.indexOf(k); return i>0? process.argv[i+1] : null; }
 const attPath = arg("--attestation"); const allowPath = arg("--allowlist");
 if(!attPath || !allowPath){ console.error("Usage: --attestation <file> --allowlist <file>"); process.exit(2); }
