@@ -370,35 +370,6 @@ Data Flow Summary:
 
 **Result:** ❌ **PARTIAL SUCCESS** - Framework ready, but uploads failing due to SDK issues
 
-## Data Flow - How It Works
-
-### Step 1: Setup Phase
-```
-1. Deploy smart contracts on 0G blockchain
-2. Grant access to participants (data owners)
-3. Set up storage for encrypted model files
-4. Configure TEE environment for secure processing
-```
-
-### Step 2: Training Round
-```
-1. Participants train models locally on their private data
-2. They encrypt their model updates using X25519 + XChaCha20-Poly1305
-3. Upload encrypted updates to 0G Storage (get CIDs)
-4. Submit CIDs and hashes to smart contracts
-5. TEE processes encrypted updates securely
-6. System aggregates updates using FedAvg algorithm
-7. New global model is created and encrypted
-8. Model hash is stored on blockchain for verification
-```
-
-### Step 3: Verification and Rewards
-```
-1. System verifies model integrity using SHA-256 hashes
-2. Participants get rewards for their contributions
-3. New training round begins with updated global model
-4. Process repeats for continuous learning
-```
 
 ## What We Know Works
 
