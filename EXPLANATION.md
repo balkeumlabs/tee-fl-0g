@@ -15,75 +15,75 @@ This is a **Federated Learning system** built on the 0G blockchain that allows m
 ### Phase 1: System Initialization
 
 #### Step 1: Environment Setup
-The system begins by loading environment variables and configuring the blockchain connection. This includes setting up the RPC endpoint for the 0G Galileo testnet, configuring the chain ID, and initializing the wallet with the private key. The provider and wallet are then created to enable blockchain interactions.
+When you start the system, it first loads your configuration settings from a file called `.env`. Think of this like your browser reading its settings when it starts up. The system reads your private key (like a password), the 0G network address (like a website URL), and other important settings. Then it creates a connection to the 0G blockchain network, similar to how your browser connects to the internet.
 
 #### Step 2: Smart Contract Deployment
-Two critical smart contracts are deployed to the 0G blockchain. The AccessRegistry contract manages participant permissions and access control, while the EpochManager contract handles the federated learning round lifecycle. Both contracts are deployed with unique addresses that are stored for future interactions.
+Now the system needs to deploy two smart contracts to the blockchain. Think of smart contracts like apps that run on the blockchain. The first contract (AccessRegistry) is like a security guard that controls who can enter a building. The second contract (EpochManager) is like a manager that organizes work shifts. The system sends these contracts to the blockchain, and the blockchain assigns them unique addresses (like street addresses) so they can be found later.
 
 #### Step 3: System Health Verification
-A comprehensive health check is performed to verify that all system components are functioning correctly. This includes testing the RPC connection, confirming contract addresses are accessible, checking wallet balance, and ensuring all components report healthy status.
+Before starting work, the system checks if everything is working properly. It's like when you turn on your computer and it runs a quick health check. The system tests: "Can I connect to the blockchain? Are my contracts working? Do I have enough money to pay for transactions?" If everything passes, the system is ready to begin.
 
 ### Phase 2: Federated Learning Round Setup
 
 #### Step 4: Participant Access Control
-Before participants can join the federated learning process, they must be granted access through the AccessRegistry contract. This involves checking if the participant is already approved, and if not, calling the grantAccess function with appropriate parameters including dataset CID, model hash, and expiry time. The access grant is recorded on the blockchain.
+Before anyone can participate in the federated learning, they need permission. It's like getting a membership card for a gym. The system checks: "Is this person already approved?" If not, it creates a permission record on the blockchain that says: "This person is allowed to participate in this specific training round, for this specific dataset, until this date." This permission is stored permanently on the blockchain.
 
 #### Step 5: Epoch Initialization
-A new training epoch is started by calling the startEpoch function on the EpochManager contract. This sets the initial model hash for the epoch and emits an EpochStarted event. The epoch ID and model hash are recorded on-chain to track the training round.
+Now the system starts a new training round (called an "epoch"). Think of it like starting a new work shift. The system creates a record on the blockchain that says: "Training round #1 is now active, starting with this initial model." This creates a timeline that everyone can see and follow.
 
 ### Phase 3: Model Update Creation and Encryption
 
 #### Step 6: Local Model Training
-Each participant trains their model locally on their private data. This process happens entirely on the participant's device, ensuring data privacy. The trained model update includes weights, bias, round information, timestamp, and provider identification. The model update is saved locally before encryption.
+Each participant trains their AI model on their own computer using their private data. This is like studying for an exam at home with your own books. The participant's data never leaves their computer. They create a model update (like study notes) that contains what they learned. This update includes the model's weights (like the answers), bias (like the confidence level), and metadata (like when it was created and who created it).
 
 #### Step 7: Model Hash Calculation
-A SHA-256 hash is calculated for the model update to ensure integrity and provide a unique identifier. This hash will be used for verification throughout the process and will be stored on the blockchain for transparency and auditability.
+The system creates a unique fingerprint (hash) of the model update. It's like creating a unique ID number for a document. This hash is a long string of characters that uniquely identifies this specific model update. If anyone tries to change the model update, the hash will change too, so we can detect tampering.
 
 #### Step 8: TEE Encryption Simulation
-The model update is encrypted using TEE simulation with X25519 key exchange and XChaCha20-Poly1305 encryption. This creates an encrypted version of the model update that can only be decrypted by approved TEEs. The encryption includes a nonce for security and maintains the original metadata.
+The model update is encrypted using advanced cryptography. Think of it like putting the model update in a secure vault that only special keys can open. The encryption uses X25519 (like a special lock) and XChaCha20-Poly1305 (like a special sealing method). Only approved TEEs (Trusted Execution Environments) have the keys to decrypt this data.
 
 #### Step 9: TEE Attestation Verification
-The TEE attestation is verified to ensure that only approved trusted execution environments can participate in the federated learning process. This involves checking the TEE measurement against an allowlist, verifying the enclave configuration, and confirming the attestation signature.
+The system verifies that the TEE is legitimate and approved. It's like checking someone's ID card before letting them into a secure facility. The system checks: "Is this TEE on our approved list? Does it have the right security features? Is it running the correct software?" Only verified TEEs can participate in the process.
 
 ### Phase 4: Blockchain Submission
 
 #### Step 10: Access Control Verification
-Before submitting the model update, the system verifies that the participant is approved for the specific dataset and model combination. This is done by calling the isProviderApproved function on the AccessRegistry contract, which checks the participant's permissions against the current epoch requirements.
+Before submitting the encrypted model update, the system double-checks: "Is this participant still approved for this training round?" It's like a bouncer checking your ID again before letting you into a club. The system queries the AccessRegistry contract to confirm the participant's permissions are still valid.
 
 #### Step 11: Model Update Submission
-The encrypted model update is submitted to the blockchain through the EpochManager contract. This involves providing the epoch ID, update CID (from 0G Storage), and update hash. The submission is recorded on-chain with the submitter's address, and an UpdateSubmitted event is emitted.
+The encrypted model update is submitted to the blockchain. It's like dropping a sealed envelope into a secure mailbox. The system sends the encrypted update to the EpochManager contract, which records: "Participant X submitted an update for epoch Y at time Z." This creates a permanent, tamper-proof record on the blockchain.
 
 ### Phase 5: Scoring and Aggregation
 
 #### Step 12: Scoring Process
-The TEE processes all submitted updates and calculates scores for each participant's contribution. This scoring process evaluates the quality and relevance of each update. The scores are compiled into a Merkle tree, and the root hash is posted to the blockchain for transparency and verification.
+The TEE evaluates all submitted model updates and gives each one a score. It's like a teacher grading homework assignments. The TEE looks at each update and determines: "How good is this contribution? How relevant is it? How much should it influence the final result?" These scores are compiled into a Merkle tree (like an organized grade book) and the root hash is posted to the blockchain.
 
 #### Step 13: Model Aggregation (FedAvg)
-The TEE performs Federated Averaging on all approved updates. This involves downloading the encrypted updates from 0G Storage, decrypting them inside the TEE, applying the FedAvg algorithm to average the weights and bias, creating a new global model, encrypting it, and uploading it back to storage.
+The TEE combines all the approved model updates into a single, improved model. It's like a teacher combining the best answers from all students' homework into one comprehensive answer key. The TEE downloads all encrypted updates, decrypts them, averages the weights and bias values, creates a new global model, encrypts it, and uploads it to storage.
 
 ### Phase 6: Model Publication
 
 #### Step 14: Global Model Publication
-The aggregated global model is published to the blockchain through the EpochManager contract. This involves providing the epoch ID, global model CID, and global model hash. The publication marks the epoch as complete and makes the global model available for use.
+The new global model is published to the blockchain. It's like announcing the final exam results to everyone. The system records: "Epoch X is complete. The new global model is available at location Y with hash Z." This makes the model available for everyone to use and verify.
 
 #### Step 15: Epoch Verification
-The completed epoch is verified by checking the epoch data on the blockchain. This confirms that the model hash, scores root, global model CID, and global model hash are all properly recorded, and that the epoch is marked as published.
+The system verifies that the epoch was completed successfully. It's like checking that all the paperwork is in order after finishing a project. The system confirms: "Yes, the model hash is correct, the scores are recorded, the global model is published, and everything is properly documented on the blockchain."
 
 ### Phase 7: Marketplace Integration
 
 #### Step 16: Service Registration
-The trained global model is registered in the 0G Service Marketplace. This involves creating a marketplace manifest with the model information, uploading it to 0G Storage, registering the service in the marketplace, setting up inference endpoints, and configuring pay-per-inference billing.
+The trained global model is registered in the 0G Service Marketplace. It's like opening a new business and registering it with the city. The system creates a marketplace listing that says: "This AI model is available for inference requests. Here's how to use it, how much it costs, and what it can do." The model becomes available for public use.
 
 #### Step 17: Inference Processing
-Inference requests are processed using the trained global model. This involves receiving requests from clients, downloading the global model from 0G Storage, decrypting it inside the TEE, running inference on encrypted input, encrypting the result, uploading it to storage, and returning the result CID to the client.
+When someone wants to use the model, they send a request. It's like ordering food at a restaurant. The system receives the request, downloads the global model, decrypts it inside the TEE, processes the input data, encrypts the result, and returns it to the user. The user pays for this service, and the payment is processed automatically.
 
 ### Phase 8: Continuous Learning
 
 #### Step 18: Next Round Preparation
-The system prepares for the next federated learning round by updating the global model, notifying all participants of the new round, starting a new epoch with the updated model, and repeating the process from the epoch initialization step.
+The system prepares for the next training round. It's like planning the next work shift. The system updates the global model, notifies all participants that a new round is starting, creates a new epoch, and begins the process again. This allows the model to continuously improve with new data.
 
 #### Step 19: Monitoring and Maintenance
-Continuous system monitoring ensures that all components remain healthy and functional. This includes monitoring blockchain connectivity, contract health, storage availability, TEE attestation status, participant activity, and model performance.
+The system continuously monitors itself to ensure everything is working properly. It's like having a security guard who constantly checks that all systems are functioning. The system monitors: "Is the blockchain connection stable? Are the contracts working? Is storage available? Are participants active? Is the model performing well?" If any issues are detected, the system can alert administrators or take corrective action.
 
 ### Complete Data Flow Summary
 
