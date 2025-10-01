@@ -6,8 +6,8 @@ import fs from 'fs';
 
 const CONFIG = {
   rpc: process.env.CHAIN_RPC || 'https://evmrpc-testnet.0g.ai',
-  accessRegistry: process.env.ACCESS_REGISTRY_ADDR || '0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e',
-  epochManager: process.env.EPOCH_MANAGER_ADDR || '0x...',
+  accessRegistry: process.env.ACCESS_REGISTRY_ADDR || '0x29029882D92d91024dBA05A43739A397AC1d9557',
+  epochManager: process.env.EPOCH_MANAGER_ADDR || '0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e',
   timeout: 10000
 };
 

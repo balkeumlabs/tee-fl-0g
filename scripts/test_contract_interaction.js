@@ -7,8 +7,8 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY || '0x123456789012345678901234567890
 
 // AccessRegistry ABI (minimal interface)
 const ACCESS_REGISTRY_ABI = [
-  "function isProviderApproved(address provider) external view returns (bool)",
-  "function getProviderInfo(address provider) external view returns (address owner, uint256 expiry, bool approved)"
+  "function isProviderApproved(address owner, address provider, string calldata datasetCid, bytes32 modelHash) external view returns (bool)",
+  "function grants(bytes32 key) external view returns (address owner, address provider, string memory datasetCid, bytes32 modelHash, uint64 expiry, bool revoked)"
 ];
 
 async function testContractInteraction() {
@@ -16,7 +16,7 @@ async function testContractInteraction() {
   
   try {
     // Load deployment addresses
-    const deployInfo = JSON.parse(await readFile('deploy.out.json', 'utf8'));
+    const deployInfo = JSON.parse(await readFile('data/deploy.out.json', 'utf8'));
     const accessRegistryAddress = deployInfo.addresses.AccessRegistry;
     
     console.log(`AccessRegistry: ${accessRegistryAddress}`);
@@ -40,19 +40,19 @@ async function testContractInteraction() {
     // Create contract instance
     const contract = new ethers.Contract(accessRegistryAddress, ACCESS_REGISTRY_ABI, signer);
     
-    // Test contract call
+    // Test contract call with same parameters as grant
     const testProvider = "0x9Ed57870379e28E32cb627bE365745dc184950dF";
+    const datasetCid = "QmTestDataset123456789";
+    const modelHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+    const owner = "0x9Ed57870379e28E32cb627bE365745dc184950dF"; // Use the owner from the grant
+    
     console.log(`Testing contract call for provider: ${testProvider}`);
+    console.log(`Owner: ${owner}`);
+    console.log(`Dataset CID: ${datasetCid}`);
+    console.log(`Model Hash: ${modelHash}`);
     
-    const isApproved = await contract.isProviderApproved(testProvider);
+    const isApproved = await contract.isProviderApproved(owner, testProvider, datasetCid, modelHash);
     console.log(`✅ Contract call successful! Provider approved: ${isApproved}`);
-    
-    // Get detailed info
-    const info = await contract.getProviderInfo(testProvider);
-    console.log(`Provider info:`);
-    console.log(`  Owner: ${info[0]}`);
-    console.log(`  Expiry: ${info[1]} (${new Date(Number(info[1]) * 1000).toISOString()})`);
-    console.log(`  Approved: ${info[2]}`);
     
     return true;
   } catch (error) {

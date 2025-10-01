@@ -1,15 +1,18 @@
 // scripts/grant_access_raw.js
 import { readFile } from 'node:fs/promises';
 import { JsonRpcProvider, Wallet, ethers } from 'ethers';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://evmrpc-testnet.0g.ai';
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
 
 // AccessRegistry ABI (minimal interface)
 const ACCESS_REGISTRY_ABI = [
-  "function grantAccess(address provider, uint256 expiry) external",
-  "function isProviderApproved(address provider) external view returns (bool)",
-  "function getProviderInfo(address provider) external view returns (address owner, uint256 expiry, bool approved)"
+  "function grantAccess(address provider, string calldata datasetCid, bytes32 modelHash, uint64 expiry) external returns (bytes32 key)",
+  "function isProviderApproved(address owner, address provider, string calldata datasetCid, bytes32 modelHash) external view returns (bool)",
+  "function grants(bytes32 key) external view returns (address owner, address provider, string memory datasetCid, bytes32 modelHash, uint64 expiry, bool revoked)"
 ];
 
 async function main() {
@@ -29,7 +32,7 @@ async function main() {
 
   try {
     // Load deployment addresses
-    const deployInfo = JSON.parse(await readFile('deploy.out.json', 'utf8'));
+    const deployInfo = JSON.parse(await readFile('data/deploy.out.json', 'utf8'));
     const accessRegistryAddress = deployInfo.addresses.AccessRegistry;
 
     if (!accessRegistryAddress) {
@@ -56,8 +59,11 @@ async function main() {
 
     console.log(`Expiry: ${expiryTime} (${new Date(Number(expiryTime) * 1000).toISOString()})`);
 
-    // Grant access
-    const tx = await contract.grantAccess(provider, expiryTime);
+    // Grant access with test dataset and model
+    const datasetCid = "QmTestDataset123456789";
+    const modelHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+    
+    const tx = await contract.grantAccess(provider, datasetCid, modelHash, Number(expiryTime));
     console.log(`Transaction submitted: ${tx.hash}`);
 
     const receipt = await tx.wait();
@@ -65,7 +71,7 @@ async function main() {
     console.log(`Gas used: ${receipt.gasUsed}`);
 
     // Verify the access was granted
-    const isApproved = await contract.isProviderApproved(provider);
+    const isApproved = await contract.isProviderApproved(await signer.getAddress(), provider, datasetCid, modelHash);
     console.log(`Provider ${provider} approved: ${isApproved}`);
 
   } catch (error) {

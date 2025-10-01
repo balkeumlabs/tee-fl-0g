@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-10-01T08:40:59.892Z",
+  "rpc": {
+    "status": "healthy",
+    "blockNumber": 729040,
+    "chainId": "16602",
+    "responseTime": 1759308061228
+  },
+  "contracts": {
+    "status": "healthy",
+    "contract": "0x29029882D92d91024dBA05A43739A397AC1d9557",
+    "hasCode": true
+  },
+  "storage": {
+    "status": "manual_mode",
+    "message": "Storage in manual mode"
+  }
+}

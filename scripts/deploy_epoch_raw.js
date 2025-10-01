@@ -1,7 +1,9 @@
 // scripts/deploy_epoch_raw.js
-require('dotenv').config();
-const { ethers } = require('ethers');
-const fs = require('fs');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+import fs from 'fs';
+
+dotenv.config();
 
 (async () => {
   const rpc = process.env.RPC_ENDPOINT, pk = process.env.PRIVATE_KEY;
