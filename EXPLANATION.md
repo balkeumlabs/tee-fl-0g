@@ -12,6 +12,8 @@ This is a **Federated Learning system** built on the 0G blockchain that allows m
 
 ## Complete Step-by-Step Process
 
+1. Environment setup → 2. Contract deployment → 3. Health checks → 4. Access control → 5. Epoch initialization → 6. Local training → 7. Hash calculation → 8. TEE encryption → 9. Attestation → 10. Access verification → 11. Submission → 12. Scoring → 13. Aggregation → 14. Publication → 15. Verification → 16. Service registration → 17. Inference → 18. Next round → 19. Monitoring
+
 ### Phase 1: System Initialization
 
 #### Step 1: Environment Setup
