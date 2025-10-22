@@ -84,8 +84,6 @@ u*.json
 *update*.json
 *.enc.json
 *.dec.json
-Progress.md
-Progress-Backup.md
 # Local artifacts / backups (dev-only)
 attestation.json
 market_manifest.json
