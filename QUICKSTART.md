@@ -2,7 +2,24 @@
 
 **Purpose**: Get developers up and running quickly  
 **Target**: Developers integrating with FLAI Protocol  
-**Status**: Production-ready
+**Status**: Production-ready + Mainnet-ready
+
+## Network Support
+
+### 0G Galileo Testnet (Current)
+- **Network Name**: 0G Galileo
+- **Chain ID**: 16602
+- **RPC URL**: `https://evmrpc-testnet.0g.ai`
+- **Block Explorer**: `https://galileo.0g.ai`
+- **Status**: ✅ Fully operational
+
+### 0G Mainnet (Ready for Deployment)
+- **Network Name**: 0G Mainnet
+- **Chain ID**: 16661
+- **RPC URL**: `https://evmrpc.0g.ai`
+- **Block Explorer**: `https://chainscan.0g.ai`
+- **Storage Indexer**: `https://indexer-storage-turbo.0g.ai`
+- **Status**: ✅ Ready for deployment (waiting for tokens)
 
 ## Quick Setup
 
@@ -131,23 +148,53 @@ node scripts/is_approved_raw.js --provider 0x...
 
 ## Production Deployment
 
-### Pre-deployment Checklist
-- [ ] OG tokens available
-- [ ] RPC endpoint responding
-- [ ] Contracts deployed
+### Testnet Deployment (Galileo)
+```bash
+# Pre-deployment checklist
 - [ ] Environment configured
+- [ ] Private key set
+- [ ] RPC endpoint verified
+- [ ] Contracts deployed
+- [ ] Access granted
 - [ ] Health checks passing
 
-### Deployment Commands
+# Deploy to Galileo testnet
+node scripts/deploy_access_raw.js
+node scripts/deploy_epoch_raw.js
+```
+
+### Mainnet Deployment (0G Mainnet)
 ```bash
-# Switch to production mode
-export OG_STORAGE_MODE=0g-storage
+# Pre-deployment checklist
+- [ ] Mainnet environment configured (.env.mainnet)
+- [ ] Mainnet private key set
+- [ ] 0G tokens available in wallet
+- [ ] Mainnet RPC endpoint verified
 
-# Deploy contracts
-npx hardhat deploy --network galileo
+# Check mainnet readiness
+node scripts/check_mainnet_readiness.cjs
 
-# Start monitoring
-node scripts/health_check.js
+# Deploy to mainnet
+node scripts/deploy_mainnet.js
+```
+
+### Environment Configuration
+
+**Testnet (.env):**
+```bash
+PRIVATE_KEY=0x[your-testnet-private-key]
+RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
+CHAIN_ID=16602
+```
+
+**Mainnet (.env.mainnet):**
+```bash
+PRIVATE_KEY=0x[your-mainnet-private-key]
+RPC_ENDPOINT=https://evmrpc.0g.ai
+CHAIN_ID=16661
+OG_STORAGE_FLOW_CONTRACT=0x62D4144DB0F0a6fBBaeb6296c785C71B3D57C526
+OG_STORAGE_MINE_CONTRACT=0xCd01c5Cd953971CE4C2c9bFb95610236a7F414fe
+OG_STORAGE_REWARD_CONTRACT=0x457aC76B58ffcDc118AABD6DbC63ff9072880870
 ```
 
 ## Troubleshooting

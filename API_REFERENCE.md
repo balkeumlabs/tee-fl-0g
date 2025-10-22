@@ -2,7 +2,7 @@
 
 **Purpose**: Complete API documentation for all scripts and functions  
 **Target**: Developers integrating with FLAI Protocol  
-**Status**: Production-ready
+**Status**: Production-ready + Mainnet-ready
 
 ## Scripts Overview
 
@@ -28,32 +28,84 @@
 | `marketplace_inference_processor.js` | Process inference requests | `--request-id` | Inference result |
 | `marketplace_client.js` | Client inference requests | `--service-id` | Inference response |
 
-### Testing & Validation
+### Mainnet Deployment
 | Script | Purpose | Input | Output |
 |--------|---------|-------|--------|
-| `test_rpc_connection.js` | Test RPC connectivity | None | Connection status |
-| `test_corrected_contract.js` | Test contract interactions | None | Transaction results |
-| `test_storage_simple.cjs` | Test storage integration | None | Storage status |
-| `health_check.js` | System health monitoring | None | Health report |
+| `deploy_mainnet.js` | Deploy contracts to mainnet | None | Contract addresses |
+| `check_mainnet_balance.cjs` | Check mainnet wallet balance | None | Balance info |
+| `check_mainnet_readiness.cjs` | Check mainnet deployment readiness | None | Readiness status |
+| `test_mainnet_connection.cjs` | Test mainnet RPC connection | None | Connection status |
 
 ## Environment Variables
 
-### Required Variables
+### Testnet Configuration (.env)
 ```bash
 # Blockchain Configuration
-CHAIN_RPC=https://evmrpc-testnet.0g.ai
-CHAIN_ID=5167003
-ACCESS_REGISTRY_ADDR=0xE3bffF639B4522Fa3D1E72973f9BEc040504c21e
-EPOCH_MANAGER_ADDR=0x...
+PRIVATE_KEY=0x[your-testnet-private-key]
+RPC_ENDPOINT=https://evmrpc-testnet.0g.ai
+CHAIN_ID=16602
 
 # Storage Configuration
 OG_STORAGE_MODE=manual  # or '0g-storage', 'ipfs-api'
-OG_STORAGE_RPC=https://evmrpc-testnet.0g.ai
-OG_STORAGE_PRIVATE_KEY=0x...
+OG_STORAGE_API_BASE=https://ipfs.infura.io:5001
+OG_STORAGE_API_TOKEN=Bearer YOUR_TOKEN
+OG_GATEWAY_BASE=https://ipfs.io/ipfs/
 
-# Security Configuration
-ATTESTATION_ENFORCED=true
-ATT_ALLOWLIST_PATH=./attestation_allowlist.json
+# Encryption
+FL_ENC_MODE=dev
+FL_TEE_PUBKEY_B64=BASE64_X25519_PUBKEY_HERE
+FL_TEE_PRIVKEY_B64=
+FL_CLIENT_PRIVKEY_B64=
+FL_ENC_DELETE_PLAINTEXT=1
+
+# Attestation
+TEE_ATTEST_MEAS_ALLOWLIST=
+TEE_ATTEST_ENCLAVE_ID=
+
+# Safety
+DRY_RUN=0
+LOCAL_UPLOAD=0
+```
+
+### Mainnet Configuration (.env.mainnet)
+```bash
+# Blockchain Configuration
+PRIVATE_KEY=0x[your-mainnet-private-key]
+RPC_ENDPOINT=https://evmrpc.0g.ai
+CHAIN_ID=16661
+
+# 0G Storage Contract Addresses (Mainnet)
+OG_STORAGE_FLOW_CONTRACT=0x62D4144DB0F0a6fBBaeb6296c785C71B3D57C526
+OG_STORAGE_MINE_CONTRACT=0xCd01c5Cd953971CE4C2c9bFb95610236a7F414fe
+OG_STORAGE_REWARD_CONTRACT=0x457aC76B58ffcDc118AABD6DbC63ff9072880870
+
+# Storage Configuration
+OG_STORAGE_MODE=manual
+OG_STORAGE_RPC=https://evmrpc.0g.ai
+OG_STORAGE_API_BASE=
+OG_STORAGE_API_TOKEN=
+OG_GATEWAY_BASE=https://ipfs.io/ipfs/
+
+# Encryption
+FL_ENC_MODE=dev
+FL_TEE_PUBKEY_B64=BASE64_X25519_PUBKEY_HERE
+FL_TEE_PRIVKEY_B64=
+FL_CLIENT_PRIVKEY_B64=
+FL_ENC_DELETE_PLAINTEXT=1
+
+# Attestation
+TEE_ATTEST_MEAS_ALLOWLIST=
+TEE_ATTEST_ENCLAVE_ID=
+
+# Safety
+DRY_RUN=0
+LOCAL_UPLOAD=0
+
+# Marketplace Integration
+OG_MARKETPLACE_RPC=https://evmrpc.0g.ai
+OG_MARKETPLACE_PRIVATE_KEY=0x[your-mainnet-private-key]
+OG_MARKETPLACE_CONTRACT_ADDRESS=0xMARKETPLACE_CONTRACT_ADDRESS
+OG_MARKETPLACE_SERVICE_ID=1
 ```
 
 ### Optional Variables
