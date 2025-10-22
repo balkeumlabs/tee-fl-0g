@@ -9,7 +9,7 @@
 
 # TEE-FL-0G — Federated Learning on 0G (Galileo) with access-gated updates, on-chain anchoring, and FedAvg
 
-<sub>Last update: 2025-09-28 01:31:16 UTC</sub>
+<sub>Last update: 2025-10-22 23:59:00 UTC</sub>
 
 **Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Roadmap](#roadmap-and-milestones)
 
@@ -17,28 +17,38 @@
 
 ## Production Status
 
-**Current Status**: Production-Ready
+**Current Status**: Production-Ready + Mainnet-Ready
 
 ### What's Complete:
 - **Smart Contracts**: Deployed and functional on 0G Galileo testnet
 - **RPC Integration**: Working via 0G endpoint (`https://evmrpc-testnet.0g.ai`)
+- **Mainnet Preparation**: Ready for 0G mainnet deployment
 - **Marketplace Integration**: Service registration, inference processing, client integration ready
 - **CI/CD Pipeline**: All workflows functional and tested
 - **Security & Attestation**: Feature-flagged middleware implemented
 - **Monitoring & Alerting**: Health checks and alerting system ready
 - **Test Files**: Ready for upload
 
-### Deployment Requirements:
-- **OG Tokens**: Required for transaction fees
-- **Storage Configuration**: Configure storage mode in environment
+### Mainnet Deployment Status:
+- **✅ Mainnet Connection**: Tested and working (`https://evmrpc.0g.ai`, Chain ID: 16661)
+- **✅ Deployment Scripts**: Ready for mainnet deployment
+- **✅ Configuration**: Mainnet environment template created
+- **⏳ Waiting for**: 0G tokens from 0G team for deployment
 
 ### Production Deployment:
-The system can be deployed with:
+**Testnet (Current):**
 ```bash
-# Get OG tokens from 0G faucet
-# Test storage uploads
-node scripts/test_real_0g_upload.js --file test_upload_small.txt
-# Deploy to production
+# Deploy to Galileo testnet
+node scripts/deploy_access_raw.js
+node scripts/deploy_epoch_raw.js
+```
+
+**Mainnet (Ready):**
+```bash
+# Check mainnet readiness
+node scripts/check_mainnet_readiness.cjs
+# Deploy to mainnet
+node scripts/deploy_mainnet.js
 ```
 
 ---
