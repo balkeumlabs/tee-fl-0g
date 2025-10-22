@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-10-22 23:59:00 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [API Reference](docs/API_REFERENCE.md) · [Roadmap](#roadmap-and-milestones)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Roadmap](#roadmap-and-milestones)
 
 
 
@@ -107,7 +107,8 @@ tee-fl-0g/
 ├── 📁 docs/               # Documentation
 │   ├── API_REFERENCE.md
 │   ├── QUICKSTART.md
-│   └── MAINNET_DEPLOYMENT.md
+│   ├── MAINNET_DEPLOYMENT.md
+│   └── EXPLANATION.md
 ├── 📁 config/             # Configuration templates
 │   ├── .env.example
 │   └── mainnet.env.template

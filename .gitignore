@@ -93,4 +93,3 @@ docs/audio/
 .github/workflows/ci-live.yml.backup-parse
 ai_prompt.md
 INSTRUCTION_TASK.md
-EXPLANATION.md
