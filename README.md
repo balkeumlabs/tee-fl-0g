@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-10-22 23:59:00 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](MAINNET_DEPLOYMENT.md) · [Roadmap](#roadmap-and-milestones)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [API Reference](docs/API_REFERENCE.md) · [Roadmap](#roadmap-and-milestones)
 
 
 
@@ -98,9 +98,32 @@ This repository implements a privacy-preserving federated learning pipeline on t
 
 
 
+## Project Structure
+
+```
+tee-fl-0g/
+├── 📁 contracts/          # Smart contracts (Solidity)
+├── 📁 scripts/            # Deployment and utility scripts
+├── 📁 docs/               # Documentation
+│   ├── API_REFERENCE.md
+│   ├── QUICKSTART.md
+│   └── MAINNET_DEPLOYMENT.md
+├── 📁 config/             # Configuration templates
+│   ├── .env.example
+│   └── mainnet.env.template
+├── 📁 data/               # Data files and outputs
+├── 📁 examples/           # Example files and samples
+├── 📁 test/               # Test files
+├── 📁 .github/             # GitHub Actions workflows
+├── README.md              # Main documentation
+├── PROGRESS.md            # Project progress tracking
+└── package.json           # Dependencies
+```
+
 ## Table of Contents
 
 - [Summary](#summary)
+- [Project Structure](#project-structure)
 - [Visual Overview](#visual-overview)
 - [Quick Start](#quick-start)
   - [Prerequisites](#prerequisites)
