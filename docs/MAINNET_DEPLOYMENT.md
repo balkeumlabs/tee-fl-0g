@@ -7,22 +7,32 @@
 ## 0G Mainnet Overview
 
 ### Network Details
-- **Network Name**: 0G Mainnet
-- **Chain ID**: 16661
-- **Token Symbol**: 0G
-- **RPC URL**: `https://evmrpc.0g.ai`
-- **Storage Indexer**: `https://indexer-storage-turbo.0g.ai`
-- **Block Explorer**: `https://chainscan.0g.ai`
+| Parameter | Value |
+|-----------|-------|
+| **Network Name** | 0G Mainnet |
+| **Chain ID** | 16661 |
+| **Token Symbol** | 0G |
+| **RPC URL** | `https://evmrpc.0g.ai` |
+| **Storage Indexer** | `https://indexer-storage-turbo.0g.ai` |
+| **Block Explorer** | `https://chainscan.0g.ai` |
 
 ### 0G Storage Contract Addresses
-- **Flow Contract**: `0x62D4144DB0F0a6fBBaeb6296c785C71B3D57C526`
+- **Flow Contract**: `0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526`
 - **Mine Contract**: `0xCd01c5Cd953971CE4C2c9bFb95610236a7F414fe`
 - **Reward Contract**: `0x457aC76B58ffcDc118AABD6DbC63ff9072880870`
 
 ### Third-Party RPC Providers (Recommended for Production)
+✅ **Recommended for production apps:**
 - **QuickNode**: High-performance RPC endpoints
-- **ThirdWeb**: Developer-friendly infrastructure
+- **ThirdWeb**: Developer-friendly infrastructure  
 - **Ankr**: Reliable blockchain infrastructure
+
+> **Note**: For redundancy in production apps, consider adding multiple RPC providers where available.
+
+### Wallet Integration
+- **MetaMask**: Add 0G Mainnet network
+- **OKX Wallet**: Add 0G Mainnet network
+- **Network Configuration**: Use the network details above to add 0G Mainnet to your wallet
 
 ## Prerequisites
 

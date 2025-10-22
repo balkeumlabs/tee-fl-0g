@@ -75,9 +75,14 @@ RPC_ENDPOINT=https://evmrpc.0g.ai
 CHAIN_ID=16661
 
 # 0G Storage Contract Addresses (Mainnet)
-OG_STORAGE_FLOW_CONTRACT=0x62D4144DB0F0a6fBBaeb6296c785C71B3D57C526
+OG_STORAGE_FLOW_CONTRACT=0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526
 OG_STORAGE_MINE_CONTRACT=0xCd01c5Cd953971CE4C2c9bFb95610236a7F414fe
 OG_STORAGE_REWARD_CONTRACT=0x457aC76B58ffcDc118AABD6DbC63ff9072880870
+
+# Third-Party RPC Providers (Recommended for Production)
+# QuickNode: High-performance RPC endpoints
+# ThirdWeb: Developer-friendly infrastructure
+# Ankr: Reliable blockchain infrastructure
 
 # Storage Configuration
 OG_STORAGE_MODE=manual

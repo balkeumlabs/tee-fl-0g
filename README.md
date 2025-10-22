@@ -33,7 +33,22 @@
 - **✅ Mainnet Connection**: Tested and working (`https://evmrpc.0g.ai`, Chain ID: 16661)
 - **✅ Deployment Scripts**: Ready for mainnet deployment
 - **✅ Configuration**: Mainnet environment template created
+- **✅ Contract Addresses**: Official 0G Storage contracts configured
+- **✅ Third-Party RPCs**: QuickNode, ThirdWeb, Ankr integration ready
 - **⏳ Waiting for**: 0G tokens from 0G team for deployment
+
+**Network Details:**
+- Network Name: 0G Mainnet
+- Chain ID: 16661
+- Token Symbol: 0G
+- RPC URL: https://evmrpc.0g.ai
+- Block Explorer: https://chainscan.0g.ai
+- Storage Indexer: https://indexer-storage-turbo.0g.ai
+
+**Contract Addresses:**
+- Flow: 0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526
+- Mine: 0xCd01c5Cd953971CE4C2c9bFb95610236a7F414fe
+- Reward: 0x457aC76B58ffcDc118AABD6DbC63ff9072880870
 
 ### Production Deployment:
 **Testnet (Current):**
