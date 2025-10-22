@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-10-22 23:59:00 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Roadmap](#roadmap-and-milestones)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](MAINNET_DEPLOYMENT.md) · [Roadmap](#roadmap-and-milestones)
 
 
 
