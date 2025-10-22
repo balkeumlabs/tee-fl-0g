@@ -1,0 +1,11 @@
+{
+  "network": "0G-Galileo",
+  "chainId": 16602,
+  "commit": "2fc996353098b8627e639d014caf3e174e7fbb8b",
+  "addresses": {
+    "AccessRegistry": "0x29029882D92d91024dBA05A43739A397AC1d9557",
+    "EpochManager": "0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e",
+    "Deployer": "0x9Ed57870379e28E32cb627bE365745dc184950dF"
+  },
+  "generatedAtUtc": "2025-09-23T15:21:08Z"
+}
