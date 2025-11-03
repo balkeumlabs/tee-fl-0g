@@ -235,6 +235,7 @@ echo $OG_STORAGE_MODE
 
 ## Status
 
-**Current Status**: Ready for mainnet deployment  
-**Last Updated**: 2025-10-22 23:59:00 UTC  
-**Next Steps**: Deploy once 0G tokens are received
+**Current Status**: Deployed and tested on mainnet  
+**Last Updated**: 2025-11-03 21:15:05 UTC  
+**Deployment Date**: 2025-11-03  
+**Next Steps**: Test with multiple participants, implement real scoring/FedAvg
