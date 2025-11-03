@@ -141,16 +141,5 @@
 
 ## Next Steps
 
-1. **✅ Mainnet Deployment**: Complete - Contracts deployed and tested
-2. **✅ End-to-End Pipeline Testing**: Complete - Full pipeline tested on mainnet
-   - ✅ Submit encrypted updates
-   - ✅ Compute scores
-   - ✅ Aggregate with FedAvg
-   - ✅ Publish global model
-3. **📊 Performance Monitoring**: Monitor gas costs and transaction performance
-4. **🔍 Optimization**: Optimize gas costs if needed
-5. **📝 Documentation**: Update README with mainnet contract addresses
-6. **🚀 Production Readiness**: Finalize production configuration
-7. **🎯 User Testing**: Conduct user acceptance testing
-8. **📢 Community Release**: Prepare for open source release
+See [ROADMAP.md](docs/ROADMAP.md) for detailed next steps and planning.
 
