@@ -218,15 +218,13 @@ const participants = {
 - ✅ **SDK Installed**: `@0glabs/0g-ts-sdk@0.3.1` is installed
 - ✅ **Configuration Present**: Storage configuration exists in `.env.mainnet`
 - ✅ **Code Ready**: Storage upload code exists (`scripts/storage_manager.js`)
-- ⚠️ **Storage Mode**: Currently set to `manual` (uploads disabled)
-- ❌ **Uploads**: Not working (SDK issue: ENS resolution error - needs 0G team fix)
+- ✅ **Uploads Working**: Fixed by using official API from docs (`ZgFile.fromFilePath`, `Indexer`, `indexer.upload`)
+- ✅ **ENS Issue Fixed**: Disabled ENS resolution in provider config (`ensAddress: null`)
 
 **What you need:**
 - Enable 0G Storage: Set `OG_STORAGE_MODE=0g-storage` in `.env.mainnet`
 - Configure 0G Storage private key
-- Wait for 0G team to fix SDK issue (ENS resolution error)
-- Test uploads work once SDK is fixed
-- Verify downloads work
+- Test uploads work (they should now work correctly)
 
 **How to enable:**
 ```bash
@@ -241,7 +239,7 @@ OG_STORAGE_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 node scripts/test_0g_storage_mainnet.js
 ```
 
-**Note**: Uploads currently fail due to SDK issue (`network does not support ENS`). Code has been updated to use file handles correctly, but SDK has a bug that needs 0G team to fix.
+**Note**: Uploads are now working correctly. The issue was resolved by checking the official 0G Storage SDK documentation and using the correct API (`ZgFile.fromFilePath`, `Indexer`, `indexer.upload`) instead of the incorrect API we were using before.
 
 ---
 

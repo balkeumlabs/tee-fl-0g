@@ -142,38 +142,55 @@ class StorageManager {
     }
 
     try {
-      // Dynamic import for 0G SDK
-      const { StorageNode, Uploader, defaultUploadOption, ZgFile, getFlowContract } = await import('@0glabs/0g-ts-sdk');
+      // Dynamic import using official API from docs: https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
+      const { ZgFile, Indexer } = await import('@0glabs/0g-ts-sdk');
       const { JsonRpcProvider, Wallet } = await import('ethers');
 
-      const nodes = [
-        new StorageNode('https://node1.storage.0g.ai'),
-        new StorageNode('https://node2.storage.0g.ai')
-      ];
-
-      const provider = new JsonRpcProvider(this.ogRpc);
+      // Initialize provider and signer (official API from docs)
+      const provider = new JsonRpcProvider(this.ogRpc, {
+        name: this.ogRpc.includes('mainnet') || this.ogRpc.includes('evmrpc.0g.ai') ? "0g-mainnet" : "0g-galileo",
+        chainId: this.ogRpc.includes('mainnet') || this.ogRpc.includes('evmrpc.0g.ai') ? 16661 : 16602,
+        ensAddress: null // Disable ENS
+      });
       const signer = new Wallet(this.ogPrivateKey, provider);
 
-      const flow = await getFlowContract(this.ogRpc, signer);
-      const uploader = new Uploader(nodes, this.ogRpc, flow);
-
-      // Create ZgFile from buffer
-      const zgFile = new ZgFile(fileBuffer, fileBuffer.length);
+      // Initialize indexer (official API from docs)
+      const indexerRpc = this.ogRpc.includes('mainnet') || this.ogRpc.includes('evmrpc.0g.ai')
+        ? 'https://indexer-storage-turbo.0g.ai'
+        : 'https://indexer-storage-testnet-turbo.0g.ai';
+      const indexer = new Indexer(indexerRpc);
 
       for (let attempt = 1; attempt <= retries; attempt++) {
         try {
           console.error(`[storage] 0G Storage upload attempt ${attempt}/${retries}`);
           
-          const [rootHash, error] = await uploader.uploadFile(zgFile, defaultUploadOption);
-
-          if (error) {
-            throw new Error(`0G Storage upload failed: ${error}`);
+          // Create file from file path (official API from docs: ZgFile.fromFilePath)
+          const file = await ZgFile.fromFilePath(filePath);
+          
+          // Generate Merkle tree for verification (official API from docs)
+          const [tree, treeErr] = await file.merkleTree();
+          if (treeErr !== null) {
+            throw new Error(`Error generating Merkle tree: ${treeErr}`);
           }
+          
+          // Get root hash
+          const rootHash = tree?.rootHash();
+          
+          // Upload using indexer (official API from docs: indexer.upload)
+          const [tx, uploadErr] = await indexer.upload(file, this.ogRpc, signer);
+          
+          if (uploadErr !== null) {
+            throw new Error(`0G Storage upload failed: ${uploadErr}`);
+          }
+
+          // Close file when done (official API from docs)
+          await file.close();
 
           return {
             cid: rootHash,
             url: `0g://${rootHash}`,
-            provider: '0g-storage'
+            provider: '0g-storage',
+            txHash: tx
           };
 
         } catch (error) {

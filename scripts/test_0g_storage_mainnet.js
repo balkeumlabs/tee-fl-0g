@@ -1,4 +1,4 @@
-// scripts/test_0g_storage_mainnet.js - Test 0G Storage upload on mainnet
+// scripts/test_0g_storage_mainnet.js - Test 0G Storage upload on mainnet (using official API from docs)
 import dotenv from 'dotenv';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -10,7 +10,7 @@ const OG_STORAGE_MODE = process.env.OG_STORAGE_MODE || 'manual';
 const OG_STORAGE_RPC = process.env.OG_STORAGE_RPC || process.env.RPC_ENDPOINT || 'https://evmrpc.0g.ai';
 const OG_STORAGE_PRIVATE_KEY = process.env.OG_STORAGE_PRIVATE_KEY || process.env.PRIVATE_KEY || '';
 
-console.log('=== 0G Storage Mainnet Test ===');
+console.log('=== 0G Storage Mainnet Test (Official API) ===');
 console.log(`Mode: ${OG_STORAGE_MODE}`);
 console.log(`RPC: ${OG_STORAGE_RPC}`);
 console.log(`Has Private Key: ${!!OG_STORAGE_PRIVATE_KEY}`);
@@ -38,7 +38,8 @@ async function test0GStorageMainnet() {
       test: "0G Storage mainnet upload test", 
       timestamp: new Date().toISOString(),
       network: "0G Mainnet",
-      chainId: 16661
+      chainId: 16661,
+      api: "Official API from docs.0g.ai"
     });
     await writeFile('test_0g_storage_mainnet.json', testData);
     console.log('✅ Test file created: test_0g_storage_mainnet.json');
@@ -50,17 +51,16 @@ async function test0GStorageMainnet() {
     console.log(`✅ File size: ${fileBuffer.length} bytes`);
 
     if (OG_STORAGE_MODE === '0g-storage') {
-      console.log('\n📤 Testing 0G Storage SDK upload...');
+      console.log('\n📤 Testing 0G Storage SDK upload (Official API)...');
       
       try {
-        // Dynamic import to catch module errors
-        const { StorageNode, Uploader, defaultUploadOption, ZgFile, getFlowContract } = await import('@0glabs/0g-ts-sdk');
-        const { JsonRpcProvider, Wallet } = await import('ethers');
+        // Import official API from docs: https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
+        const { ZgFile, Indexer } = await import('@0glabs/0g-ts-sdk');
         
         console.log('✅ 0G Storage SDK imported successfully');
 
-        // Create provider for mainnet
-        const provider = new JsonRpcProvider(OG_STORAGE_RPC, {
+        // Initialize provider and signer (official API from docs)
+        const provider = new ethers.JsonRpcProvider(OG_STORAGE_RPC, {
           name: "0g-mainnet",
           chainId: 16661,
           ensAddress: null // Disable ENS
@@ -76,7 +76,7 @@ async function test0GStorageMainnet() {
         }
 
         // Create signer
-        const signer = new Wallet(OG_STORAGE_PRIVATE_KEY, provider);
+        const signer = new ethers.Wallet(OG_STORAGE_PRIVATE_KEY, provider);
         const signerAddress = await signer.getAddress();
         console.log(`✅ Signer address: ${signerAddress}`);
 
@@ -91,36 +91,38 @@ async function test0GStorageMainnet() {
           console.warn(`⚠️  Could not check balance: ${error.message}`);
         }
 
-        // Create storage nodes (mainnet nodes)
-        const nodes = [
-          new StorageNode('https://node1.storage.0g.ai'),
-          new StorageNode('https://node2.storage.0g.ai')
-        ];
-        console.log('✅ Storage nodes created');
+        // Initialize indexer (official API from docs)
+        const indexerRpc = 'https://indexer-storage-turbo.0g.ai';
+        const indexer = new Indexer(indexerRpc);
+        console.log('✅ Indexer initialized');
 
-        // Get flow contract
-        const flow = await getFlowContract(OG_STORAGE_RPC, signer);
-        console.log('✅ Flow contract initialized');
+        // Create file from file path (official API from docs: ZgFile.fromFilePath)
+        const filePath = 'test_0g_storage_mainnet.json';
+        const file = await ZgFile.fromFilePath(filePath);
+        console.log('✅ ZgFile created from file path');
 
-        // Create uploader
-        const uploader = new Uploader(nodes, OG_STORAGE_RPC, flow);
-        console.log('✅ Uploader created');
+        // Generate Merkle tree for verification (official API from docs)
+        console.log('\n📊 Generating Merkle tree...');
+        const [tree, treeErr] = await file.merkleTree();
+        if (treeErr !== null) {
+          throw new Error(`Error generating Merkle tree: ${treeErr}`);
+        }
+        const rootHash = tree?.rootHash();
+        console.log(`✅ Merkle tree generated. Root hash: ${rootHash}`);
 
-        // Create ZgFile
-        const zgFile = new ZgFile(fileBuffer, fileBuffer.length);
-        console.log('✅ ZgFile created');
-
-        // Attempt upload
+        // Attempt upload using indexer (official API from docs: indexer.upload)
         console.log('\n📤 Uploading to 0G Storage...');
         console.log('   This may take a few seconds...');
         
-        const [rootHash, error] = await uploader.uploadFile(zgFile, defaultUploadOption);
-
-        if (error) {
-          console.error(`❌ Upload failed: ${error}`);
-          console.error('   Error details:', error);
-          throw new Error(`0G Storage upload failed: ${error}`);
+        const [tx, uploadErr] = await indexer.upload(file, OG_STORAGE_RPC, signer);
+        
+        if (uploadErr !== null) {
+          console.error(`❌ Upload failed: ${uploadErr}`);
+          throw new Error(`0G Storage upload failed: ${uploadErr}`);
         }
+
+        // Close file when done (official API from docs)
+        await file.close();
 
         if (!rootHash) {
           console.error('❌ Upload failed: No root hash returned');
@@ -129,6 +131,7 @@ async function test0GStorageMainnet() {
 
         console.log('\n✅ Upload successful!');
         console.log(`   Root Hash (CID): ${rootHash}`);
+        console.log(`   Transaction: ${tx}`);
         console.log(`   URL: 0g://${rootHash}`);
         console.log(`   Verify on: https://indexer-storage-turbo.0g.ai/search?cid=${rootHash}`);
 
@@ -136,12 +139,14 @@ async function test0GStorageMainnet() {
         const uploadInfo = {
           success: true,
           rootHash: rootHash,
+          txHash: tx,
           url: `0g://${rootHash}`,
           fileHash: `0x${fileHash}`,
           fileSize: fileBuffer.length,
           timestamp: new Date().toISOString(),
           network: "0G Mainnet",
-          chainId: 16661
+          chainId: 16661,
+          api: "Official API from docs.0g.ai"
         };
 
         await writeFile('data/0g_storage_upload_mainnet.json', JSON.stringify(uploadInfo, null, 2));
@@ -160,7 +165,6 @@ async function test0GStorageMainnet() {
         
         if (error.message.includes('insufficient funds')) {
           console.error('\n💡 Solution: Add 0G tokens to wallet');
-          console.error(`   Wallet: ${signerAddress || 'N/A'}`);
         }
 
         throw error;

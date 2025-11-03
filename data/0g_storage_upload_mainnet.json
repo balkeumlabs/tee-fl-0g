@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "rootHash": "0x79f4b4ab4f49162f2fabc2532464a271f8c44c512b30ca238e55cf38dcddb4c8",
+  "txHash": {
+    "txHash": "0xa58eccc4e17150129ace52dedea69b284a006507a72c518a351d42ca25ce4487",
+    "rootHash": "0x79f4b4ab4f49162f2fabc2532464a271f8c44c512b30ca238e55cf38dcddb4c8"
+  },
+  "url": "0g://0x79f4b4ab4f49162f2fabc2532464a271f8c44c512b30ca238e55cf38dcddb4c8",
+  "fileHash": "0x910e10cb75378184d56a4bb6b666c323cc14ef99951b968183ee514bc2e78080",
+  "fileSize": 156,
+  "timestamp": "2025-11-03T21:38:33.678Z",
+  "network": "0G Mainnet",
+  "chainId": 16661,
+  "api": "Official API from docs.0g.ai"
+}

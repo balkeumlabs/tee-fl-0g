@@ -9,7 +9,7 @@
 
 # TEE-FL-0G — Federated Learning on 0G (Galileo) with access-gated updates, on-chain anchoring, and FedAvg
 
-<sub>Last update: 2025-11-03 21:15:05 UTC</sub>
+<sub>Last update: 2025-11-04 00:00:00 UTC</sub>
 
 **Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [Multiple Participants](docs/MULTIPLE_PARTICIPANTS_SETUP.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Progress & Roadmap](PROGRESS.md)
 
