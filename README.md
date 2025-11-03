@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-11-03 21:15:05 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [Multiple Participants](docs/MULTIPLE_PARTICIPANTS_SETUP.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Roadmap](docs/ROADMAP.md) · [Next Steps](docs/NEXT_STEPS.md)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [Multiple Participants](docs/MULTIPLE_PARTICIPANTS_SETUP.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Progress & Roadmap](PROGRESS.md)
 
 
 

@@ -141,5 +141,123 @@
 
 ## Next Steps
 
-See [ROADMAP.md](docs/ROADMAP.md) for detailed next steps and planning.
+### Immediate Priorities (Week 1)
+
+**1. Multi-Participant Testing** (1-2 days)
+- Start Epoch 2 on mainnet
+- Create 2-3 test wallets with 0G tokens
+- Grant access to each participant via AccessRegistry
+- Submit updates from different wallets
+- Test scoring with multiple participants
+- Verify FedAvg aggregation with weighted averaging
+
+**2. Real Model Integration** (2-3 days)
+- Integrate real model training code
+- Generate actual model weights (neural network)
+- Encrypt real model weights
+- Test with real data instead of simplified test data
+
+**3. 0G Storage** (Blocked - Needs 0G Team)
+- Currently blocked by SDK issue (ENS resolution error)
+- Code updated to use file handles correctly
+- Waiting for 0G team to fix SDK bug
+- Once fixed: Enable uploads and test with real CIDs
+
+### Short-Term Goals (Week 2)
+
+**4. Performance Monitoring** (3-5 days)
+- Monitor gas costs per transaction
+- Track transaction success rates
+- Monitor block confirmation times
+- Set up alerts for failed transactions
+- Create dashboard for pipeline status
+
+**5. Security Hardening** (5-7 days)
+- Review access control mechanisms
+- Implement TEE attestation verification
+- Add encryption key rotation
+- Set up audit logging
+- Test disaster recovery procedures
+
+**6. Gas Optimization** (2-3 days, if needed)
+- Analyze gas usage per function
+- Optimize contract code if needed
+- Consider batch operations
+- Test with optimized contracts
+
+### Medium-Term Goals (Week 3+)
+
+**7. User Acceptance Testing** (1-2 weeks)
+- Test with 5+ participants
+- Test concurrent submissions
+- Test access revocation
+- Test error recovery
+- Gather user feedback
+
+**8. Production Deployment** (1 week)
+- Set up production infrastructure
+- Configure production monitoring
+- Set up backup RPC providers
+- Create runbooks and procedures
+
+**9. Service Marketplace Integration** (1 week)
+- Register services on marketplace
+- Test inference requests
+- Test pay-per-inference billing
+- Verify service discovery
+
+### Long-Term Goals
+
+**10. Community Release** (2-3 weeks)
+- Final code review and cleanup
+- Add comprehensive tests
+- Create user guides and tutorials
+- Set up community channels
+- Prepare release announcement
+
+**11. Advanced Features** (Ongoing)
+- Implement differential privacy
+- Add secure multi-party computation
+- Implement advanced aggregation algorithms (FedProx, FedNova)
+- Add model versioning
+- Implement model compression
+
+### Quick Commands
+
+```bash
+# Start Epoch 2 for multi-participant testing
+node scripts/start_mainnet_epoch.js --epoch 2
+
+# Submit update from different wallet
+node scripts/submit_mainnet_update.js --epoch 2 --wallet <wallet2>
+
+# Compute scores with multiple participants
+node scripts/compute_mainnet_scores.js --epoch 2
+
+# Aggregate and publish
+node scripts/publish_mainnet_model.js --epoch 2
+
+# Monitor performance
+node scripts/query_mainnet_epoch_data.js --epoch 2
+```
+
+### Success Criteria
+
+**Multi-Participant Testing:**
+- ✅ 3+ participants submit updates
+- ✅ Scoring works correctly with weighted contributions
+- ✅ FedAvg aggregation works with multiple updates
+- ✅ Global model published successfully
+
+**Real Model Integration:**
+- ✅ Real model weights used (not test data)
+- ✅ Encryption works correctly
+- ✅ Aggregation produces valid model
+- ✅ Performance acceptable
+
+**Production Readiness:**
+- ✅ Monitoring in place
+- ✅ Security verified
+- ✅ Documentation complete
+- ✅ Procedures documented
 
