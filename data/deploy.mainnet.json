@@ -1,0 +1,11 @@
+{
+  "network": "0G-Mainnet",
+  "chainId": 16661,
+  "commit": "43c516b32dc2c76c446b54372869e2bfa096d860",
+  "addresses": {
+    "AccessRegistry": "0x29029882D92d91024dBA05A43739A397AC1d9557",
+    "EpochManager": "0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e",
+    "Deployer": "0x9Ed57870379e28E32cb627bE365745dc184950dF"
+  },
+  "generatedAtUtc": "2025-11-03T20:03:23.627Z"
+}

@@ -1,24 +1,24 @@
-#!/usr/bin/env node
 // scripts/deploy_mainnet.js - Deploy contracts to 0G Mainnet
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+import fs from 'fs';
+import { execSync } from 'child_process';
 
-const { ethers } = require("hardhat");
-const fs = require("fs").promises;
+dotenv.config({ path: '.env.mainnet' });
 
-async function main() {
+(async () => {
   console.log("🚀 Deploying to 0G Mainnet...");
   
-  // Check environment
-  const rpc = process.env.RPC_ENDPOINT;
+  const rpc = process.env.RPC_ENDPOINT || "https://evmrpc.0g.ai";
   const pk = process.env.PRIVATE_KEY;
   
-  if (!rpc || !pk) {
-    throw new Error("Missing RPC_ENDPOINT or PRIVATE_KEY in .env");
+  if (!pk) {
+    throw new Error('Missing PRIVATE_KEY in .env.mainnet');
   }
   
   console.log(`RPC: ${rpc}`);
   console.log(`Chain ID: 16661`);
   
-  // Create provider and wallet
   const provider = new ethers.JsonRpcProvider(rpc);
   const wallet = new ethers.Wallet(pk, provider);
   
@@ -36,8 +36,10 @@ async function main() {
   
   // Deploy AccessRegistry
   console.log("\n📋 Deploying AccessRegistry...");
-  const AccessRegistry = await ethers.getContractFactory("AccessRegistry");
-  const accessRegistry = await AccessRegistry.deploy();
+  const accessRegistryArt = JSON.parse(fs.readFileSync('artifacts/contracts/AccessRegistry.sol/AccessRegistry.json', 'utf8'));
+  const accessRegistryFac = new ethers.ContractFactory(accessRegistryArt.abi, accessRegistryArt.bytecode, wallet);
+  const accessRegistry = await accessRegistryFac.deploy();
+  console.log('// Deploy tx:', (await accessRegistry.deploymentTransaction()).hash);
   await accessRegistry.waitForDeployment();
   const accessRegistryAddress = await accessRegistry.getAddress();
   addresses.AccessRegistry = accessRegistryAddress;
@@ -45,8 +47,10 @@ async function main() {
   
   // Deploy EpochManager
   console.log("\n⏰ Deploying EpochManager...");
-  const EpochManager = await ethers.getContractFactory("EpochManager");
-  const epochManager = await EpochManager.deploy();
+  const epochManagerArt = JSON.parse(fs.readFileSync('artifacts/contracts/EpochManager.sol/EpochManager.json', 'utf8'));
+  const epochManagerFac = new ethers.ContractFactory(epochManagerArt.abi, epochManagerArt.bytecode, wallet);
+  const epochManager = await epochManagerFac.deploy();
+  console.log('// Deploy tx:', (await epochManager.deploymentTransaction()).hash);
   await epochManager.waitForDeployment();
   const epochManagerAddress = await epochManager.getAddress();
   addresses.EpochManager = epochManagerAddress;
@@ -56,7 +60,7 @@ async function main() {
   const deployInfo = {
     network: "0G-Mainnet",
     chainId: 16661,
-    commit: require("child_process").execSync("git rev-parse HEAD").toString().trim(),
+    commit: execSync("git rev-parse HEAD").toString().trim(),
     addresses: {
       AccessRegistry: accessRegistryAddress,
       EpochManager: epochManagerAddress,
@@ -65,15 +69,13 @@ async function main() {
     generatedAtUtc: new Date().toISOString()
   };
   
-  await fs.writeFile("data/deploy.mainnet.json", JSON.stringify(deployInfo, null, 2));
+  fs.writeFileSync("data/deploy.mainnet.json", JSON.stringify(deployInfo, null, 2));
   console.log("\n💾 Deployment info saved to data/deploy.mainnet.json");
   
   console.log("\n🎉 Mainnet deployment complete!");
   console.log(`AccessRegistry: ${accessRegistryAddress}`);
   console.log(`EpochManager: ${epochManagerAddress}`);
-}
-
-main().catch((error) => {
-  console.error("Deployment failed:", error);
-  process.exit(1);
+})().catch(e => { 
+  console.error("Deployment failed:", e); 
+  process.exit(1); 
 });

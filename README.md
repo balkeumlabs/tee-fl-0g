@@ -34,7 +34,8 @@
 - **✅ Contracts Deployed**: AccessRegistry and EpochManager live on mainnet
 - **✅ Contracts Tested**: All functions verified and working
 - **✅ Access Granted**: Initial access setup complete
-- **✅ Epoch 1 Ready**: First epoch initialized for testing
+- **✅ Epoch 1 Complete**: Full pipeline tested end-to-end
+  - Epoch started → Update submitted → Scores computed → Model published
 
 **Mainnet Contract Addresses:**
 - **AccessRegistry**: `0x29029882D92d91024dBA05A43739A397AC1d9557`
