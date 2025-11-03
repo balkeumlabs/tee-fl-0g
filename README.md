@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-10-22 23:59:00 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Roadmap](#roadmap-and-milestones)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Roadmap](#roadmap-and-milestones)
 
 
 
