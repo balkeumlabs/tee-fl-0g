@@ -214,13 +214,17 @@ const participants = {
 
 ### 6. 0G Storage Integration ✅ (Required for Production)
 
-**Current status:**
-- ⚠️ 0G Storage is configured but disabled (mode: "manual")
-- Need to enable and test uploads
+**Current Status:**
+- ✅ **SDK Installed**: `@0glabs/0g-ts-sdk@0.3.1` is installed
+- ✅ **Configuration Present**: Storage configuration exists in `.env.mainnet`
+- ✅ **Code Ready**: Storage upload code exists (`scripts/storage_manager.js`)
+- ⚠️ **Storage Mode**: Currently set to `manual` (uploads disabled)
+- ❌ **Uploads**: Not working (SDK API issue: `this.fd?.read is not a function`)
 
 **What you need:**
 - Enable 0G Storage: Set `OG_STORAGE_MODE=0g-storage` in `.env.mainnet`
 - Configure 0G Storage private key
+- Fix SDK upload issue (currently fails with file handle error)
 - Test uploads work
 - Verify downloads work
 
@@ -236,6 +240,8 @@ OG_STORAGE_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 ```bash
 node scripts/test_0g_storage_mainnet.js
 ```
+
+**Note**: Uploads currently fail due to SDK API issue. The SDK expects a file handle/path, but buffer handling needs to be fixed.
 
 ---
 
