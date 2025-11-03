@@ -31,11 +31,15 @@
 
 ### Mainnet Deployment Status:
 - **✅ Mainnet Connection**: Tested and working (`https://evmrpc.0g.ai`, Chain ID: 16661)
-- **✅ Deployment Scripts**: Ready for mainnet deployment
-- **✅ Configuration**: Mainnet environment template created
-- **✅ Contract Addresses**: Official 0G Storage contracts configured
-- **✅ Third-Party RPCs**: QuickNode, ThirdWeb, Ankr integration ready
-- **⏳ Waiting for**: 0G tokens from 0G team for deployment
+- **✅ Contracts Deployed**: AccessRegistry and EpochManager live on mainnet
+- **✅ Contracts Tested**: All functions verified and working
+- **✅ Access Granted**: Initial access setup complete
+- **✅ Epoch 1 Ready**: First epoch initialized for testing
+
+**Mainnet Contract Addresses:**
+- **AccessRegistry**: `0x29029882D92d91024dBA05A43739A397AC1d9557`
+- **EpochManager**: `0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e`
+- **Block Explorer**: https://chainscan.0g.ai
 
 **Network Details:**
 - Network Name: 0G Mainnet
