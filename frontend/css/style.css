@@ -95,6 +95,48 @@ body {
     color: var(--text-primary);
 }
 
+/* Overview Section */
+.overview-section {
+    margin-bottom: 2rem;
+}
+
+.overview-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.overview-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.overview-text {
+    font-size: 1rem;
+    color: var(--text-primary);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.overview-text strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.overview-list {
+    margin: 1rem 0;
+    padding-left: 2rem;
+    color: var(--text-primary);
+    line-height: 1.8;
+}
+
+.overview-list li {
+    margin-bottom: 0.5rem;
+}
+
 /* Network Info */
 .network-info {
     margin-bottom: 2rem;

@@ -28,6 +28,32 @@
             </div>
         </header>
 
+        <!-- Overview Section -->
+        <section class="overview-section">
+            <div class="overview-card">
+                <h2 class="overview-title">What is This?</h2>
+                <p class="overview-text">
+                    This dashboard showcases a <strong>Federated Learning system</strong> deployed on <strong>0G Mainnet</strong>. 
+                    Federated Learning allows multiple parties to train a shared AI model without sharing their private data.
+                </p>
+                <p class="overview-text">
+                    <strong>What happened:</strong> We successfully deployed smart contracts (AccessRegistry and EpochManager) on 0G Mainnet 
+                    and ran a complete federated learning pipeline end-to-end. This included:
+                </p>
+                <ul class="overview-list">
+                    <li>Starting Epoch 1 with an initial model hash</li>
+                    <li>Submitting an encrypted model update (without exposing private data)</li>
+                    <li>Computing contribution scores for the update</li>
+                    <li>Aggregating updates using FedAvg (Federated Averaging)</li>
+                    <li>Publishing the global model on-chain</li>
+                </ul>
+                <p class="overview-text">
+                    <strong>All 4 transactions succeeded</strong> and are verified on the 0G blockchain. The dashboard below shows 
+                    the contract addresses, transaction history, and pipeline execution details.
+                </p>
+            </div>
+        </section>
+
         <!-- Network Info -->
         <section class="network-info">
             <div class="info-card">
