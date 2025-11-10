@@ -293,27 +293,13 @@ async function displayTransactions(epochData) {
 
     // Fetch gas costs for all transactions
     const gasPromises = transactions.map(tx => fetchGasCost(tx.hash));
-    const gasCosts = await Promise.all(gasPromises);
-
-    // Calculate timing between steps
-    const timingData = [];
-    for (let i = 0; i < transactions.length - 1; i++) {
-        const current = transactions[i];
-        const next = transactions[i + 1];
-        const timeDiff = calculateTimeBetweenBlocks(current.block, next.block);
-        timingData.push({
-            from: current.type,
-            to: next.type,
-            time: timeDiff,
-            blocks: next.block - current.block
-        });
-    }
+    const gasData = await Promise.all(gasPromises);
 
     // Display transactions with gas costs
     transactionsList.innerHTML = transactions.map((tx, index) => {
-        const gas = gasCosts[index];
-        const gasDisplay = gas ? formatGas(gas) : 'Loading...';
-        const timing = index > 0 ? calculateTimeBetweenBlocks(transactions[index - 1].block, tx.block) : null;
+        const gasInfo = gasData[index];
+        const gasDisplay = gasInfo?.gasUsed ? formatGas(gasInfo.gasUsed) : 'Loading...';
+        const tokenCostDisplay = gasInfo?.tokenCostWei ? formatTokenCost(gasInfo.tokenCostWei) : 'Loading...';
         
         return `
         <div class="transaction-item">
@@ -322,7 +308,7 @@ async function displayTransactions(epochData) {
                 <div class="transaction-type">${tx.type}</div>
                 <div class="transaction-hash">${tx.hash}</div>
                 <div class="transaction-meta">${tx.details}</div>
-                <div class="transaction-gas">Gas: ${gasDisplay}</div>
+                <div class="transaction-gas">Gas: ${gasDisplay} | Cost: ${tokenCostDisplay}</div>
             </div>
             <a href="${createExplorerLink('tx', tx.hash)}" target="_blank" class="transaction-link">
                 View on Explorer →
@@ -332,7 +318,7 @@ async function displayTransactions(epochData) {
     }).join('');
 
     // Display pipeline timing summary
-    displayPipelineTimingSummary(transactions, gasCosts, timingData);
+    displayPipelineTimingSummary(transactions, gasData);
 }
 
 // Display pipeline timing summary
