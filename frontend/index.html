@@ -81,6 +81,41 @@
             </div>
         </section>
 
+        <!-- Integration Badges -->
+        <section class="integration-badges-section">
+            <h2 class="section-title">Integration Status</h2>
+            <div class="badges-grid">
+                <div class="integration-badge badge-success">
+                    <div class="badge-icon">✓</div>
+                    <div class="badge-content">
+                        <div class="badge-title">0G Mainnet</div>
+                        <div class="badge-description">Deployed & Active</div>
+                    </div>
+                </div>
+                <div class="integration-badge badge-success">
+                    <div class="badge-icon">✓</div>
+                    <div class="badge-content">
+                        <div class="badge-title">0G Storage</div>
+                        <div class="badge-description">Uploads Working</div>
+                    </div>
+                </div>
+                <div class="integration-badge badge-success">
+                    <div class="badge-icon">✓</div>
+                    <div class="badge-content">
+                        <div class="badge-title">Smart Contracts</div>
+                        <div class="badge-description">AccessRegistry & EpochManager</div>
+                    </div>
+                </div>
+                <div class="integration-badge badge-warning">
+                    <div class="badge-icon">⏳</div>
+                    <div class="badge-content">
+                        <div class="badge-title">0G Marketplace</div>
+                        <div class="badge-description">SDK Issue (Awaiting Fix)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Statistics Panel -->
         <section class="statistics-section">
             <h2 class="section-title">Statistics</h2>
@@ -96,14 +131,14 @@
                     <div class="stat-description">All transactions succeeded</div>
                 </div>
                 <div class="stat-card stat-info">
-                    <div class="stat-label">Epochs Completed</div>
-                    <div class="stat-value" id="stat-epochs">1</div>
-                    <div class="stat-description">Epoch 1 published</div>
+                    <div class="stat-label">Total Gas Used</div>
+                    <div class="stat-value" id="stat-total-gas">Loading...</div>
+                    <div class="stat-description">All pipeline transactions</div>
                 </div>
                 <div class="stat-card stat-warning">
-                    <div class="stat-label">Network Status</div>
-                    <div class="stat-value" id="stat-network-status">Active</div>
-                    <div class="stat-description" id="stat-block-time">Block time: <span id="block-time-value">Loading...</span></div>
+                    <div class="stat-label">Pipeline Duration</div>
+                    <div class="stat-value" id="stat-pipeline-duration">Loading...</div>
+                    <div class="stat-description" id="stat-block-time">Block time: <span id="block-time-value">~2s</span></div>
                 </div>
             </div>
         </section>
@@ -254,6 +289,9 @@
             <h2 class="section-title">Transaction History</h2>
             <div class="transactions-list" id="transactions-list">
                 <!-- Transactions will be loaded here -->
+            </div>
+            <div class="pipeline-timing-summary" id="pipeline-timing-summary">
+                <!-- Pipeline timing summary will be loaded here -->
             </div>
         </section>
 

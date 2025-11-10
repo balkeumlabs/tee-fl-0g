@@ -138,8 +138,68 @@ function displayPipelineSteps(epochData) {
     }
 }
 
+// Fetch gas cost for a transaction
+async function fetchGasCost(txHash) {
+    try {
+        const RPC_ENDPOINT = 'https://evmrpc.0g.ai';
+        const response = await fetch(RPC_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_getTransactionReceipt',
+                params: [txHash],
+                id: 1
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network request failed');
+        }
+
+        const data = await response.json();
+        if (data.result && data.result.gasUsed) {
+            const gasUsed = parseInt(data.result.gasUsed, 16);
+            return gasUsed;
+        }
+        return null;
+    } catch (error) {
+        console.error(`Error fetching gas for ${txHash}:`, error);
+        return null;
+    }
+}
+
+// Format gas cost
+function formatGas(gas) {
+    if (!gas) return 'N/A';
+    if (gas >= 1000000) {
+        return `${(gas / 1000000).toFixed(2)}M`;
+    } else if (gas >= 1000) {
+        return `${(gas / 1000).toFixed(2)}K`;
+    }
+    return gas.toLocaleString();
+}
+
+// Calculate time between blocks (assuming ~2s per block on 0G Mainnet)
+function calculateTimeBetweenBlocks(block1, block2, blockTimeSeconds = 2) {
+    const blockDiff = Math.abs(block2 - block1);
+    const seconds = blockDiff * blockTimeSeconds;
+    
+    if (seconds < 60) {
+        return `${seconds}s`;
+    } else if (seconds < 3600) {
+        return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    } else {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return `${hours}h ${minutes}m`;
+    }
+}
+
 // Display transaction history
-function displayTransactions(epochData) {
+async function displayTransactions(epochData) {
     if (!epochData || !epochData.events) return;
 
     const transactionsList = document.getElementById('transactions-list');
@@ -155,7 +215,8 @@ function displayTransactions(epochData) {
                 hash: event.transactionHash,
                 block: event.blockNumber,
                 icon: '1',
-                details: `Model Hash: ${formatHash(event.modelHash)}`
+                details: `Model Hash: ${formatHash(event.modelHash)}`,
+                timestamp: epochData.timestamp
             });
         });
     }
@@ -199,20 +260,103 @@ function displayTransactions(epochData) {
     // Sort by block number
     transactions.sort((a, b) => a.block - b.block);
 
-    // Display transactions
-    transactionsList.innerHTML = transactions.map(tx => `
+    // Fetch gas costs for all transactions
+    const gasPromises = transactions.map(tx => fetchGasCost(tx.hash));
+    const gasCosts = await Promise.all(gasPromises);
+
+    // Calculate timing between steps
+    const timingData = [];
+    for (let i = 0; i < transactions.length - 1; i++) {
+        const current = transactions[i];
+        const next = transactions[i + 1];
+        const timeDiff = calculateTimeBetweenBlocks(current.block, next.block);
+        timingData.push({
+            from: current.type,
+            to: next.type,
+            time: timeDiff,
+            blocks: next.block - current.block
+        });
+    }
+
+    // Display transactions with gas costs
+    transactionsList.innerHTML = transactions.map((tx, index) => {
+        const gas = gasCosts[index];
+        const gasDisplay = gas ? formatGas(gas) : 'Loading...';
+        const timing = index > 0 ? calculateTimeBetweenBlocks(transactions[index - 1].block, tx.block) : null;
+        
+        return `
         <div class="transaction-item">
             <div class="transaction-icon">${tx.icon}</div>
             <div class="transaction-details">
                 <div class="transaction-type">${tx.type}</div>
                 <div class="transaction-hash">${tx.hash}</div>
                 <div class="transaction-meta">${tx.details}</div>
+                <div class="transaction-gas">Gas: ${gasDisplay}</div>
+                ${timing ? `<div class="transaction-timing">Time from previous: ${timing}</div>` : ''}
             </div>
             <a href="${createExplorerLink('tx', tx.hash)}" target="_blank" class="transaction-link">
                 View on Explorer →
             </a>
         </div>
-    `).join('');
+        `;
+    }).join('');
+
+    // Display pipeline timing summary
+    displayPipelineTimingSummary(transactions, gasCosts, timingData);
+}
+
+// Display pipeline timing summary
+function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
+    const summaryContainer = document.getElementById('pipeline-timing-summary');
+    if (!summaryContainer) return;
+
+    const totalGas = gasCosts.reduce((sum, gas) => sum + (gas || 0), 0);
+    const avgGas = gasCosts.filter(g => g).length > 0 
+        ? Math.round(totalGas / gasCosts.filter(g => g).length) 
+        : 0;
+
+    const firstBlock = transactions[0]?.block || 0;
+    const lastBlock = transactions[transactions.length - 1]?.block || 0;
+    const totalBlocks = lastBlock - firstBlock;
+    const totalTime = calculateTimeBetweenBlocks(firstBlock, lastBlock);
+
+    summaryContainer.innerHTML = `
+        <div class="timing-summary-title">Pipeline Performance Summary</div>
+        <div class="timing-summary-grid">
+            <div class="timing-summary-item">
+                <div class="timing-summary-label">Total Duration</div>
+                <div class="timing-summary-value">${totalTime}</div>
+            </div>
+            <div class="timing-summary-item">
+                <div class="timing-summary-label">Total Blocks</div>
+                <div class="timing-summary-value">${totalBlocks}</div>
+            </div>
+            <div class="timing-summary-item">
+                <div class="timing-summary-label">Total Gas Used</div>
+                <div class="timing-summary-value">${formatGas(totalGas)}</div>
+            </div>
+            <div class="timing-summary-item">
+                <div class="timing-summary-label">Average Gas per TX</div>
+                <div class="timing-summary-value">${formatGas(avgGas)}</div>
+            </div>
+        </div>
+    `;
+
+    // Update statistics
+    const totalGasEl = document.getElementById('stat-total-gas');
+    if (totalGasEl) {
+        totalGasEl.textContent = formatGas(totalGas);
+    }
+
+    const avgGasEl = document.getElementById('stat-avg-gas');
+    if (avgGasEl) {
+        avgGasEl.textContent = formatGas(avgGas);
+    }
+
+    const pipelineDurationEl = document.getElementById('stat-pipeline-duration');
+    if (pipelineDurationEl) {
+        pipelineDurationEl.textContent = totalTime;
+    }
 }
 
 // Display epoch summary
@@ -436,7 +580,7 @@ async function initDashboard() {
     // Display all sections
     displayDeploymentInfo(deployData);
     displayPipelineSteps(epochData);
-    displayTransactions(epochData);
+    await displayTransactions(epochData);
     displayEpochSummary(epochData);
     displayStorageStatus(storageData);
     updateLastUpdated();
