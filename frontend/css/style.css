@@ -398,26 +398,6 @@ body {
     margin-bottom: 3rem;
 }
 
-.statistics-info {
-    margin-bottom: 1.5rem;
-}
-
-.statistics-description {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0;
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
-}
-
-.statistics-description strong {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
 .statistics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

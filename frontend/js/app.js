@@ -345,24 +345,13 @@ function displayPipelineTimingSummary(transactions, gasData) {
     const lastBlock = transactions[transactions.length - 1]?.block || 0;
     const totalBlocks = lastBlock - firstBlock;
 
+    // Only show Total Blocks (not duplicate gas/token info)
     summaryContainer.innerHTML = `
         <div class="timing-summary-title">Pipeline Performance Summary</div>
         <div class="timing-summary-grid">
             <div class="timing-summary-item">
                 <div class="timing-summary-label">Total Blocks</div>
                 <div class="timing-summary-value">${totalBlocks}</div>
-            </div>
-            <div class="timing-summary-item">
-                <div class="timing-summary-label">Total Gas Used</div>
-                <div class="timing-summary-value">${formatGas(totalGas)}</div>
-            </div>
-            <div class="timing-summary-item">
-                <div class="timing-summary-label">Total Token Cost</div>
-                <div class="timing-summary-value">${formatTokenCost(totalTokenCost)}</div>
-            </div>
-            <div class="timing-summary-item">
-                <div class="timing-summary-label">Average Gas per TX</div>
-                <div class="timing-summary-value">${formatGas(avgGas)}</div>
             </div>
         </div>
     `;
