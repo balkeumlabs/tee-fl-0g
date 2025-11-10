@@ -206,14 +206,15 @@ function formatTokenCost(wei) {
     const divisor = BigInt(1e18);
     const tokens = Number(weiBigInt) / Number(divisor);
     
+    // Always show in 0G format with appropriate decimal places
     if (tokens >= 1) {
         return `${tokens.toFixed(6)} 0G`;
     } else if (tokens >= 0.001) {
-        return `${(tokens * 1000).toFixed(4)} m0G`;
+        return `${tokens.toFixed(7)} 0G`;
     } else if (tokens >= 0.000001) {
-        return `${(tokens * 1000000).toFixed(2)} μ0G`;
+        return `${tokens.toFixed(9)} 0G`;
     } else {
-        return `${tokens.toExponential(2)} 0G`;
+        return `${tokens.toFixed(12)} 0G`;
     }
 }
 
