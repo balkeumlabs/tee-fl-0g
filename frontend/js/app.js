@@ -166,7 +166,8 @@ async function fetchGasCost(txHash) {
             
             if (gasUsed && gasPrice) {
                 // Calculate token cost: gasUsed × gasPrice (in wei)
-                const tokenCostWei = gasUsed * gasPrice;
+                // Use BigInt to handle large numbers accurately
+                const tokenCostWei = BigInt(gasUsed) * BigInt(gasPrice);
                 return {
                     gasUsed: gasUsed,
                     tokenCostWei: tokenCostWei
@@ -200,7 +201,10 @@ function formatGas(gas) {
 function formatTokenCost(wei) {
     if (!wei) return 'N/A';
     // Convert wei to 0G (1 0G = 10^18 wei)
-    const tokens = Number(wei) / 1e18;
+    // Handle BigInt properly
+    const weiBigInt = typeof wei === 'bigint' ? wei : BigInt(wei);
+    const divisor = BigInt(1e18);
+    const tokens = Number(weiBigInt) / Number(divisor);
     
     if (tokens >= 1) {
         return `${tokens.toFixed(6)} 0G`;
@@ -327,7 +331,12 @@ function displayPipelineTimingSummary(transactions, gasData) {
     if (!summaryContainer) return;
 
     const totalGas = gasData.reduce((sum, info) => sum + (info?.gasUsed || 0), 0);
-    const totalTokenCost = gasData.reduce((sum, info) => sum + (info?.tokenCostWei || 0n), 0n);
+    const totalTokenCost = gasData.reduce((sum, info) => {
+        if (info?.tokenCostWei) {
+            return sum + (typeof info.tokenCostWei === 'bigint' ? info.tokenCostWei : BigInt(info.tokenCostWei));
+        }
+        return sum;
+    }, 0n);
     const avgGas = gasData.filter(g => g?.gasUsed).length > 0 
         ? Math.round(totalGas / gasData.filter(g => g?.gasUsed).length) 
         : 0;
