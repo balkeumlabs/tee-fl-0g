@@ -160,9 +160,23 @@ async function fetchGasCost(txHash) {
         }
 
         const data = await response.json();
-        if (data.result && data.result.gasUsed) {
-            const gasUsed = parseInt(data.result.gasUsed, 16);
-            return gasUsed;
+        if (data.result) {
+            const gasUsed = data.result.gasUsed ? parseInt(data.result.gasUsed, 16) : null;
+            const gasPrice = data.result.effectiveGasPrice ? parseInt(data.result.effectiveGasPrice, 16) : null;
+            
+            if (gasUsed && gasPrice) {
+                // Calculate token cost: gasUsed × gasPrice (in wei)
+                const tokenCostWei = gasUsed * gasPrice;
+                return {
+                    gasUsed: gasUsed,
+                    tokenCostWei: tokenCostWei
+                };
+            } else if (gasUsed) {
+                return {
+                    gasUsed: gasUsed,
+                    tokenCostWei: null
+                };
+            }
         }
         return null;
     } catch (error) {
@@ -180,6 +194,23 @@ function formatGas(gas) {
         return `${(gas / 1000).toFixed(2)}K`;
     }
     return gas.toLocaleString();
+}
+
+// Format token cost (from wei to 0G tokens)
+function formatTokenCost(wei) {
+    if (!wei) return 'N/A';
+    // Convert wei to 0G (1 0G = 10^18 wei)
+    const tokens = Number(wei) / 1e18;
+    
+    if (tokens >= 1) {
+        return `${tokens.toFixed(6)} 0G`;
+    } else if (tokens >= 0.001) {
+        return `${(tokens * 1000).toFixed(4)} m0G`;
+    } else if (tokens >= 0.000001) {
+        return `${(tokens * 1000000).toFixed(2)} μ0G`;
+    } else {
+        return `${tokens.toExponential(2)} 0G`;
+    }
 }
 
 // Calculate time between blocks (assuming ~2s per block on 0G Mainnet)
@@ -305,19 +336,19 @@ async function displayTransactions(epochData) {
 }
 
 // Display pipeline timing summary
-function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
+function displayPipelineTimingSummary(transactions, gasData) {
     const summaryContainer = document.getElementById('pipeline-timing-summary');
     if (!summaryContainer) return;
 
-    const totalGas = gasCosts.reduce((sum, gas) => sum + (gas || 0), 0);
-    const avgGas = gasCosts.filter(g => g).length > 0 
-        ? Math.round(totalGas / gasCosts.filter(g => g).length) 
+    const totalGas = gasData.reduce((sum, info) => sum + (info?.gasUsed || 0), 0);
+    const totalTokenCost = gasData.reduce((sum, info) => sum + (info?.tokenCostWei || 0n), 0n);
+    const avgGas = gasData.filter(g => g?.gasUsed).length > 0 
+        ? Math.round(totalGas / gasData.filter(g => g?.gasUsed).length) 
         : 0;
 
     const firstBlock = transactions[0]?.block || 0;
     const lastBlock = transactions[transactions.length - 1]?.block || 0;
     const totalBlocks = lastBlock - firstBlock;
-    const totalTime = calculateTimeBetweenBlocks(firstBlock, lastBlock);
 
     summaryContainer.innerHTML = `
         <div class="timing-summary-title">Pipeline Performance Summary</div>
@@ -329,6 +360,10 @@ function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
             <div class="timing-summary-item">
                 <div class="timing-summary-label">Total Gas Used</div>
                 <div class="timing-summary-value">${formatGas(totalGas)}</div>
+            </div>
+            <div class="timing-summary-item">
+                <div class="timing-summary-label">Total Token Cost</div>
+                <div class="timing-summary-value">${formatTokenCost(totalTokenCost)}</div>
             </div>
             <div class="timing-summary-item">
                 <div class="timing-summary-label">Average Gas per TX</div>
@@ -343,12 +378,15 @@ function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
         totalGasEl.textContent = formatGas(totalGas);
     }
 
+    const totalTokenCostEl = document.getElementById('stat-total-token-cost');
+    if (totalTokenCostEl) {
+        totalTokenCostEl.textContent = formatTokenCost(totalTokenCost);
+    }
+
     const avgGasEl = document.getElementById('stat-avg-gas');
     if (avgGasEl) {
         avgGasEl.textContent = formatGas(avgGas);
     }
-
-    // Pipeline duration removed - it reflects manual test execution time, not actual pipeline performance
 }
 
 // Display epoch summary
