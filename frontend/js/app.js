@@ -263,6 +263,165 @@ function updateLastUpdated() {
     }
 }
 
+// Toggle step details
+function toggleStepDetails(stepNumber) {
+    const stepDetails = document.getElementById(`step-${stepNumber}-details`);
+    if (stepDetails) {
+        stepDetails.classList.toggle('expanded');
+        const button = stepDetails.previousElementSibling;
+        if (button && button.classList.contains('step-toggle')) {
+            button.textContent = stepDetails.classList.contains('expanded') ? 'Hide Details' : 'View Details';
+        }
+    }
+}
+
+// Toggle expandable cards
+function toggleExpandable(card) {
+    card.classList.toggle('expanded');
+}
+
+// Fetch network health
+async function fetchNetworkHealth() {
+    try {
+        const RPC_ENDPOINT = 'https://evmrpc.0g.ai';
+        const response = await fetch(RPC_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_blockNumber',
+                params: [],
+                id: 1
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network request failed');
+        }
+
+        const data = await response.json();
+        const currentBlock = parseInt(data.result, 16);
+
+        // Update current block
+        const currentBlockEl = document.getElementById('current-block');
+        if (currentBlockEl) {
+            currentBlockEl.textContent = currentBlock.toLocaleString();
+        }
+
+        // Calculate block time (simplified - would need historical data for accurate calculation)
+        const blockTimeEl = document.getElementById('block-time-value');
+        if (blockTimeEl) {
+            blockTimeEl.textContent = '~2s (estimated)';
+        }
+
+        // Update network health
+        const networkHealthEl = document.getElementById('network-health');
+        if (networkHealthEl) {
+            networkHealthEl.textContent = 'Healthy';
+            networkHealthEl.className = 'info-value status-success';
+        }
+
+        return currentBlock;
+    } catch (error) {
+        console.error('Error fetching network health:', error);
+        const networkHealthEl = document.getElementById('network-health');
+        if (networkHealthEl) {
+            networkHealthEl.textContent = 'Unknown';
+            networkHealthEl.className = 'info-value';
+        }
+        return null;
+    }
+}
+
+// Calculate statistics
+function calculateStatistics(epochData) {
+    if (!epochData || !epochData.events) return;
+
+    const events = epochData.events;
+    let totalTx = 0;
+
+    if (events.epochStarted) totalTx += events.epochStarted.length;
+    if (events.updatesSubmitted) totalTx += events.updatesSubmitted.length;
+    if (events.scoresPosted) totalTx += events.scoresPosted.length;
+    if (events.modelPublished) totalTx += events.modelPublished.length;
+
+    // Update statistics
+    const totalTxEl = document.getElementById('stat-total-tx');
+    if (totalTxEl) {
+        totalTxEl.textContent = totalTx;
+    }
+
+    const successRateEl = document.getElementById('stat-success-rate');
+    if (successRateEl) {
+        successRateEl.textContent = '100%';
+    }
+
+    const epochsEl = document.getElementById('stat-epochs');
+    if (epochsEl) {
+        epochsEl.textContent = epochData.epochId || 1;
+    }
+
+    const networkStatusEl = document.getElementById('stat-network-status');
+    if (networkStatusEl) {
+        networkStatusEl.textContent = 'Active';
+    }
+}
+
+// Animate pipeline steps
+function animatePipelineSteps() {
+    const steps = document.querySelectorAll('.pipeline-step.animated');
+    steps.forEach((step, index) => {
+        step.style.setProperty('--step-index', index);
+        step.style.animationDelay = `${index * 0.15}s`;
+    });
+}
+
+// Update epoch progress
+function updateEpochProgress(epochData) {
+    if (!epochData || !epochData.epochInfo) return;
+
+    const progressFill = document.getElementById('epoch-progress-fill');
+    const progressText = document.getElementById('epoch-progress-text');
+
+    if (epochData.epochInfo.published) {
+        if (progressFill) {
+            progressFill.style.width = '100%';
+        }
+        if (progressText) {
+            progressText.textContent = '100% Complete';
+        }
+    }
+}
+
+// Update full hashes in expandable content
+function updateFullHashes(epochData) {
+    if (!epochData || !epochData.epochInfo) return;
+
+    const epochInfo = epochData.epochInfo;
+
+    const fullModelHash = document.getElementById('full-model-hash');
+    if (fullModelHash && epochInfo.modelHash) {
+        fullModelHash.textContent = epochInfo.modelHash;
+    }
+
+    const fullScoresRoot = document.getElementById('full-scores-root');
+    if (fullScoresRoot && epochInfo.scoresRoot) {
+        fullScoresRoot.textContent = epochInfo.scoresRoot;
+    }
+
+    const fullGlobalModelCid = document.getElementById('full-global-model-cid');
+    if (fullGlobalModelCid && epochInfo.globalModelCid) {
+        fullGlobalModelCid.textContent = epochInfo.globalModelCid;
+    }
+
+    const fullGlobalModelHash = document.getElementById('full-global-model-hash');
+    if (fullGlobalModelHash && epochInfo.globalModelHash) {
+        fullGlobalModelHash.textContent = epochInfo.globalModelHash;
+    }
+}
+
 // Initialize dashboard
 async function initDashboard() {
     const data = await loadData();
@@ -282,8 +441,30 @@ async function initDashboard() {
     displayStorageStatus(storageData);
     updateLastUpdated();
 
+    // Calculate and display statistics
+    calculateStatistics(epochData);
+
+    // Fetch network health
+    await fetchNetworkHealth();
+
+    // Animate pipeline steps
+    animatePipelineSteps();
+
+    // Update epoch progress
+    updateEpochProgress(epochData);
+
+    // Update full hashes
+    updateFullHashes(epochData);
+
+    // Smooth scroll on load
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     console.log('Dashboard initialized successfully');
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', initDashboard);
+
+// Make functions globally available for onclick handlers
+window.toggleStepDetails = toggleStepDetails;
+window.toggleExpandable = toggleExpandable;

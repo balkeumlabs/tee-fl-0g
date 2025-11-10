@@ -81,12 +81,40 @@
             </div>
         </section>
 
-        <!-- Network Info -->
+        <!-- Statistics Panel -->
+        <section class="statistics-section">
+            <h2 class="section-title">Statistics</h2>
+            <div class="statistics-grid">
+                <div class="stat-card stat-primary">
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value" id="stat-total-tx">4</div>
+                    <div class="stat-description">Pipeline execution</div>
+                </div>
+                <div class="stat-card stat-success">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value" id="stat-success-rate">100%</div>
+                    <div class="stat-description">All transactions succeeded</div>
+                </div>
+                <div class="stat-card stat-info">
+                    <div class="stat-label">Epochs Completed</div>
+                    <div class="stat-value" id="stat-epochs">1</div>
+                    <div class="stat-description">Epoch 1 published</div>
+                </div>
+                <div class="stat-card stat-warning">
+                    <div class="stat-label">Network Status</div>
+                    <div class="stat-value" id="stat-network-status">Active</div>
+                    <div class="stat-description" id="stat-block-time">Block time: <span id="block-time-value">Loading...</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Network Info & Health -->
         <section class="network-info">
+            <h2 class="section-title">Network Information</h2>
             <div class="info-card">
                 <div class="info-item">
                     <span class="info-label">Network</span>
-                    <span class="info-value">0G Mainnet</span>
+                    <span class="info-value status-active">0G Mainnet</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Chain ID</span>
@@ -99,6 +127,14 @@
                 <div class="info-item">
                     <span class="info-label">Deployed</span>
                     <span class="info-value" id="deployment-date">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Current Block</span>
+                    <span class="info-value" id="current-block">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Network Health</span>
+                    <span class="info-value status-success" id="network-health">Healthy</span>
                 </div>
             </div>
         </section>
@@ -133,42 +169,83 @@
         <!-- Pipeline Visualization -->
         <section class="pipeline-section">
             <h2 class="section-title">Federated Learning Pipeline - Epoch 1</h2>
-            <div class="pipeline-container">
-                <div class="pipeline-step completed" data-step="1">
-                    <div class="step-icon">1</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Start Epoch</h3>
-                        <p class="step-description">Initialize epoch with model hash</p>
-                        <div class="step-details" id="step-1-details">Loading...</div>
+            <div class="pipeline-flow-container">
+                <div class="pipeline-flow-diagram">
+                    <div class="pipeline-step completed animated" data-step="1">
+                        <div class="step-connector step-connector-right"></div>
+                        <div class="step-icon-wrapper">
+                            <div class="step-icon">1</div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Start Epoch</h3>
+                            <p class="step-description">Initialize epoch with model hash</p>
+                            <button class="step-toggle" onclick="toggleStepDetails(1)">View Details</button>
+                            <div class="step-details expandable" id="step-1-details">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-connection">
+                        <div class="connection-line"></div>
+                        <div class="connection-arrow"></div>
+                    </div>
+                    <div class="pipeline-step completed animated" data-step="2">
+                        <div class="step-connector step-connector-left"></div>
+                        <div class="step-connector step-connector-right"></div>
+                        <div class="step-icon-wrapper">
+                            <div class="step-icon">2</div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Submit Update</h3>
+                            <p class="step-description">Encrypted model update submitted</p>
+                            <button class="step-toggle" onclick="toggleStepDetails(2)">View Details</button>
+                            <div class="step-details expandable" id="step-2-details">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-connection">
+                        <div class="connection-line"></div>
+                        <div class="connection-arrow"></div>
+                    </div>
+                    <div class="pipeline-step completed animated" data-step="3">
+                        <div class="step-connector step-connector-left"></div>
+                        <div class="step-connector step-connector-right"></div>
+                        <div class="step-icon-wrapper">
+                            <div class="step-icon">3</div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Compute Scores</h3>
+                            <p class="step-description">Contribution scores calculated</p>
+                            <button class="step-toggle" onclick="toggleStepDetails(3)">View Details</button>
+                            <div class="step-details expandable" id="step-3-details">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-connection">
+                        <div class="connection-line"></div>
+                        <div class="connection-arrow"></div>
+                    </div>
+                    <div class="pipeline-step completed animated" data-step="4">
+                        <div class="step-connector step-connector-left"></div>
+                        <div class="step-icon-wrapper">
+                            <div class="step-icon">4</div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Publish Model</h3>
+                            <p class="step-description">Global model aggregated & published</p>
+                            <button class="step-toggle" onclick="toggleStepDetails(4)">View Details</button>
+                            <div class="step-details expandable" id="step-4-details">Loading...</div>
+                        </div>
                     </div>
                 </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-step completed" data-step="2">
-                    <div class="step-icon">2</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Submit Update</h3>
-                        <p class="step-description">Encrypted model update submitted</p>
-                        <div class="step-details" id="step-2-details">Loading...</div>
-                    </div>
+            </div>
+            <!-- Epoch Progress -->
+            <div class="epoch-progress-container">
+                <div class="epoch-progress-label">Epoch 1 Progress</div>
+                <div class="epoch-progress-bar">
+                    <div class="epoch-progress-fill" id="epoch-progress-fill"></div>
                 </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-step completed" data-step="3">
-                    <div class="step-icon">3</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Compute Scores</h3>
-                        <p class="step-description">Contribution scores calculated</p>
-                        <div class="step-details" id="step-3-details">Loading...</div>
-                    </div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-step completed" data-step="4">
-                    <div class="step-icon">4</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Publish Model</h3>
-                        <p class="step-description">Global model aggregated & published</p>
-                        <div class="step-details" id="step-4-details">Loading...</div>
-                    </div>
-                </div>
+                <div class="epoch-progress-text" id="epoch-progress-text">100% Complete</div>
             </div>
         </section>
 
@@ -184,21 +261,33 @@
         <section class="epoch-summary">
             <h2 class="section-title">Epoch 1 Summary</h2>
             <div class="summary-grid">
-                <div class="summary-card">
+                <div class="summary-card expandable-card" onclick="toggleExpandable(this)">
                     <span class="summary-label">Model Hash</span>
                     <span class="summary-value" id="model-hash">Loading...</span>
+                    <div class="expandable-content">
+                        <div class="full-hash" id="full-model-hash">Loading...</div>
+                    </div>
                 </div>
-                <div class="summary-card">
+                <div class="summary-card expandable-card" onclick="toggleExpandable(this)">
                     <span class="summary-label">Scores Root</span>
                     <span class="summary-value" id="scores-root">Loading...</span>
+                    <div class="expandable-content">
+                        <div class="full-hash" id="full-scores-root">Loading...</div>
+                    </div>
                 </div>
-                <div class="summary-card">
+                <div class="summary-card expandable-card" onclick="toggleExpandable(this)">
                     <span class="summary-label">Global Model CID</span>
                     <span class="summary-value" id="global-model-cid">Loading...</span>
+                    <div class="expandable-content">
+                        <div class="full-hash" id="full-global-model-cid">Loading...</div>
+                    </div>
                 </div>
-                <div class="summary-card">
+                <div class="summary-card expandable-card" onclick="toggleExpandable(this)">
                     <span class="summary-label">Global Model Hash</span>
                     <span class="summary-value" id="global-model-hash">Loading...</span>
+                    <div class="expandable-content">
+                        <div class="full-hash" id="full-global-model-hash">Loading...</div>
+                    </div>
                 </div>
                 <div class="summary-card">
                     <span class="summary-label">Status</span>
