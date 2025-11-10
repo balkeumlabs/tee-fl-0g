@@ -611,7 +611,7 @@ body {
 
 .pipeline-flow-diagram {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0;
@@ -793,11 +793,12 @@ body {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     min-width: 40px;
     position: relative;
-    height: 50px;
+    height: 3px;
     margin: 0 0.25rem;
+    align-self: center;
 }
 
 .connection-line {
@@ -811,14 +812,15 @@ body {
 .connection-arrow {
     width: 0;
     height: 0;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
+    border-top: 1.5px solid transparent;
+    border-bottom: 1.5px solid transparent;
     border-left: 6px solid var(--primary-color);
     position: absolute;
     right: 0;
-    top: 50%;
+    top: 0;
     transform: translateY(-50%);
     margin: 0;
+    display: block;
 }
 
 /* Epoch Progress */
