@@ -97,28 +97,14 @@ body {
 
 /* Overview Section */
 .overview-section {
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
 }
 
 .overview-card {
     background: var(--bg-card);
     border-radius: var(--border-radius);
-    padding: 2.5rem;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-}
-
-.overview-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.overview-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
 }
 
 .overview-content {
