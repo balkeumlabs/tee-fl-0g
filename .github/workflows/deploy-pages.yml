@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - 'data/deploy.mainnet.json'
+      - 'data/epoch_1_mainnet_data.json'
+      - 'data/0g_storage_upload_mainnet.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Copy data files to frontend
+        run: |
+          mkdir -p frontend/data
+          cp data/deploy.mainnet.json frontend/data/ 2>/dev/null || echo "deploy.mainnet.json not found"
+          cp data/epoch_1_mainnet_data.json frontend/data/ 2>/dev/null || echo "epoch_1_mainnet_data.json not found"
+          cp data/0g_storage_upload_mainnet.json frontend/data/ 2>/dev/null || echo "0g_storage_upload_mainnet.json not found"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

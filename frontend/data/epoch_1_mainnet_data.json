@@ -1,0 +1,47 @@
+{
+  "epochId": 1,
+  "network": "0G Mainnet",
+  "chainId": 16661,
+  "contractAddress": "0x39FDd691B8fA988aE221CB3d0423c5f613Bee56e",
+  "timestamp": "2025-11-03T20:34:25.081Z",
+  "epochInfo": {
+    "modelHash": "0xe899bb46b3da376931d9ce26762908a1ce190402a9bb667ffa7cb4b1bb827536",
+    "scoresRoot": "0x226ba6cba65a4669ddfc4c6ce126ba2de2f16b80aa46f700a7399def34224d39",
+    "globalModelCid": "aggregated-model-epoch-1-1762201708010",
+    "globalModelHash": "0x845c38bef5728b6aa917d85b6557a6a0e8c54a38918ddda29a208d718d596080",
+    "published": true
+  },
+  "events": {
+    "epochStarted": [
+      {
+        "transactionHash": "0x2dc9de1139e1c7e4646a91650cc7c8f06348cac5835de3bd35f1e54bea18e4e6",
+        "blockNumber": 11455836,
+        "modelHash": "0xe899bb46b3da376931d9ce26762908a1ce190402a9bb667ffa7cb4b1bb827536"
+      }
+    ],
+    "updatesSubmitted": [
+      {
+        "transactionHash": "0x066c2c9098d8b71798416dd14231889700936ada9b131570166872fed142a919",
+        "blockNumber": 11456060,
+        "submitter": "0x9Ed57870379e28E32cb627bE365745dc184950dF",
+        "updateCid": "test-update-1762201561001",
+        "updateHash": "0x226ba6cba65a4669ddfc4c6ce126ba2de2f16b80aa46f700a7399def34224d39"
+      }
+    ],
+    "scoresPosted": [
+      {
+        "transactionHash": "0xd46a3e5627161dee7c171b7989005d2fd8d1ab73fdeea59810cbdd6778a33f1e",
+        "blockNumber": 11456196,
+        "scoresRoot": "0x226ba6cba65a4669ddfc4c6ce126ba2de2f16b80aa46f700a7399def34224d39"
+      }
+    ],
+    "modelPublished": [
+      {
+        "transactionHash": "0x4b2c7a0c789a12ed42ea05a6bc79403cda2bc0eedf8293f8d4faf99e1df34417",
+        "blockNumber": 11456260,
+        "globalModelCid": "aggregated-model-epoch-1-1762201708010",
+        "globalModelHash": "0x845c38bef5728b6aa917d85b6557a6a0e8c54a38918ddda29a208d718d596080"
+      }
+    ]
+  }
+}
