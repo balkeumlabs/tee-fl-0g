@@ -107,10 +107,6 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-.overview-card .section-title {
-    margin-bottom: 1.5rem;
-}
-
 .overview-content {
     display: flex;
     flex-direction: column;
