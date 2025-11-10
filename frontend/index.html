@@ -31,26 +31,59 @@
         <!-- Overview Section -->
         <section class="overview-section">
             <div class="overview-card">
-                <h2 class="overview-title">What is This?</h2>
-                <p class="overview-text">
-                    This dashboard showcases a <strong>Federated Learning system</strong> deployed on <strong>0G Mainnet</strong>. 
-                    Federated Learning allows multiple parties to train a shared AI model without sharing their private data.
-                </p>
-                <p class="overview-text">
-                    <strong>What happened:</strong> We successfully deployed smart contracts (AccessRegistry and EpochManager) on 0G Mainnet 
-                    and ran a complete federated learning pipeline end-to-end. This included:
-                </p>
-                <ul class="overview-list">
-                    <li>Starting Epoch 1 with an initial model hash</li>
-                    <li>Submitting an encrypted model update (without exposing private data)</li>
-                    <li>Computing contribution scores for the update</li>
-                    <li>Aggregating updates using FedAvg (Federated Averaging)</li>
-                    <li>Publishing the global model on-chain</li>
-                </ul>
-                <p class="overview-text">
-                    <strong>All 4 transactions succeeded</strong> and are verified on the 0G blockchain. The dashboard below shows 
-                    the contract addresses, transaction history, and pipeline execution details.
-                </p>
+                <div class="overview-header">
+                    <div class="overview-icon">📊</div>
+                    <h2 class="overview-title">What is This?</h2>
+                </div>
+                <div class="overview-content">
+                    <div class="overview-intro">
+                        <p class="overview-text">
+                            This dashboard showcases a <strong>Federated Learning system</strong> deployed on <strong>0G Mainnet</strong>. 
+                            Federated Learning allows multiple parties to train a shared AI model without sharing their private data.
+                        </p>
+                    </div>
+                    <div class="overview-highlight">
+                        <div class="highlight-icon">✨</div>
+                        <div class="highlight-content">
+                            <h3 class="highlight-title">What happened:</h3>
+                            <p class="highlight-text">
+                                We successfully deployed smart contracts (AccessRegistry and EpochManager) on 0G Mainnet 
+                                and ran a complete federated learning pipeline end-to-end. This included:
+                            </p>
+                        </div>
+                    </div>
+                    <ul class="overview-list">
+                        <li>
+                            <span class="list-icon">1️⃣</span>
+                            <span class="list-text">Starting Epoch 1 with an initial model hash</span>
+                        </li>
+                        <li>
+                            <span class="list-icon">2️⃣</span>
+                            <span class="list-text">Submitting an encrypted model update (without exposing private data)</span>
+                        </li>
+                        <li>
+                            <span class="list-icon">3️⃣</span>
+                            <span class="list-text">Computing contribution scores for the update</span>
+                        </li>
+                        <li>
+                            <span class="list-icon">4️⃣</span>
+                            <span class="list-text">Aggregating updates using FedAvg (Federated Averaging)</span>
+                        </li>
+                        <li>
+                            <span class="list-icon">✅</span>
+                            <span class="list-text">Publishing the global model on-chain</span>
+                        </li>
+                    </ul>
+                    <div class="overview-success">
+                        <div class="success-badge">
+                            <span class="success-icon">✓</span>
+                            <span class="success-text"><strong>All 4 transactions succeeded</strong> and are verified on the 0G blockchain.</span>
+                        </div>
+                        <p class="overview-text">
+                            The dashboard below shows the contract addresses, transaction history, and pipeline execution details.
+                        </p>
+                    </div>
+                </div>
             </div>
         </section>
 
