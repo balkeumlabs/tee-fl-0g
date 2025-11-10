@@ -863,12 +863,13 @@ body {
 }
 
 .connection-line {
-    width: calc(100% - 6px);
+    width: 100%;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    background: var(--primary-color);
     position: absolute;
     left: 0;
     top: 0;
+    display: block;
 }
 
 .connection-arrow {
@@ -878,10 +879,11 @@ body {
     border-bottom: 1.5px solid transparent;
     border-left: 6px solid var(--primary-color);
     position: absolute;
-    right: 0;
+    right: -1px;
     top: 0;
     margin: 0;
     display: block;
+    z-index: 1;
 }
 
 /* Epoch Progress */
