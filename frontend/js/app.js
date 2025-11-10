@@ -292,7 +292,6 @@ async function displayTransactions(epochData) {
                 <div class="transaction-hash">${tx.hash}</div>
                 <div class="transaction-meta">${tx.details}</div>
                 <div class="transaction-gas">Gas: ${gasDisplay}</div>
-                ${timing ? `<div class="transaction-timing">Time from previous: ${timing}</div>` : ''}
             </div>
             <a href="${createExplorerLink('tx', tx.hash)}" target="_blank" class="transaction-link">
                 View on Explorer →
@@ -324,10 +323,6 @@ function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
         <div class="timing-summary-title">Pipeline Performance Summary</div>
         <div class="timing-summary-grid">
             <div class="timing-summary-item">
-                <div class="timing-summary-label">Total Duration</div>
-                <div class="timing-summary-value">${totalTime}</div>
-            </div>
-            <div class="timing-summary-item">
                 <div class="timing-summary-label">Total Blocks</div>
                 <div class="timing-summary-value">${totalBlocks}</div>
             </div>
@@ -353,10 +348,7 @@ function displayPipelineTimingSummary(transactions, gasCosts, timingData) {
         avgGasEl.textContent = formatGas(avgGas);
     }
 
-    const pipelineDurationEl = document.getElementById('stat-pipeline-duration');
-    if (pipelineDurationEl) {
-        pipelineDurationEl.textContent = totalTime;
-    }
+    // Pipeline duration removed - it reflects manual test execution time, not actual pipeline performance
 }
 
 // Display epoch summary
