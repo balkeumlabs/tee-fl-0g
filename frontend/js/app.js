@@ -322,15 +322,12 @@ async function displayTransactions(epochData) {
         `;
     }).join('');
 
-    // Display pipeline timing summary
-    displayPipelineTimingSummary(transactions, gasData);
+    // Update statistics with gas and token cost data
+    updateStatisticsFromGasData(transactions, gasData);
 }
 
-// Display pipeline timing summary
-function displayPipelineTimingSummary(transactions, gasData) {
-    const summaryContainer = document.getElementById('pipeline-timing-summary');
-    if (!summaryContainer) return;
-
+// Update statistics from gas data
+function updateStatisticsFromGasData(transactions, gasData) {
     const totalGas = gasData.reduce((sum, info) => sum + (info?.gasUsed || 0), 0);
     const totalTokenCost = gasData.reduce((sum, info) => {
         if (info?.tokenCostWei) {
@@ -341,21 +338,6 @@ function displayPipelineTimingSummary(transactions, gasData) {
     const avgGas = gasData.filter(g => g?.gasUsed).length > 0 
         ? Math.round(totalGas / gasData.filter(g => g?.gasUsed).length) 
         : 0;
-
-    const firstBlock = transactions[0]?.block || 0;
-    const lastBlock = transactions[transactions.length - 1]?.block || 0;
-    const totalBlocks = lastBlock - firstBlock;
-
-    // Only show Total Blocks (not duplicate gas/token info)
-    summaryContainer.innerHTML = `
-        <div class="timing-summary-title">Pipeline Performance Summary</div>
-        <div class="timing-summary-grid">
-            <div class="timing-summary-item">
-                <div class="timing-summary-label">Total Blocks</div>
-                <div class="timing-summary-value">${totalBlocks}</div>
-            </div>
-        </div>
-    `;
 
     // Update statistics
     const totalGasEl = document.getElementById('stat-total-gas');

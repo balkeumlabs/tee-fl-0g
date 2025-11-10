@@ -977,46 +977,6 @@ body {
     font-weight: 500;
 }
 
-.pipeline-timing-summary {
-    background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    margin-top: 1.5rem;
-}
-
-.timing-summary-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 1rem;
-}
-
-.timing-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-
-.timing-summary-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.timing-summary-label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.timing-summary-value {
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: 'Courier New', monospace;
-}
 
 .transaction-icon {
     width: 48px;
@@ -1263,10 +1223,6 @@ body {
     .badges-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
-    }
-
-    .timing-summary-grid {
-        grid-template-columns: 1fr;
     }
 
     .stat-value {
