@@ -1,14 +1,14 @@
 // Configuration
 const BLOCK_EXPLORER_BASE = 'https://chainscan.0g.ai';
-const DATA_BASE_PATH = './data'; // Relative path from frontend/ to data/
+const API_BASE = window.location.origin; // Use same origin (works for both local and AWS)
 
-// Load data from JSON files
+// Load data from backend API
 async function loadData() {
     try {
         const [deployData, epochData, storageData] = await Promise.all([
-            fetch(`${DATA_BASE_PATH}/deploy.mainnet.json`).then(r => r.json()),
-            fetch(`${DATA_BASE_PATH}/epoch_1_mainnet_data.json`).then(r => r.json()),
-            fetch(`${DATA_BASE_PATH}/0g_storage_upload_mainnet.json`).then(r => r.json()).catch(() => null)
+            fetch(`${API_BASE}/api/deployment`).then(r => r.json()),
+            fetch(`${API_BASE}/api/epoch/1`).then(r => r.json()),
+            fetch(`${API_BASE}/api/storage`).then(r => r.json()).catch(() => null)
         ]);
 
         return { deployData, epochData, storageData };
@@ -138,21 +138,15 @@ function displayPipelineSteps(epochData) {
     }
 }
 
-// Fetch gas cost for a transaction
+// Fetch gas cost for a transaction (via backend API)
 async function fetchGasCost(txHash) {
     try {
-        const RPC_ENDPOINT = 'https://evmrpc.0g.ai';
-        const response = await fetch(RPC_ENDPOINT, {
+        const response = await fetch(`${API_BASE}/api/transaction/receipt`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                jsonrpc: '2.0',
-                method: 'eth_getTransactionReceipt',
-                params: [txHash],
-                id: 1
-            })
+            body: JSON.stringify({ txHash })
         });
 
         if (!response.ok) {
@@ -160,24 +154,11 @@ async function fetchGasCost(txHash) {
         }
 
         const data = await response.json();
-        if (data.result) {
-            const gasUsed = data.result.gasUsed ? parseInt(data.result.gasUsed, 16) : null;
-            const gasPrice = data.result.effectiveGasPrice ? parseInt(data.result.effectiveGasPrice, 16) : null;
-            
-            if (gasUsed && gasPrice) {
-                // Calculate token cost: gasUsed × gasPrice (in wei)
-                // Use BigInt to handle large numbers accurately
-                const tokenCostWei = BigInt(gasUsed) * BigInt(gasPrice);
-                return {
-                    gasUsed: gasUsed,
-                    tokenCostWei: tokenCostWei
-                };
-            } else if (gasUsed) {
-                return {
-                    gasUsed: gasUsed,
-                    tokenCostWei: null
-                };
-            }
+        if (data.gasUsed) {
+            return {
+                gasUsed: parseInt(data.gasUsed),
+                tokenCostWei: data.tokenCostWei ? BigInt(data.tokenCostWei) : null
+            };
         }
         return null;
     } catch (error) {
@@ -421,29 +402,17 @@ function toggleExpandable(card) {
     card.classList.toggle('expanded');
 }
 
-// Fetch network health
+// Fetch network health (via backend API)
 async function fetchNetworkHealth() {
     try {
-        const RPC_ENDPOINT = 'https://evmrpc.0g.ai';
-        const response = await fetch(RPC_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                jsonrpc: '2.0',
-                method: 'eth_blockNumber',
-                params: [],
-                id: 1
-            })
-        });
+        const response = await fetch(`${API_BASE}/api/network/health`);
 
         if (!response.ok) {
             throw new Error('Network request failed');
         }
 
         const data = await response.json();
-        const currentBlock = parseInt(data.result, 16);
+        const currentBlock = parseInt(data.blockNumber);
 
         // Update current block
         const currentBlockEl = document.getElementById('current-block');
@@ -451,17 +420,17 @@ async function fetchNetworkHealth() {
             currentBlockEl.textContent = currentBlock.toLocaleString();
         }
 
-        // Calculate block time (simplified - would need historical data for accurate calculation)
+        // Update block time
         const blockTimeEl = document.getElementById('block-time-value');
         if (blockTimeEl) {
-            blockTimeEl.textContent = '~2s (estimated)';
+            blockTimeEl.textContent = data.blockTime || '~2s (estimated)';
         }
 
         // Update network health
         const networkHealthEl = document.getElementById('network-health');
         if (networkHealthEl) {
-            networkHealthEl.textContent = 'Healthy';
-            networkHealthEl.className = 'info-value status-success';
+            networkHealthEl.textContent = data.status === 'healthy' ? 'Healthy' : 'Unknown';
+            networkHealthEl.className = data.status === 'healthy' ? 'info-value status-success' : 'info-value';
         }
 
         return currentBlock;

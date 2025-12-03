@@ -11,7 +11,9 @@
     "market:setup": "node scripts/market-setup.mjs",
     "market:account": "node scripts/market-account.mjs",
     "market:inspect": "node scripts/market-inspect.mjs",
-    "market:compute": "node scripts/compute-flow.mjs"
+    "market:compute": "node scripts/compute-flow.mjs",
+    "server": "node server/index.js",
+    "server:dev": "node --watch server/index.js"
   },
   "dependencies": {
     "@0glabs/0g-serving-broker": "^0.3.3",
@@ -20,9 +22,11 @@
     "@noble/hashes": "^2.0.0",
     "@openzeppelin/contracts": "^5.4.0",
     "axios": "^1.11.0",
+    "cors": "^2.8.5",
     "cross-fetch": "^4.1.0",
     "dotenv": "^17.2.2",
     "ethers": "^6.13.1",
+    "express": "^4.21.1",
     "form-data": "^4.0.4",
     "libsodium-wrappers": "^0.7.15",
     "multiformats": "^13.4.0",
