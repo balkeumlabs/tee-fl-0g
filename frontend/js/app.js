@@ -381,19 +381,31 @@ function updateStatisticsFromGasData(transactions, gasData) {
 
 // Display epoch summary
 function displayEpochSummary(epochData) {
-    if (!epochData || !epochData.epochInfo) return;
+    if (!epochData) return;
 
-    const epochInfo = epochData.epochInfo;
+    // Handle both old format (epochData.epochInfo) and new format (direct properties)
+    const epochInfo = epochData.epochInfo || epochData;
 
     const modelHash = document.getElementById('model-hash');
     const scoresRoot = document.getElementById('scores-root');
     const globalModelCid = document.getElementById('global-model-cid');
     const globalModelHash = document.getElementById('global-model-hash');
 
-    if (modelHash) modelHash.textContent = formatHash(epochInfo.modelHash);
-    if (scoresRoot) scoresRoot.textContent = formatHash(epochInfo.scoresRoot);
-    if (globalModelCid) globalModelCid.textContent = epochInfo.globalModelCid || 'N/A';
-    if (globalModelHash) globalModelHash.textContent = formatHash(epochInfo.globalModelHash);
+    if (modelHash) modelHash.textContent = epochInfo.modelHash ? formatHash(epochInfo.modelHash) : 'N/A';
+    if (scoresRoot) scoresRoot.textContent = epochInfo.scoresRoot ? formatHash(epochInfo.scoresRoot) : 'Not set';
+    if (globalModelCid) globalModelCid.textContent = epochInfo.globalModelCid || 'Not published';
+    if (globalModelHash) globalModelHash.textContent = epochInfo.globalModelHash ? formatHash(epochInfo.globalModelHash) : 'Not published';
+    
+    // Update full hashes
+    const fullModelHash = document.getElementById('full-model-hash');
+    const fullScoresRoot = document.getElementById('full-scores-root');
+    const fullGlobalModelCid = document.getElementById('full-global-model-cid');
+    const fullGlobalModelHash = document.getElementById('full-global-model-hash');
+    
+    if (fullModelHash) fullModelHash.textContent = epochInfo.modelHash || 'N/A';
+    if (fullScoresRoot) fullScoresRoot.textContent = epochInfo.scoresRoot || 'Not set';
+    if (fullGlobalModelCid) fullGlobalModelCid.textContent = epochInfo.globalModelCid || 'Not published';
+    if (fullGlobalModelHash) fullGlobalModelHash.textContent = epochInfo.globalModelHash || 'Not published';
 }
 
 // Update epoch ID in UI
@@ -549,28 +561,29 @@ function updateEpochProgress(epochData) {
 
 // Update full hashes in expandable content
 function updateFullHashes(epochData) {
-    if (!epochData || !epochData.epochInfo) return;
+    if (!epochData) return;
 
-    const epochInfo = epochData.epochInfo;
+    // Handle both old format (epochData.epochInfo) and new format (direct properties)
+    const epochInfo = epochData.epochInfo || epochData;
 
     const fullModelHash = document.getElementById('full-model-hash');
-    if (fullModelHash && epochInfo.modelHash) {
-        fullModelHash.textContent = epochInfo.modelHash;
+    if (fullModelHash) {
+        fullModelHash.textContent = epochInfo.modelHash || 'N/A';
     }
 
     const fullScoresRoot = document.getElementById('full-scores-root');
-    if (fullScoresRoot && epochInfo.scoresRoot) {
-        fullScoresRoot.textContent = epochInfo.scoresRoot;
+    if (fullScoresRoot) {
+        fullScoresRoot.textContent = epochInfo.scoresRoot || 'Not set';
     }
 
     const fullGlobalModelCid = document.getElementById('full-global-model-cid');
-    if (fullGlobalModelCid && epochInfo.globalModelCid) {
-        fullGlobalModelCid.textContent = epochInfo.globalModelCid;
+    if (fullGlobalModelCid) {
+        fullGlobalModelCid.textContent = epochInfo.globalModelCid || 'Not published';
     }
 
     const fullGlobalModelHash = document.getElementById('full-global-model-hash');
-    if (fullGlobalModelHash && epochInfo.globalModelHash) {
-        fullGlobalModelHash.textContent = epochInfo.globalModelHash;
+    if (fullGlobalModelHash) {
+        fullGlobalModelHash.textContent = epochInfo.globalModelHash || 'Not published';
     }
 }
 
