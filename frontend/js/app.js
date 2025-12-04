@@ -544,17 +544,28 @@ function animatePipelineSteps() {
 
 // Update epoch progress
 function updateEpochProgress(epochData) {
-    if (!epochData || !epochData.epochInfo) return;
+    if (!epochData) return;
+
+    // Handle both old format (epochData.epochInfo) and new format (direct properties)
+    const epochInfo = epochData.epochInfo || epochData;
 
     const progressFill = document.getElementById('epoch-progress-fill');
     const progressText = document.getElementById('epoch-progress-text');
 
-    if (epochData.epochInfo.published) {
+    if (epochInfo.published) {
         if (progressFill) {
             progressFill.style.width = '100%';
         }
         if (progressText) {
             progressText.textContent = '100% Complete';
+        }
+    } else {
+        // Epoch is active but not published yet
+        if (progressFill) {
+            progressFill.style.width = '25%'; // Just started
+        }
+        if (progressText) {
+            progressText.textContent = 'In Progress';
         }
     }
 }
