@@ -95,11 +95,20 @@ app.get('/api/epoch/:epochNumber', async (req, res) => {
         // Get epoch info from blockchain
         const epochInfo = await epochManager.epochs(epochNumber);
         
-        // Get update events
-        const filter = epochManager.filters.UpdateSubmitted(epochNumber);
-        const events = await epochManager.queryFilter(filter);
+        // Fetch all events for this epoch
+        const epochStartedFilter = epochManager.filters.EpochStarted(epochNumber);
+        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(epochNumber);
+        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(epochNumber);
+        const modelPublishedFilter = epochManager.filters.ModelPublished(epochNumber);
         
-        // Build epoch data structure
+        const [epochStartedEvents, updateEvents, scoresEvents, publishedEvents] = await Promise.all([
+            epochManager.queryFilter(epochStartedFilter).catch(() => []),
+            epochManager.queryFilter(updateSubmittedFilter).catch(() => []),
+            epochManager.queryFilter(scoresPostedFilter).catch(() => []),
+            epochManager.queryFilter(modelPublishedFilter).catch(() => [])
+        ]);
+        
+        // Build epoch data structure to match frontend expectations
         const epochData = {
             epochId: parseInt(epochNumber),
             modelHash: epochInfo.modelHash,
@@ -107,13 +116,35 @@ app.get('/api/epoch/:epochNumber', async (req, res) => {
             globalModelCid: epochInfo.globalModelCid || null,
             globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
             published: epochInfo.published,
-            updates: events.map(e => ({
-                submitter: e.args.submitter,
-                updateCid: e.args.updateCid,
-                updateHash: e.args.updateHash,
-                blockNumber: e.blockNumber,
-                transactionHash: e.transactionHash
-            }))
+            events: {
+                epochStarted: epochStartedEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    modelHash: e.args.modelHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                updatesSubmitted: updateEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    submitter: e.args.submitter,
+                    updateCid: e.args.updateCid,
+                    updateHash: e.args.updateHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                scoresPosted: scoresEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    scoresRoot: e.args.scoresRoot,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                modelPublished: publishedEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    globalModelCid: e.args.globalModelCid,
+                    globalModelHash: e.args.globalModelHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                }))
+            }
         };
         
         res.json(epochData);
@@ -162,9 +193,21 @@ app.get('/api/epoch/latest', async (req, res) => {
         
         // Fetch epoch data using the existing endpoint logic
         const epochInfo = await epochManager.epochs(latestEpoch);
-        const filter = epochManager.filters.UpdateSubmitted(latestEpoch);
-        const events = await epochManager.queryFilter(filter);
         
+        // Fetch all events for this epoch
+        const epochStartedFilter = epochManager.filters.EpochStarted(latestEpoch);
+        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(latestEpoch);
+        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(latestEpoch);
+        const modelPublishedFilter = epochManager.filters.ModelPublished(latestEpoch);
+        
+        const [epochStartedEvents, updateEvents, scoresEvents, publishedEvents] = await Promise.all([
+            epochManager.queryFilter(epochStartedFilter).catch(() => []),
+            epochManager.queryFilter(updateSubmittedFilter).catch(() => []),
+            epochManager.queryFilter(scoresPostedFilter).catch(() => []),
+            epochManager.queryFilter(modelPublishedFilter).catch(() => [])
+        ]);
+        
+        // Structure data to match frontend expectations
         const epochData = {
             epochId: latestEpoch,
             modelHash: epochInfo.modelHash,
@@ -172,13 +215,35 @@ app.get('/api/epoch/latest', async (req, res) => {
             globalModelCid: epochInfo.globalModelCid || null,
             globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
             published: epochInfo.published,
-            updates: events.map(e => ({
-                submitter: e.args.submitter,
-                updateCid: e.args.updateCid,
-                updateHash: e.args.updateHash,
-                blockNumber: e.blockNumber,
-                transactionHash: e.transactionHash
-            }))
+            events: {
+                epochStarted: epochStartedEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    modelHash: e.args.modelHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                updatesSubmitted: updateEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    submitter: e.args.submitter,
+                    updateCid: e.args.updateCid,
+                    updateHash: e.args.updateHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                scoresPosted: scoresEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    scoresRoot: e.args.scoresRoot,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                })),
+                modelPublished: publishedEvents.map(e => ({
+                    epochId: e.args.epochId.toString(),
+                    globalModelCid: e.args.globalModelCid,
+                    globalModelHash: e.args.globalModelHash,
+                    blockNumber: e.blockNumber,
+                    transactionHash: e.transactionHash
+                }))
+            }
         };
         
         res.json(epochData);
