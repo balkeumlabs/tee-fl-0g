@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <base href="./">
+    <title>FL Pipeline Training | TEE-FL-0G</title>
+    <meta name="description" content="Federated Learning Pipeline Training Interface">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .training-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .training-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+        .training-header h1 {
+            margin-bottom: 0.5rem;
+        }
+        .training-nav {
+            margin-top: 1rem;
+        }
+        .training-nav a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-right: 1rem;
+        }
+        .training-nav a:hover {
+            text-decoration: underline;
+        }
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tab:hover {
+            color: var(--primary-color);
+        }
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .training-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 768px) {
+            .training-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .status-card, .stats-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+        .status-card h2, .stats-card h2 {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .refresh-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .refresh-link:hover {
+            text-decoration: underline;
+        }
+        .training-status-large {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            color: var(--text-primary);
+        }
+        .training-status-large.active {
+            color: var(--success-color);
+        }
+        .training-status-large.inactive {
+            color: var(--text-secondary);
+        }
+        .status-message {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        .btn-start {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+        .btn-start:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-stop {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: not-allowed;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.6;
+        }
+        .stats-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+        .stats-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .stats-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+        }
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h2 {
+            margin-bottom: 0.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .form-group label .required {
+            color: #ef4444;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: var(--font-family);
+            font-size: 0.875rem;
+        }
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        .btn-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-cancel:hover {
+            background: var(--border-color);
+        }
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .chart-header h3 {
+            margin: 0;
+        }
+        .btn-export {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-export:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="training-container">
+        <!-- Header -->
+        <div class="training-header">
+            <h1>Federated Learning Pipeline Training</h1>
+            <p class="subtitle">Manage training sessions and monitor performance</p>
+            <div class="training-nav">
+                <a href="index.html">← Back to Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="overview">
+                <span>✓</span>
+                <span>TRAINING OVERVIEW</span>
+            </button>
+            <button class="tab" data-tab="metrics">
+                <span>📊</span>
+                <span>DETAILED METRICS</span>
+            </button>
+        </div>
+
+        <!-- Training Overview Tab -->
+        <div class="tab-content active" id="overview-tab">
+            <div class="training-grid">
+                <!-- Training Status -->
+                <div class="status-card">
+                    <h2>
+                        <span>Training Status</span>
+                        <a href="#" class="refresh-link" onclick="refreshTrainingStatus(); return false;">
+                            <span>↻</span>
+                            <span>REFRESH</span>
+                        </a>
+                    </h2>
+                    <div class="training-status-large inactive" id="training-status">Training Inactive</div>
+                    <p class="status-message" id="status-message">Ready to start a new training session</p>
+                    <div class="action-buttons">
+                        <button class="btn-start" onclick="openConfigModal()">
+                            <span>▶</span>
+                            <span>START TRAINING</span>
+                        </button>
+                        <button class="btn-stop" disabled>
+                            <span>■</span>
+                            <span>STOP TRAINING</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Training Statistics -->
+                <div class="stats-card">
+                    <h2>Training Statistics</h2>
+                    <div class="stats-item">
+                        <span class="stats-label">Status:</span>
+                        <span class="stats-value" id="stats-status">Inactive</span>
+                    </div>
+                    <div class="stats-item">
+                        <span class="stats-label">Connected Clients:</span>
+                        <span class="stats-value" id="stats-clients">0</span>
+                    </div>
+                    <div class="stats-item">
+                        <span class="stats-label">Current Round:</span>
+                        <span class="stats-value" id="stats-round">0/10</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Metrics Tab -->
+        <div class="tab-content" id="metrics-tab">
+            <!-- Training & Validation Loss Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Training & Validation Loss</h3>
+                    <button class="btn-export" onclick="exportChartData('loss')">
+                        <span>⬇</span>
+                        <span>EXPORT DATA</span>
+                    </button>
+                </div>
+                <canvas id="loss-chart"></canvas>
+            </div>
+
+            <!-- Training & Validation Accuracy Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Training & Validation Accuracy</h3>
+                    <button class="btn-export" onclick="exportChartData('accuracy')">
+                        <span>⬇</span>
+                        <span>EXPORT DATA</span>
+                    </button>
+                </div>
+                <canvas id="accuracy-chart"></canvas>
+            </div>
+
+            <!-- AUROC Score Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>AUROC Score</h3>
+                    <button class="btn-export" onclick="exportChartData('auroc')">
+                        <span>⬇</span>
+                        <span>EXPORT DATA</span>
+                    </button>
+                </div>
+                <canvas id="auroc-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configure Training Modal -->
+    <div class="modal-overlay" id="config-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Configure Training</h2>
+            </div>
+            <form id="config-form">
+                <div class="form-group">
+                    <label for="num-rounds">Number of Rounds <span class="required">*</span></label>
+                    <input type="number" id="num-rounds" name="numRounds" value="10" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="min-clients">Minimum Clients <span class="required">*</span></label>
+                    <input type="number" id="min-clients" name="minClients" value="3" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="local-epochs">Local Epochs <span class="required">*</span></label>
+                    <input type="number" id="local-epochs" name="localEpochs" value="5" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="batch-size">Batch Size <span class="required">*</span></label>
+                    <input type="number" id="batch-size" name="batchSize" value="32" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="learning-rate">Learning Rate <span class="required">*</span></label>
+                    <input type="number" id="learning-rate" name="learningRate" value="0.01" step="0.001" min="0" required>
+                    <small>Default: 0.01</small>
+                </div>
+                <div class="form-group">
+                    <label for="model">Model <span class="required">*</span></label>
+                    <select id="model" name="model" required>
+                        <option value="default">Default Model</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeConfigModal()">CANCEL</button>
+                    <button type="submit" class="btn-start">
+                        <span>▶</span>
+                        <span>START TRAINING</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/training.js"></script>
+</body>
+</html>
+

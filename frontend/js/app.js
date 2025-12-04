@@ -15,7 +15,7 @@ let blockNumberInterval = null;
 async function loadData(retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
-            const [deployData, epochData, storageData] = await Promise.all([
+            const [deployData, epochData] = await Promise.all([
                 fetch(`${API_BASE}/api/deployment`, { cache: 'no-cache' })
                     .then(r => {
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -25,16 +25,10 @@ async function loadData(retries = 3) {
                     .then(r => {
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
                         return r.json();
-                    }),
-                fetch(`${API_BASE}/api/storage`, { cache: 'no-cache' })
-                    .then(r => {
-                        if (!r.ok) return null;
-                        return r.json();
                     })
-                    .catch(() => null)
             ]);
 
-            return { deployData, epochData, storageData };
+            return { deployData, epochData };
         } catch (error) {
             console.error(`Error loading data (attempt ${i + 1}/${retries}):`, error);
             if (i === retries - 1) {
@@ -395,29 +389,6 @@ function displayEpochSummary(epochData) {
     if (globalModelHash) globalModelHash.textContent = formatHash(epochInfo.globalModelHash);
 }
 
-// Display storage status
-function displayStorageStatus(storageData) {
-    const storageDetails = document.getElementById('storage-details');
-    if (!storageDetails) return;
-
-    if (storageData && storageData.success) {
-        storageDetails.innerHTML = `
-            <div><strong>Status:</strong> Upload successful</div>
-            <div><strong>Root Hash (CID):</strong> ${storageData.rootHash}</div>
-            <div><strong>Transaction:</strong> ${storageData.txHash?.txHash || 'N/A'}</div>
-            <div><strong>URL:</strong> <a href="#" class="info-link">${storageData.url}</a></div>
-            <div><strong>File Hash:</strong> ${formatHash(storageData.fileHash)}</div>
-            <div><strong>File Size:</strong> ${storageData.fileSize} bytes</div>
-            <div><strong>API:</strong> ${storageData.api || 'Official API from docs.0g.ai'}</div>
-        `;
-    } else {
-        storageDetails.innerHTML = `
-            <div><strong>Status:</strong> Storage integration ready</div>
-            <div>0G Storage uploads are working correctly using the official SDK API.</div>
-        `;
-    }
-}
-
 // Update last updated timestamp
 function updateLastUpdated() {
     const lastUpdated = document.getElementById('last-updated');
@@ -594,14 +565,13 @@ async function initDashboard() {
         return;
     }
 
-    const { deployData, epochData, storageData } = data;
+    const { deployData, epochData } = data;
 
     // Display all sections
     displayDeploymentInfo(deployData);
     displayPipelineSteps(epochData);
     await displayTransactions(epochData);
     displayEpochSummary(epochData);
-    displayStorageStatus(storageData);
     updateLastUpdated();
 
     // Calculate and display statistics
@@ -701,14 +671,13 @@ async function refreshDashboard() {
             return;
         }
 
-        const { deployData, epochData, storageData } = data;
+        const { deployData, epochData } = data;
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);
         displayPipelineSteps(epochData);
         await displayTransactions(epochData);
         displayEpochSummary(epochData);
-        displayStorageStatus(storageData);
         updateLastUpdated();
         calculateStatistics(epochData);
         updateFullHashes(epochData);

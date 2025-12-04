@@ -26,6 +26,10 @@
                         <span class="status-dot active"></span>
                         <span class="status-text">Mainnet Active</span>
                     </div>
+                    <a href="training.html" class="refresh-btn" style="text-decoration: none; margin-right: 0.5rem;" title="FL Pipeline Training">
+                        <span class="refresh-icon">⚙</span>
+                        <span class="refresh-text">Training</span>
+                    </a>
                     <button id="refresh-btn" class="refresh-btn" onclick="refreshDashboard()" title="Refresh data">
                         <span class="refresh-icon">↻</span>
                         <span class="refresh-text">Refresh</span>
@@ -33,59 +37,6 @@
                 </div>
             </div>
         </header>
-
-        <!-- Overview Section -->
-        <section class="overview-section">
-            <div class="overview-card">
-                <div class="overview-content">
-                    <div class="overview-intro">
-                        <p class="overview-text">
-                            This dashboard showcases a <strong>Federated Learning system</strong> deployed on <strong>0G Mainnet</strong>. 
-                            Federated Learning allows multiple parties to train a shared AI model without sharing their private data.
-                        </p>
-                    </div>
-                    <div class="overview-highlight">
-                        <div class="highlight-content">
-                            <h3 class="highlight-title">What happened:</h3>
-                            <p class="highlight-text">
-                                We successfully deployed smart contracts (AccessRegistry and EpochManager) on 0G Mainnet 
-                                and ran a complete federated learning pipeline end-to-end. This included:
-                            </p>
-                        </div>
-                    </div>
-                    <ul class="overview-list">
-                        <li>
-                            <span class="list-number">1</span>
-                            <span class="list-text">Starting Epoch 1 with an initial model hash</span>
-                        </li>
-                        <li>
-                            <span class="list-number">2</span>
-                            <span class="list-text">Submitting an encrypted model update (without exposing private data)</span>
-                        </li>
-                        <li>
-                            <span class="list-number">3</span>
-                            <span class="list-text">Computing contribution scores for the update</span>
-                        </li>
-                        <li>
-                            <span class="list-number">4</span>
-                            <span class="list-text">Aggregating updates using FedAvg (Federated Averaging)</span>
-                        </li>
-                        <li>
-                            <span class="list-number">5</span>
-                            <span class="list-text">Publishing the global model on-chain</span>
-                        </li>
-                    </ul>
-                    <div class="overview-success">
-                        <div class="success-badge">
-                            <span class="success-text"><strong>All 4 transactions succeeded</strong> and are verified on the 0G blockchain.</span>
-                        </div>
-                        <p class="overview-text">
-                            The dashboard below shows the contract addresses, transaction history, and pipeline execution details.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Integration Badges -->
         <section class="integration-badges-section">
@@ -95,13 +46,6 @@
                     <div class="badge-content">
                         <div class="badge-title">0G Mainnet</div>
                         <div class="badge-description">Deployed & Active</div>
-                    </div>
-                    <div class="badge-icon">✓</div>
-                </div>
-                <div class="integration-badge badge-success">
-                    <div class="badge-content">
-                        <div class="badge-title">0G Storage</div>
-                        <div class="badge-description">Uploads Working</div>
                     </div>
                     <div class="badge-icon">✓</div>
                 </div>
@@ -338,20 +282,6 @@
                 <div class="summary-card">
                     <span class="summary-label">Status</span>
                     <span class="summary-value status-published">Published</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- 0G Storage Status -->
-        <section class="storage-section">
-            <h2 class="section-title">0G Storage Integration</h2>
-            <div class="storage-card">
-                <div class="storage-status">
-                    <span class="status-dot active"></span>
-                    <span class="storage-status-text">Uploads Working</span>
-                </div>
-                <div class="storage-details" id="storage-details">
-                    <!-- Storage details will be loaded here -->
                 </div>
             </div>
         </section>
