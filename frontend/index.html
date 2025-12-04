@@ -158,7 +158,7 @@
 
         <!-- Pipeline Visualization -->
         <section class="pipeline-section">
-            <h2 class="section-title">Federated Learning Pipeline - Epoch 1</h2>
+            <h2 class="section-title" id="pipeline-title">Federated Learning Pipeline - Epoch <span id="current-epoch-id">Loading...</span></h2>
             <div class="pipeline-flow-container">
                 <div class="pipeline-flow-diagram">
                     <div class="pipeline-step completed animated" data-step="1">
@@ -231,7 +231,7 @@
             </div>
             <!-- Epoch Progress -->
             <div class="epoch-progress-container">
-                <div class="epoch-progress-label">Epoch 1 Progress</div>
+                <div class="epoch-progress-label">Epoch <span id="progress-epoch-id">Loading...</span> Progress</div>
                 <div class="epoch-progress-bar">
                     <div class="epoch-progress-fill" id="epoch-progress-fill"></div>
                 </div>
@@ -249,7 +249,7 @@
 
         <!-- Epoch Summary -->
         <section class="epoch-summary">
-            <h2 class="section-title">Epoch 1 Summary</h2>
+            <h2 class="section-title">Epoch <span id="summary-epoch-id">Loading...</span> Summary</h2>
             <div class="summary-grid">
                 <div class="summary-card expandable-card" onclick="toggleExpandable(this)">
                     <span class="summary-label">Model Hash</span>

@@ -59,17 +59,132 @@ app.get('/api/deployment', async (req, res) => {
     }
 });
 
-// Get epoch data
+// Get epoch data (from JSON file or blockchain)
 app.get('/api/epoch/:epochNumber', async (req, res) => {
     try {
         const epochNumber = req.params.epochNumber;
         const epochDataPath = path.join(FRONTEND_PATH, 'data', `epoch_${epochNumber}_mainnet_data.json`);
         const fs = await import('fs/promises');
-        const epochData = JSON.parse(await fs.readFile(epochDataPath, 'utf-8'));
+        
+        // Try to load from JSON file first
+        try {
+            const epochData = JSON.parse(await fs.readFile(epochDataPath, 'utf-8'));
+            res.json(epochData);
+            return;
+        } catch (fileError) {
+            // If file doesn't exist, fetch from blockchain
+            console.log(`Epoch ${epochNumber} JSON file not found, fetching from blockchain...`);
+        }
+        
+        // Fetch from blockchain
+        const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
+        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        const epochManagerAddress = deployData.addresses.EpochManager;
+        
+        // Load contract ABI
+        const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+        let epochManagerArt;
+        try {
+            epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        } catch (e) {
+            const altPath = path.join(FRONTEND_PATH, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+            epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
+        }
+        const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
+        
+        // Get epoch info from blockchain
+        const epochInfo = await epochManager.epochs(epochNumber);
+        
+        // Get update events
+        const filter = epochManager.filters.UpdateSubmitted(epochNumber);
+        const events = await epochManager.queryFilter(filter);
+        
+        // Build epoch data structure
+        const epochData = {
+            epochId: parseInt(epochNumber),
+            modelHash: epochInfo.modelHash,
+            scoresRoot: epochInfo.scoresRoot !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.scoresRoot : null,
+            globalModelCid: epochInfo.globalModelCid || null,
+            globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
+            published: epochInfo.published,
+            updates: events.map(e => ({
+                submitter: e.args.submitter,
+                updateCid: e.args.updateCid,
+                updateHash: e.args.updateHash,
+                blockNumber: e.blockNumber,
+                transactionHash: e.transactionHash
+            }))
+        };
+        
         res.json(epochData);
     } catch (error) {
         console.error(`Error loading epoch ${req.params.epochNumber} data:`, error);
-        res.status(500).json({ error: `Failed to load epoch ${req.params.epochNumber} data` });
+        res.status(500).json({ error: `Failed to load epoch ${req.params.epochNumber} data`, message: error.message });
+    }
+});
+
+// Get latest epoch data
+app.get('/api/epoch/latest', async (req, res) => {
+    try {
+        const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
+        const fs = await import('fs/promises');
+        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        const epochManagerAddress = deployData.addresses.EpochManager;
+        
+        // Load contract ABI
+        const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+        let epochManagerArt;
+        try {
+            epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        } catch (e) {
+            const altPath = path.join(FRONTEND_PATH, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+            epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
+        }
+        const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
+        
+        // Find latest epoch
+        let latestEpoch = 0;
+        for (let i = 10; i >= 1; i--) {
+            try {
+                const info = await epochManager.epochs(i);
+                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    latestEpoch = i;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+        
+        if (latestEpoch === 0) {
+            return res.status(404).json({ error: 'No epochs found' });
+        }
+        
+        // Fetch epoch data using the existing endpoint logic
+        const epochInfo = await epochManager.epochs(latestEpoch);
+        const filter = epochManager.filters.UpdateSubmitted(latestEpoch);
+        const events = await epochManager.queryFilter(filter);
+        
+        const epochData = {
+            epochId: latestEpoch,
+            modelHash: epochInfo.modelHash,
+            scoresRoot: epochInfo.scoresRoot !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.scoresRoot : null,
+            globalModelCid: epochInfo.globalModelCid || null,
+            globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
+            published: epochInfo.published,
+            updates: events.map(e => ({
+                submitter: e.args.submitter,
+                updateCid: e.args.updateCid,
+                updateHash: e.args.updateHash,
+                blockNumber: e.blockNumber,
+                transactionHash: e.transactionHash
+            }))
+        };
+        
+        res.json(epochData);
+    } catch (error) {
+        console.error('Error fetching latest epoch:', error);
+        res.status(500).json({ error: 'Failed to fetch latest epoch', message: error.message });
     }
 });
 

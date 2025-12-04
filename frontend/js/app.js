@@ -21,9 +21,16 @@ async function loadData(retries = 3) {
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
                         return r.json();
                     }),
-                fetch(`${API_BASE}/api/epoch/1`, { cache: 'no-cache' })
+                fetch(`${API_BASE}/api/epoch/latest`, { cache: 'no-cache' })
                     .then(r => {
-                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        if (!r.ok) {
+                            // Fallback to epoch 1 if latest fails
+                            return fetch(`${API_BASE}/api/epoch/1`, { cache: 'no-cache' })
+                                .then(r2 => {
+                                    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+                                    return r2.json();
+                                });
+                        }
                         return r.json();
                     })
             ]);
@@ -389,6 +396,17 @@ function displayEpochSummary(epochData) {
     if (globalModelHash) globalModelHash.textContent = formatHash(epochInfo.globalModelHash);
 }
 
+// Update epoch ID in UI
+function updateEpochId(epochId) {
+    const currentEpochId = document.getElementById('current-epoch-id');
+    const progressEpochId = document.getElementById('progress-epoch-id');
+    const summaryEpochId = document.getElementById('summary-epoch-id');
+    
+    if (currentEpochId) currentEpochId.textContent = epochId;
+    if (progressEpochId) progressEpochId.textContent = epochId;
+    if (summaryEpochId) summaryEpochId.textContent = epochId;
+}
+
 // Update last updated timestamp
 function updateLastUpdated() {
     const lastUpdated = document.getElementById('last-updated');
@@ -567,6 +585,9 @@ async function initDashboard() {
 
     const { deployData, epochData } = data;
 
+    // Update epoch ID in UI
+    updateEpochId(epochData.epochId || 1);
+
     // Display all sections
     displayDeploymentInfo(deployData);
     displayPipelineSteps(epochData);
@@ -672,6 +693,9 @@ async function refreshDashboard() {
         }
 
         const { deployData, epochData } = data;
+
+        // Update epoch ID in UI
+        updateEpochId(epochData.epochId || 1);
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);
