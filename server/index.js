@@ -192,7 +192,14 @@ app.get('/api/training/status', async (req, res) => {
         
         // Load contract ABI
         const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
-        const epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        let epochManagerArt;
+        try {
+            epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        } catch (e) {
+            // Fallback: try data directory
+            const altPath = path.join(FRONTEND_PATH, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+            epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
+        }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
         // Check latest epoch (try epochs 1-10)
