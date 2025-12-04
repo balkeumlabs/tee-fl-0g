@@ -43,25 +43,57 @@ document.getElementById('config-modal').addEventListener('click', (e) => {
 document.getElementById('config-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
-    const config = {
-        numRounds: parseInt(formData.get('numRounds')),
-        minClients: parseInt(formData.get('minClients')),
-        localEpochs: parseInt(formData.get('localEpochs')),
-        batchSize: parseInt(formData.get('batchSize')),
-        learningRate: parseFloat(formData.get('learningRate')),
-        model: formData.get('model')
-    };
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
     
-    // TODO: Send to backend API
-    console.log('Training config:', config);
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>⏳</span> <span>Starting...</span>';
     
-    // For now, just close modal and show message
-    closeConfigModal();
-    alert('Training configuration submitted. Backend API integration required to start actual training.');
-    
-    // Update UI to show training started (for demo)
-    // updateTrainingStatus('active', config.numRounds);
+    try {
+        const formData = new FormData(e.target);
+        const config = {
+            numRounds: parseInt(formData.get('numRounds')),
+            minClients: parseInt(formData.get('minClients')),
+            localEpochs: parseInt(formData.get('localEpochs')),
+            batchSize: parseInt(formData.get('batchSize')),
+            learningRate: parseFloat(formData.get('learningRate')),
+            model: formData.get('model')
+        };
+        
+        // Send to backend API
+        const response = await fetch(`${API_BASE}/api/training/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || result.error || 'Failed to start training');
+        }
+        
+        // Success - close modal and update UI
+        closeConfigModal();
+        updateTrainingStatus('active', config.numRounds);
+        
+        // Refresh training status
+        await refreshTrainingStatus();
+        
+        // Show success message
+        alert(`Training started successfully!\nEpoch ID: ${result.epochId}\nTransaction: ${result.transactionHash}`);
+        
+    } catch (error) {
+        console.error('Error starting training:', error);
+        alert(`Failed to start training: ${error.message}\n\nNote: Make sure PRIVATE_KEY is configured in backend .env file.`);
+    } finally {
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
 });
 
 // Training status
@@ -94,10 +126,37 @@ function updateTrainingStatus(status, rounds = 10) {
     statsRoundEl.textContent = `${currentRound}/${totalRounds}`;
 }
 
-function refreshTrainingStatus() {
-    // TODO: Fetch from backend API
-    // For now, just update display
-    updateTrainingStatus(trainingStatus, totalRounds);
+async function refreshTrainingStatus() {
+    try {
+        const response = await fetch(`${API_BASE}/api/training/status`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch training status');
+        }
+        
+        const data = await response.json();
+        
+        // Update training status
+        trainingStatus = data.status;
+        currentRound = data.currentRound || 0;
+        totalRounds = data.totalRounds || 10;
+        connectedClients = data.connectedClients || 0;
+        
+        // Update UI
+        updateTrainingStatus(data.status, data.totalRounds);
+        
+        // Update statistics
+        const statsStatusEl = document.getElementById('stats-status');
+        const statsClientsEl = document.getElementById('stats-clients');
+        const statsRoundEl = document.getElementById('stats-round');
+        
+        if (statsStatusEl) statsStatusEl.textContent = data.status === 'active' ? 'Active' : 'Inactive';
+        if (statsClientsEl) statsClientsEl.textContent = data.connectedClients || 0;
+        if (statsRoundEl) statsRoundEl.textContent = `${data.currentRound || 0}/${data.totalRounds || 10}`;
+        
+    } catch (error) {
+        console.error('Error refreshing training status:', error);
+        // Keep current display on error
+    }
 }
 
 // Chart initialization
@@ -288,12 +347,16 @@ function exportChartData(type) {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    updateTrainingStatus('inactive');
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load initial training status
+    await refreshTrainingStatus();
     
     // Initialize charts if metrics tab is active
     if (document.getElementById('metrics-tab').classList.contains('active')) {
         initializeCharts();
     }
+    
+    // Auto-refresh status every 10 seconds
+    setInterval(refreshTrainingStatus, 10000);
 });
 

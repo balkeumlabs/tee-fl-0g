@@ -181,6 +181,176 @@ app.get('/api/contracts', async (req, res) => {
     }
 });
 
+// Training API endpoints
+// Get training status
+app.get('/api/training/status', async (req, res) => {
+    try {
+        const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
+        const fs = await import('fs/promises');
+        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        const epochManagerAddress = deployData.addresses.EpochManager;
+        
+        // Load contract ABI
+        const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+        const epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
+        
+        // Check latest epoch (try epochs 1-10)
+        let latestEpoch = 0;
+        let epochInfo = null;
+        
+        for (let i = 10; i >= 1; i--) {
+            try {
+                const info = await epochManager.epochs(i);
+                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    latestEpoch = i;
+                    epochInfo = info;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+        
+        // Get update count for latest epoch
+        let updateCount = 0;
+        let connectedClients = 0;
+        if (latestEpoch > 0) {
+            try {
+                const filter = epochManager.filters.UpdateSubmitted(latestEpoch);
+                const events = await epochManager.queryFilter(filter);
+                updateCount = events.length;
+                // Count unique submitters
+                const uniqueSubmitters = new Set(events.map(e => e.args.submitter));
+                connectedClients = uniqueSubmitters.size;
+            } catch (e) {
+                console.error('Error fetching updates:', e);
+            }
+        }
+        
+        const isActive = latestEpoch > 0 && epochInfo && !epochInfo.published;
+        
+        res.json({
+            status: isActive ? 'active' : 'inactive',
+            currentRound: latestEpoch > 0 ? latestEpoch : 0,
+            totalRounds: 10, // Default, can be configured
+            connectedClients: connectedClients,
+            epochId: latestEpoch,
+            published: epochInfo ? epochInfo.published : false
+        });
+    } catch (error) {
+        console.error('Error fetching training status:', error);
+        res.status(500).json({ error: 'Failed to fetch training status', message: error.message });
+    }
+});
+
+// Start training (start new epoch)
+app.post('/api/training/start', async (req, res) => {
+    try {
+        const { numRounds, minClients, localEpochs, batchSize, learningRate, model } = req.body;
+        
+        // Validate required fields
+        if (!numRounds || !minClients) {
+            return res.status(400).json({ error: 'Number of rounds and minimum clients are required' });
+        }
+        
+        // Load deployment info
+        const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
+        const fs = await import('fs/promises');
+        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        const epochManagerAddress = deployData.addresses.EpochManager;
+        
+        // Check if PRIVATE_KEY is set (required for transactions)
+        const privateKey = process.env.PRIVATE_KEY;
+        if (!privateKey) {
+            return res.status(500).json({ 
+                error: 'PRIVATE_KEY not configured', 
+                message: 'Backend requires PRIVATE_KEY in .env to start epochs' 
+            });
+        }
+        
+        // Create wallet
+        const wallet = new ethers.Wallet(privateKey, provider);
+        
+        // Load contract ABI
+        const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+        let epochManagerArt;
+        try {
+            epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        } catch (e) {
+            // Fallback: try data directory
+            const altPath = path.join(FRONTEND_PATH, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+            epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
+        }
+        const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, wallet);
+        
+        // Find next available epoch ID
+        let nextEpochId = 1;
+        for (let i = 1; i <= 100; i++) {
+            try {
+                const info = await epochManager.epochs(i);
+                if (info.modelHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    nextEpochId = i;
+                    break;
+                }
+            } catch (e) {
+                nextEpochId = i;
+                break;
+            }
+        }
+        
+        // Generate model hash for new epoch
+        const modelHash = ethers.keccak256(ethers.toUtf8Bytes(`epoch-${nextEpochId}-${Date.now()}-${learningRate || '0.01'}`));
+        
+        // Start epoch on blockchain
+        const tx = await epochManager.startEpoch(nextEpochId, modelHash);
+        await tx.wait();
+        
+        // Save training config (optional, for reference)
+        const trainingConfig = {
+            epochId: nextEpochId,
+            numRounds,
+            minClients,
+            localEpochs,
+            batchSize,
+            learningRate,
+            model,
+            startedAt: new Date().toISOString(),
+            modelHash: modelHash
+        };
+        
+        res.json({
+            success: true,
+            epochId: nextEpochId,
+            modelHash: modelHash,
+            transactionHash: tx.hash,
+            config: trainingConfig
+        });
+    } catch (error) {
+        console.error('Error starting training:', error);
+        res.status(500).json({ 
+            error: 'Failed to start training', 
+            message: error.message,
+            details: error.reason || error.code
+        });
+    }
+});
+
+// Stop training (not implemented in contract, but we can track status)
+app.post('/api/training/stop', async (req, res) => {
+    try {
+        // Note: There's no "stop epoch" function in the contract
+        // This would need to be implemented as a status tracking mechanism
+        res.json({
+            success: true,
+            message: 'Training stop requested. Note: Epochs cannot be stopped on-chain, only completed.'
+        });
+    } catch (error) {
+        console.error('Error stopping training:', error);
+        res.status(500).json({ error: 'Failed to stop training', message: error.message });
+    }
+});
+
 // Serve frontend static files
 app.use(express.static(FRONTEND_PATH));
 
