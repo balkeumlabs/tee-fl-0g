@@ -1,0 +1,7 @@
+{
+  "round": 1,
+  "ciphertext": "ewogICJyb3VuZCI6IDEsCiAgIndlaWdodHMiOiBbCiAgICAwLjEsCiAgICAwLjIsCiAgICAwLjMsCiAgICAwLjQsCiAgICAwLjUKICBdLAogICJiaWFzIjogMC4xLAogICJ0aW1lc3RhbXAiOiAiMjAyNS0xMC0yMlQxODo1NDo0My45NjRaIiwKICAicHJvdmlkZXIiOiAiMHg5RWQ1Nzg3MDM3OWUyOEUzMmNiNjI3YkUzNjU3NDVkYzE4NDk1MGRGIgp9",
+  "nonce": "test-nonce-123",
+  "timestamp": "2025-10-22T18:54:43.964Z",
+  "provider": "0x9Ed57870379e28E32cb627bE365745dc184950dF"
+}

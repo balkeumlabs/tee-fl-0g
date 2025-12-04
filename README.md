@@ -11,7 +11,7 @@
 
 <sub>Last update: 2025-11-04 00:00:00 UTC</sub>
 
-**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Dashboard](frontend/) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [Multiple Participants](docs/MULTIPLE_PARTICIPANTS_SETUP.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Progress & Roadmap](PROGRESS.md)
+**Quick links:** [Quick start](#quick-start) · [Usage](#usage) · [Architecture](#visual-overview) · [Deep-dive](#engineering-deep-dive) · [Mainnet Dashboard](frontend/) · [AWS Deployment](docs/AWS_DEPLOYMENT.md) · [Mainnet Deployment](docs/MAINNET_DEPLOYMENT.md) · [Mainnet Pipeline Test](docs/MAINNET_PIPELINE_TEST_EXPLANATION.md) · [Multiple Participants](docs/MULTIPLE_PARTICIPANTS_SETUP.md) · [API Reference](docs/API_REFERENCE.md) · [Explanation](docs/EXPLANATION.md) · [Progress & Roadmap](PROGRESS.md)
 
 
 
@@ -70,6 +70,29 @@ node scripts/check_mainnet_readiness.cjs
 # Deploy to mainnet
 node scripts/deploy_mainnet.js
 ```
+
+### AWS Hosting (Production):
+**Current Setup:** EC2 All-in-One Server
+- **Backend API**: Node.js/Express server on EC2
+- **Frontend**: Served from same EC2 instance
+- **Process Manager**: PM2 for process management
+- **Reverse Proxy**: Nginx for routing and static file serving
+
+**Deployment:**
+```bash
+# On EC2 instance
+cd ~/apps/tee-fl-0g
+git pull origin main
+npm ci
+./scripts/deploy-aws.sh  # or deploy-aws.ps1 on Windows
+```
+
+**Documentation:** See [AWS Deployment Guide](docs/AWS_DEPLOYMENT.md) for complete setup instructions.
+
+**Access:**
+- Dashboard: `http://YOUR_EC2_PUBLIC_IP` or `https://yourdomain.com`
+- API Health: `http://YOUR_EC2_PUBLIC_IP/api/health`
+- API Endpoints: `/api/deployment`, `/api/epoch/:number`, `/api/network/health`
 
 ---
 

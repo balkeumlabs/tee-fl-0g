@@ -2,20 +2,49 @@
 const BLOCK_EXPLORER_BASE = 'https://chainscan.0g.ai';
 const API_BASE = window.location.origin; // Use same origin (works for both local and AWS)
 
-// Load data from backend API
-async function loadData() {
-    try {
-        const [deployData, epochData, storageData] = await Promise.all([
-            fetch(`${API_BASE}/api/deployment`).then(r => r.json()),
-            fetch(`${API_BASE}/api/epoch/1`).then(r => r.json()),
-            fetch(`${API_BASE}/api/storage`).then(r => r.json()).catch(() => null)
-        ]);
+// Polling intervals (in milliseconds)
+// Set to null to disable auto-polling (only refresh manually)
+// Recommended: 5-10 minutes for cost efficiency, or null for manual-only
+const NETWORK_HEALTH_POLL_INTERVAL = null; // null = disabled, or set to milliseconds (e.g., 300000 for 5 minutes)
+const BLOCK_NUMBER_POLL_INTERVAL = null; // null = disabled, or set to milliseconds (e.g., 300000 for 5 minutes)
 
-        return { deployData, epochData, storageData };
-    } catch (error) {
-        console.error('Error loading data:', error);
-        return null;
+let networkHealthInterval = null;
+let blockNumberInterval = null;
+
+// Load data from backend API with retry logic
+async function loadData(retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const [deployData, epochData, storageData] = await Promise.all([
+                fetch(`${API_BASE}/api/deployment`, { cache: 'no-cache' })
+                    .then(r => {
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        return r.json();
+                    }),
+                fetch(`${API_BASE}/api/epoch/1`, { cache: 'no-cache' })
+                    .then(r => {
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        return r.json();
+                    }),
+                fetch(`${API_BASE}/api/storage`, { cache: 'no-cache' })
+                    .then(r => {
+                        if (!r.ok) return null;
+                        return r.json();
+                    })
+                    .catch(() => null)
+            ]);
+
+            return { deployData, epochData, storageData };
+        } catch (error) {
+            console.error(`Error loading data (attempt ${i + 1}/${retries}):`, error);
+            if (i === retries - 1) {
+                return null;
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
     }
+    return null;
 }
 
 // Format date
@@ -138,33 +167,45 @@ function displayPipelineSteps(epochData) {
     }
 }
 
-// Fetch gas cost for a transaction (via backend API)
-async function fetchGasCost(txHash) {
-    try {
-        const response = await fetch(`${API_BASE}/api/transaction/receipt`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ txHash })
-        });
+// Fetch gas cost for a transaction (via backend API) with retry logic
+async function fetchGasCost(txHash, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(`${API_BASE}/api/transaction/receipt`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ txHash }),
+                cache: 'no-cache'
+            });
 
-        if (!response.ok) {
-            throw new Error('Network request failed');
-        }
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // Transaction not found - don't retry
+                    return null;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
 
-        const data = await response.json();
-        if (data.gasUsed) {
-            return {
-                gasUsed: parseInt(data.gasUsed),
-                tokenCostWei: data.tokenCostWei ? BigInt(data.tokenCostWei) : null
-            };
+            const data = await response.json();
+            if (data.gasUsed) {
+                return {
+                    gasUsed: parseInt(data.gasUsed),
+                    tokenCostWei: data.tokenCostWei ? BigInt(data.tokenCostWei) : null
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error(`Error fetching gas for ${txHash} (attempt ${i + 1}/${retries}):`, error);
+            if (i === retries - 1) {
+                return null;
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
         }
-        return null;
-    } catch (error) {
-        console.error(`Error fetching gas for ${txHash}:`, error);
-        return null;
     }
+    return null;
 }
 
 // Format gas cost
@@ -402,47 +443,59 @@ function toggleExpandable(card) {
     card.classList.toggle('expanded');
 }
 
-// Fetch network health (via backend API)
-async function fetchNetworkHealth() {
-    try {
-        const response = await fetch(`${API_BASE}/api/network/health`);
+// Fetch network health (via backend API) with retry logic
+async function fetchNetworkHealth(retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(`${API_BASE}/api/network/health`, {
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
 
-        if (!response.ok) {
-            throw new Error('Network request failed');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const currentBlock = parseInt(data.blockNumber);
+
+            // Update current block
+            const currentBlockEl = document.getElementById('current-block');
+            if (currentBlockEl) {
+                currentBlockEl.textContent = currentBlock.toLocaleString();
+            }
+
+            // Update block time
+            const blockTimeEl = document.getElementById('block-time-value');
+            if (blockTimeEl) {
+                blockTimeEl.textContent = data.blockTime || '~2s (estimated)';
+            }
+
+            // Update network health
+            const networkHealthEl = document.getElementById('network-health');
+            if (networkHealthEl) {
+                networkHealthEl.textContent = data.status === 'healthy' ? 'Healthy' : 'Unknown';
+                networkHealthEl.className = data.status === 'healthy' ? 'info-value status-success' : 'info-value';
+            }
+
+            return currentBlock;
+        } catch (error) {
+            console.error(`Error fetching network health (attempt ${i + 1}/${retries}):`, error);
+            if (i === retries - 1) {
+                const networkHealthEl = document.getElementById('network-health');
+                if (networkHealthEl) {
+                    networkHealthEl.textContent = 'Error';
+                    networkHealthEl.className = 'info-value';
+                }
+                return null;
+            }
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
         }
-
-        const data = await response.json();
-        const currentBlock = parseInt(data.blockNumber);
-
-        // Update current block
-        const currentBlockEl = document.getElementById('current-block');
-        if (currentBlockEl) {
-            currentBlockEl.textContent = currentBlock.toLocaleString();
-        }
-
-        // Update block time
-        const blockTimeEl = document.getElementById('block-time-value');
-        if (blockTimeEl) {
-            blockTimeEl.textContent = data.blockTime || '~2s (estimated)';
-        }
-
-        // Update network health
-        const networkHealthEl = document.getElementById('network-health');
-        if (networkHealthEl) {
-            networkHealthEl.textContent = data.status === 'healthy' ? 'Healthy' : 'Unknown';
-            networkHealthEl.className = data.status === 'healthy' ? 'info-value status-success' : 'info-value';
-        }
-
-        return currentBlock;
-    } catch (error) {
-        console.error('Error fetching network health:', error);
-        const networkHealthEl = document.getElementById('network-health');
-        if (networkHealthEl) {
-            networkHealthEl.textContent = 'Unknown';
-            networkHealthEl.className = 'info-value';
-        }
-        return null;
     }
+    return null;
 }
 
 // Calculate statistics
@@ -557,6 +610,9 @@ async function initDashboard() {
     // Fetch network health
     await fetchNetworkHealth();
 
+    // Start real-time polling for network health
+    startNetworkHealthPolling();
+
     // Animate pipeline steps
     animatePipelineSteps();
 
@@ -575,6 +631,106 @@ async function initDashboard() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', initDashboard);
 
+// Start real-time polling for network health (only if intervals are configured)
+function startNetworkHealthPolling() {
+    // Clear any existing intervals
+    if (networkHealthInterval) {
+        clearInterval(networkHealthInterval);
+        networkHealthInterval = null;
+    }
+    if (blockNumberInterval) {
+        clearInterval(blockNumberInterval);
+        blockNumberInterval = null;
+    }
+
+    // Poll network health (only if interval is set)
+    if (NETWORK_HEALTH_POLL_INTERVAL !== null && NETWORK_HEALTH_POLL_INTERVAL > 0) {
+        networkHealthInterval = setInterval(async () => {
+            await fetchNetworkHealth(1); // Single retry for polling
+        }, NETWORK_HEALTH_POLL_INTERVAL);
+    }
+
+    // Poll block number (only if interval is set)
+    if (BLOCK_NUMBER_POLL_INTERVAL !== null && BLOCK_NUMBER_POLL_INTERVAL > 0) {
+        blockNumberInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/network/blockNumber`, { cache: 'no-cache' });
+                if (response.ok) {
+                    const data = await response.json();
+                    const currentBlock = parseInt(data.blockNumber);
+                    const currentBlockEl = document.getElementById('current-block');
+                    if (currentBlockEl) {
+                        currentBlockEl.textContent = currentBlock.toLocaleString();
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching block number:', error);
+            }
+        }, BLOCK_NUMBER_POLL_INTERVAL);
+    }
+}
+
+// Stop real-time polling
+function stopNetworkHealthPolling() {
+    if (networkHealthInterval) {
+        clearInterval(networkHealthInterval);
+        networkHealthInterval = null;
+    }
+    if (blockNumberInterval) {
+        clearInterval(blockNumberInterval);
+        blockNumberInterval = null;
+    }
+}
+
+// Refresh dashboard data
+async function refreshDashboard() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.classList.add('loading');
+        refreshBtn.disabled = true;
+    }
+
+    try {
+        const data = await loadData();
+        if (!data) {
+            console.error('Failed to refresh data');
+            if (refreshBtn) {
+                refreshBtn.classList.remove('loading');
+                refreshBtn.disabled = false;
+            }
+            return;
+        }
+
+        const { deployData, epochData, storageData } = data;
+
+        // Update sections that might have changed
+        displayDeploymentInfo(deployData);
+        displayPipelineSteps(epochData);
+        await displayTransactions(epochData);
+        displayEpochSummary(epochData);
+        displayStorageStatus(storageData);
+        updateLastUpdated();
+        calculateStatistics(epochData);
+        updateFullHashes(epochData);
+        
+        // Also refresh network health
+        await fetchNetworkHealth();
+    } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.classList.remove('loading');
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    stopNetworkHealthPolling();
+});
+
 // Make functions globally available for onclick handlers
 window.toggleStepDetails = toggleStepDetails;
 window.toggleExpandable = toggleExpandable;
+window.refreshDashboard = refreshDashboard;

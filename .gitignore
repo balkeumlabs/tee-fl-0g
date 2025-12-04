@@ -1,95 +1,69 @@
-node_modules
-.env
-
-# Hardhat files
-/cache
-/artifacts
-# TypeChain files
-/typechain
-/typechain-types
-# solidity-coverage files
-/coverage
-/coverage.json
-# Hardhat Ignition default folder for deployments against a local node
-ignition/deployments/chain-31337
-# Additional files to ignore
-/dist
-trained_model.json
-*.tsbuildinfo
-
-.env.txt
-
-out/
-uploads/
-__pycache__/
-venv/
+# Dependencies
 node_modules/
-.env.bak
+package-lock.json
 
-# === Balkeum local artifacts (auto) ===
-# backups
-*.bak
-# aggregated model outputs
-aggregated_model_*.json
-# client update fixtures
-client_update_*.json
-# synthesized updates from round_controller
-auto_update_epoch*.json
-# docs backup hygiene
-README.md.*.bak
-README.md.bak*
-README.backup.md
-TEE-FL_PoC_Report.md*
-.tmp/
-aggregated_model.json
-# --- begin: track selected secure tools and meta ---
-!dist/
-dist/*
-!dist/local_normalize_and_aggregate.js
-!dist/run_aggregate_with_config.ps1
-!dist/emit_storage_meta.ps1
-!dist/tools/
-dist/tools/*
-!dist/tools/extract_vector_from_file.js
-
-# allow storage meta evidence but keep raw aggregate ignored
-!aggregated_model_*_storage_meta.json
-aggregated_model.json
-.tmp/
-# --- end: track selected secure tools and meta ---
-
-# allow orchestration wrappers
-!dist/round_secure.ps1
-!dist/round_dummy.ps1
-
-!dist/checked_submit.ps1
-.quarantine/
-client_update*.json
-!client_update*.enc.json
-*.old
-*.orig
-*.tmp
-*~
-aggregated_model_round*.json
-docs/visual_overview.mmd
-previous-readme.md
-.tmp
-# local/dev
+# Environment variables
+.env
 .env.local
-ci.log
-enc.out.json
-.tmp/
-# scratch updates
-u*.json
-*update*.json
-*.enc.json
-*.dec.json
-# Local artifacts / backups (dev-only)
-attestation.json
-market_manifest.json
-probe.json
-docs/audio/
-.github/workflows/ci-live.yml.bak*
-.github/workflows/ci-live.yml.backup-parse
-ai_prompt.md
-INSTRUCTION_TASK.md
+.env.*.local
+
+# Build outputs
+dist/
+artifacts/
+cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pm2-error.log
+pm2-out.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# AWS/Deployment
+.aws/
+*.pem
+*.key
+
+# Cursor rules
+.cursor/rules
+
+# Local data (keep structure, ignore sensitive)
+data/*.json
+!data/*.example.json
+!data/*.template.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# TypeScript
+*.tsbuildinfo
