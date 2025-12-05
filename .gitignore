@@ -48,6 +48,9 @@ temp/
 *.pem
 *.key
 
+# Local-only documentation (not for public repo)
+docs/TRAINING_DEMO_EXPLANATION.md
+
 # Cursor rules
 .cursor/rules
 
