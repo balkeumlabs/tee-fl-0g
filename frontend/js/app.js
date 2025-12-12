@@ -408,6 +408,24 @@ function displayEpochSummary(epochData) {
     if (fullScoresRoot) fullScoresRoot.textContent = epochInfo.scoresRoot || 'Not set';
     if (fullGlobalModelCid) fullGlobalModelCid.textContent = epochInfo.globalModelCid || 'Not published';
     if (fullGlobalModelHash) fullGlobalModelHash.textContent = epochInfo.globalModelHash || 'Not published';
+    
+    // Update status (Published/In Progress) based on actual state
+    const statusEl = document.getElementById('epoch-status');
+    if (statusEl) {
+        const isPublished = epochInfo.published === true || 
+                           epochInfo.published === 'true' || 
+                           epochInfo.published === 1 ||
+                           (epochData.events && epochData.events.modelPublished && epochData.events.modelPublished.length > 0) ||
+                           (epochInfo.globalModelCid && epochInfo.scoresRoot);
+        
+        if (isPublished) {
+            statusEl.textContent = 'Published';
+            statusEl.className = 'summary-value status-published';
+        } else {
+            statusEl.textContent = 'In Progress';
+            statusEl.className = 'summary-value status-active';
+        }
+    }
 }
 
 // Update epoch ID in UI
