@@ -30,6 +30,11 @@ const FRONTEND_PATH = process.env.FRONTEND_PATH || path.join(__dirname, '..', 'f
 // Initialize Express app
 const app = express();
 
+// Async error wrapper for routes
+const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -434,7 +439,7 @@ app.get('/api/training/status', async (req, res) => {
 });
 
 // Start training (start new epoch)
-app.post('/api/training/start', async (req, res) => {
+app.post('/api/training/start', asyncHandler(async (req, res) => {
     try {
         const { numRounds, minClients, localEpochs, batchSize, learningRate, model } = req.body;
         
@@ -650,7 +655,7 @@ app.post('/api/training/start', async (req, res) => {
             });
         }
     }
-});
+}));
 
 // Stop training (not implemented in contract, but we can track status)
 app.post('/api/training/stop', async (req, res) => {
@@ -875,6 +880,16 @@ app.get('*', (req, res) => {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
     res.sendFile(path.join(FRONTEND_PATH, 'index.html'));
+});
+
+// Global error handlers for unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
 
 // Start server
