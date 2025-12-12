@@ -446,7 +446,26 @@ app.post('/api/training/start', async (req, res) => {
         // Load deployment info
         const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
         const fs = await import('fs/promises');
-        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        
+        let deployData;
+        try {
+            const deployDataContent = await fs.readFile(deployDataPath, 'utf-8');
+            deployData = JSON.parse(deployDataContent);
+        } catch (fileError) {
+            console.error(`[Training Start] Failed to read deploy.mainnet.json:`, fileError);
+            return res.status(500).json({ 
+                error: 'Deployment configuration not found', 
+                message: `Could not read ${deployDataPath}: ${fileError.message}` 
+            });
+        }
+        
+        if (!deployData.addresses || !deployData.addresses.EpochManager) {
+            return res.status(500).json({ 
+                error: 'Invalid deployment configuration', 
+                message: 'EpochManager address not found in deployment data' 
+            });
+        }
+        
         const epochManagerAddress = deployData.addresses.EpochManager;
         
         // Check if PRIVATE_KEY is set (required for transactions)
@@ -621,11 +640,15 @@ app.post('/api/training/start', async (req, res) => {
         });
     } catch (error) {
         console.error('Error starting training:', error);
-        res.status(500).json({ 
-            error: 'Failed to start training', 
-            message: error.message,
-            details: error.reason || error.code
-        });
+        console.error('Error stack:', error.stack);
+        // Always return JSON, never HTML
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                error: 'Failed to start training', 
+                message: error.message || 'Unknown error',
+                details: error.reason || error.code || 'No additional details'
+            });
+        }
     }
 });
 
@@ -831,18 +854,27 @@ app.post('/api/training/complete-demo', async (req, res) => {
     }
 });
 
+// Error handling middleware (MUST be before static file serving)
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    // Only send JSON for API routes
+    if (req.path.startsWith('/api')) {
+        res.status(500).json({ error: 'Internal server error', message: err.message });
+    } else {
+        res.status(500).send('Internal server error');
+    }
+});
+
 // Serve frontend static files
 app.use(express.static(FRONTEND_PATH));
 
-// Fallback to index.html for SPA routing
+// Fallback to index.html for SPA routing (only for GET requests that aren't API routes)
 app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
     res.sendFile(path.join(FRONTEND_PATH, 'index.html'));
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
