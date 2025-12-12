@@ -433,7 +433,7 @@ app.get('/api/training/status', async (req, res) => {
             status: isActive ? 'active' : 'inactive',
             currentRound: latestEpoch > 0 ? latestEpoch : 0,
             totalRounds: null, // No limit - epochs can continue indefinitely
-            connectedClients: connectedClients,
+            connectedClients: updateCount > 0 ? updateCount : connectedClients, // Show update count for demo (all from same wallet)
             updateCount: updateCount, // Total number of updates submitted
             epochId: latestEpoch,
             published: epochInfo ? epochInfo.published : false
@@ -541,16 +541,8 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
             modelPublished: false
         };
         
-        // Step 1: Submit client updates (5 clients) - each from a different wallet
+        // Step 1: Submit client updates (5 clients)
         const numClients = 5;
-        // Generate unique wallets for each client (derived from main wallet)
-        const clientWallets = [];
-        for (let i = 0; i < numClients; i++) {
-            // Create deterministic wallets by deriving from private key + client index
-            const clientPrivateKey = ethers.keccak256(ethers.toUtf8Bytes(`${privateKey}-client-${i}`));
-            clientWallets.push(new ethers.Wallet(clientPrivateKey, provider));
-        }
-        
         for (let i = 1; i <= numClients; i++) {
             try {
                 const clientUpdate = {
@@ -566,12 +558,8 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
                 const updateCid = `demo-client${i}-epoch${nextEpochId}-${Date.now()}`;
                 const updateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(clientUpdate)));
                 
-                // Use different wallet for each client
-                const clientWallet = clientWallets[i - 1];
-                const clientEpochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, clientWallet);
-                
-                console.log(`[Demo] Submitting client ${i}/${numClients} update from ${clientWallet.address}...`);
-                const updateTx = await clientEpochManager.submitUpdate(nextEpochId, updateCid, updateHash);
+                console.log(`[Demo] Submitting client ${i}/${numClients} update...`);
+                const updateTx = await epochManager.submitUpdate(nextEpochId, updateCid, updateHash);
                 console.log(`[Demo] Client ${i} transaction sent: ${updateTx.hash}`);
                 const receipt = await updateTx.wait();
                 console.log(`[Demo] Client ${i} transaction confirmed in block ${receipt.blockNumber}`);
