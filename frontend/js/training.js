@@ -61,67 +61,65 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             model: formData.get('model')
         };
         
-        // Send to backend API (with longer timeout for blockchain transactions)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
-        
-        let response;
-        try {
-            response = await fetch(`${API_BASE}/api/training/start`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(config),
-                signal: controller.signal
-            });
-        } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-                throw new Error('Request timed out. The training is still processing in the background. Please refresh the page in a few moments.');
-            }
-            throw error;
-        }
-        clearTimeout(timeoutId);
-        
-        // Check if response is actually JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.error('Non-JSON response received:', text.substring(0, 200));
-            throw new Error(`Server returned ${contentType} instead of JSON. Response: ${text.substring(0, 100)}...`);
-        }
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(result.message || result.error || 'Failed to start training');
-        }
-        
-        // Success - close modal and update UI
+        // Close modal immediately - don't wait for response (training happens in background)
         closeConfigModal();
         updateTrainingStatus('active', config.numRounds);
         
-        // Wait longer for demo to complete and events to be indexed (it runs automatically in backend)
-        // The backend submits 5 client updates, posts scores, and publishes model
-        console.log('Waiting for demo simulation to complete...');
-        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
-        
-        // Refresh training status to show completed demo
-        console.log('Refreshing training status...');
-        await refreshTrainingStatus();
-        
-        // Refresh again after a short delay to ensure events are indexed
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        await refreshTrainingStatus();
-        
-        // Show success message with demo results
-        const demoInfo = result.demo || {};
-        alert(`Training started and demo completed!\n\nEpoch ID: ${result.epochId}\n` +
-              `Clients Submitted: ${demoInfo.clientsSubmitted || 0}\n` +
-              `Scores Posted: ${demoInfo.scoresPosted ? 'Yes' : 'No'}\n` +
-              `Model Published: ${demoInfo.modelPublished ? 'Yes' : 'No'}\n\n` +
-              `The dashboard now shows the complete pipeline.`);
+        // Send to backend API (fire and forget - don't block UI)
+        fetch(`${API_BASE}/api/training/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        }).then(async (response) => {
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text.substring(0, 200));
+                throw new Error(`Server returned ${contentType} instead of JSON`);
+            }
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                console.error('Training start failed:', result);
+                updateTrainingStatus('inactive', null);
+                alert(`Failed to start training: ${result.message || result.error || 'Unknown error'}`);
+                return;
+            }
+            
+            console.log('Training started successfully:', result);
+            
+            // Poll for completion (demo takes 60-90 seconds)
+            let pollCount = 0;
+            const maxPolls = 30; // 30 polls * 5 seconds = 150 seconds max
+            
+            const pollInterval = setInterval(async () => {
+                pollCount++;
+                await refreshTrainingStatus();
+                
+                const statusData = await fetch(`${API_BASE}/api/training/status`).then(r => r.json()).catch(() => null);
+                
+                // Check if new epoch is published (demo completed)
+                if (statusData && statusData.epochId && statusData.epochId >= result.epochId && statusData.published) {
+                    clearInterval(pollInterval);
+                    console.log('Demo completed!');
+                    // Refresh dashboard
+                    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+                        window.location.reload();
+                    }
+                } else if (pollCount >= maxPolls) {
+                    clearInterval(pollInterval);
+                    console.log('Polling timeout - demo may still be processing');
+                }
+            }, 5000); // Poll every 5 seconds
+        }).catch((error) => {
+            console.error('Error starting training:', error);
+            updateTrainingStatus('inactive', null);
+            alert(`Failed to start training: ${error.message}\n\nThe training may still be processing in the background. Please refresh the page in a few moments.`);
+        });
         
     } catch (error) {
         console.error('Error starting training:', error);

@@ -393,11 +393,11 @@ app.get('/api/training/status', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Check latest epoch (try epochs 1-10)
+        // Check latest epoch (try epochs 1-100, starting from highest)
         let latestEpoch = 0;
         let epochInfo = null;
         
-        for (let i = 10; i >= 1; i--) {
+        for (let i = 100; i >= 1; i--) {
             try {
                 const info = await epochManager.epochs(i);
                 if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
