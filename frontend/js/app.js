@@ -724,6 +724,37 @@ function stopNetworkHealthPolling() {
         clearInterval(blockNumberInterval);
         blockNumberInterval = null;
     }
+    if (dashboardAutoRefreshInterval) {
+        clearInterval(dashboardAutoRefreshInterval);
+        dashboardAutoRefreshInterval = null;
+    }
+}
+
+// Start auto-refresh for 5 minutes after training starts
+function startAutoRefresh() {
+    // Clear any existing auto-refresh
+    if (dashboardAutoRefreshInterval) {
+        clearInterval(dashboardAutoRefreshInterval);
+    }
+    
+    // Set end time to 5 minutes from now
+    autoRefreshEndTime = Date.now() + (5 * 60 * 1000); // 5 minutes
+    
+    // Refresh every 10 seconds
+    dashboardAutoRefreshInterval = setInterval(async () => {
+        // Check if 5 minutes have passed
+        if (Date.now() >= autoRefreshEndTime) {
+            clearInterval(dashboardAutoRefreshInterval);
+            dashboardAutoRefreshInterval = null;
+            console.log('Auto-refresh stopped after 5 minutes');
+            return;
+        }
+        
+        // Refresh dashboard
+        await refreshDashboard();
+    }, 10000); // Every 10 seconds
+    
+    console.log('Auto-refresh started for 5 minutes');
 }
 
 // Refresh dashboard data
@@ -757,6 +788,7 @@ async function refreshDashboard() {
         displayEpochSummary(epochData);
         updateLastUpdated();
         calculateStatistics(epochData);
+        updateEpochProgress(epochData); // Update progress bar
         updateFullHashes(epochData);
         
         // Also refresh network health

@@ -63,7 +63,7 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
         
         // Close modal immediately - don't wait for response (training happens in background)
         closeConfigModal();
-        updateTrainingStatus('active', config.numRounds);
+        updateTrainingStatus('active', null); // Don't use numRounds - backend returns null for totalRounds
         
         // Send to backend API (fire and forget - don't block UI)
         fetch(`${API_BASE}/api/training/start`, {
