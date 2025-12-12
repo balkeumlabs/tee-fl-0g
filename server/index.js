@@ -39,6 +39,12 @@ const asyncHandler = (fn) => (req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
+// Logging middleware for API routes
+app.use('/api', (req, res, next) => {
+    console.log(`[API] ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
+
 // Create ethers provider
 const provider = new ethers.JsonRpcProvider(RPC_ENDPOINT);
 
@@ -440,8 +446,16 @@ app.get('/api/training/status', async (req, res) => {
 
 // Start training (start new epoch)
 app.post('/api/training/start', asyncHandler(async (req, res) => {
+    console.log('[Training Start] Request received:', {
+        method: req.method,
+        path: req.path,
+        body: req.body,
+        headers: req.headers['content-type']
+    });
+    
     try {
         const { numRounds, minClients, localEpochs, batchSize, learningRate, model } = req.body;
+        console.log('[Training Start] Parsed body:', { numRounds, minClients, localEpochs, batchSize, learningRate, model });
         
         // Validate required fields
         if (!numRounds || !minClients) {
