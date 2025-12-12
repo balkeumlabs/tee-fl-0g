@@ -89,9 +89,9 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch
+        // Find latest epoch (check up to epoch 100)
         let latestEpoch = 0;
-        for (let i = 10; i >= 1; i--) {
+        for (let i = 100; i >= 1; i--) {
             try {
                 const info = await epochManager.epochs(i);
                 if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
