@@ -541,8 +541,8 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
             modelPublished: false
         };
         
-        // Step 1: Submit client updates (5 clients)
-        const numClients = 5;
+        // Step 1: Submit client updates (use minClients from form, default to 5)
+        const numClients = minClients || 5;
         for (let i = 1; i <= numClients; i++) {
             try {
                 const clientUpdate = {

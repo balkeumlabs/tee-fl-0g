@@ -185,10 +185,10 @@ async function refreshTrainingStatus() {
         // Update training status
         trainingStatus = data.status;
         currentRound = data.currentRound || 0;
-        totalRounds = data.totalRounds || 10;
+        totalRounds = data.totalRounds; // Can be null (no limit)
         connectedClients = data.connectedClients || 0;
         
-        // Update UI (pass connectedClients for better messaging)
+        // Update UI (pass totalRounds, can be null)
         updateTrainingStatus(data.status, data.totalRounds);
         
         // Update statistics
