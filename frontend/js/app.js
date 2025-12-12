@@ -754,6 +754,15 @@ function startAutoRefresh() {
         
         // Refresh dashboard
         await refreshDashboard();
+        
+        // Check if progress is 100% (epoch published) - if so, stop auto-refresh
+        const progressText = document.getElementById('epoch-progress-text');
+        if (progressText && progressText.textContent.includes('100% Complete')) {
+            clearInterval(dashboardAutoRefreshInterval);
+            dashboardAutoRefreshInterval = null;
+            console.log('Auto-refresh stopped - epoch completed (100% progress)');
+            return;
+        }
     }, 10000); // Every 10 seconds
     
     console.log('Auto-refresh started for 5 minutes');
