@@ -10,6 +10,8 @@ const BLOCK_NUMBER_POLL_INTERVAL = null; // null = disabled, or set to milliseco
 
 let networkHealthInterval = null;
 let blockNumberInterval = null;
+let dashboardAutoRefreshInterval = null;
+let autoRefreshEndTime = null; // Timestamp when auto-refresh should stop
 
 // Load data from backend API with retry logic
 async function loadData(retries = 3) {
@@ -812,3 +814,4 @@ window.addEventListener('beforeunload', () => {
 window.toggleStepDetails = toggleStepDetails;
 window.toggleExpandable = toggleExpandable;
 window.refreshDashboard = refreshDashboard;
+window.startAutoRefresh = startAutoRefresh;
