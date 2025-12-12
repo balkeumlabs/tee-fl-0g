@@ -552,7 +552,12 @@ function updateEpochProgress(epochData) {
     const progressFill = document.getElementById('epoch-progress-fill');
     const progressText = document.getElementById('epoch-progress-text');
 
-    if (epochInfo.published) {
+    // Check if published (handle boolean true, string "true", or check for published events)
+    const isPublished = epochInfo.published === true || 
+                       epochInfo.published === 'true' || 
+                       (epochData.events && epochData.events.modelPublished && epochData.events.modelPublished.length > 0);
+
+    if (isPublished) {
         if (progressFill) {
             progressFill.style.width = '100%';
         }
@@ -561,11 +566,20 @@ function updateEpochProgress(epochData) {
         }
     } else {
         // Epoch is active but not published yet
+        // Calculate progress based on completed steps
+        let progress = 0;
+        if (epochData.events) {
+            if (epochData.events.epochStarted && epochData.events.epochStarted.length > 0) progress += 25;
+            if (epochData.events.updatesSubmitted && epochData.events.updatesSubmitted.length > 0) progress += 25;
+            if (epochData.events.scoresPosted && epochData.events.scoresPosted.length > 0) progress += 25;
+            if (epochData.events.modelPublished && epochData.events.modelPublished.length > 0) progress += 25;
+        }
+        
         if (progressFill) {
-            progressFill.style.width = '25%'; // Just started
+            progressFill.style.width = `${progress}%`;
         }
         if (progressText) {
-            progressText.textContent = 'In Progress';
+            progressText.textContent = progress === 100 ? '100% Complete' : 'In Progress';
         }
     }
 }
