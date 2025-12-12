@@ -432,7 +432,7 @@ app.get('/api/training/status', async (req, res) => {
         res.json({
             status: isActive ? 'active' : 'inactive',
             currentRound: latestEpoch > 0 ? latestEpoch : 0,
-            totalRounds: 10, // Default, can be configured
+            totalRounds: null, // No limit - epochs can continue indefinitely
             connectedClients: connectedClients,
             updateCount: updateCount, // Total number of updates submitted
             epochId: latestEpoch,

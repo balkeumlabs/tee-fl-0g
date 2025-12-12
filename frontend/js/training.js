@@ -165,7 +165,12 @@ function updateTrainingStatus(status, rounds = 10) {
         statsStatusEl.textContent = 'Inactive';
     }
     
-    statsRoundEl.textContent = `${currentRound}/${totalRounds}`;
+        // Show epoch number without limit if totalRounds is null
+        if (totalRounds === null || totalRounds === undefined) {
+            statsRoundEl.textContent = `Epoch ${currentRound}`;
+        } else {
+            statsRoundEl.textContent = `${currentRound}/${totalRounds}`;
+        }
 }
 
 async function refreshTrainingStatus() {
@@ -193,7 +198,14 @@ async function refreshTrainingStatus() {
         
         if (statsStatusEl) statsStatusEl.textContent = data.status === 'active' ? 'Active' : 'Inactive';
         if (statsClientsEl) statsClientsEl.textContent = data.connectedClients || 0;
-        if (statsRoundEl) statsRoundEl.textContent = `${data.currentRound || 0}/${data.totalRounds || 10}`;
+        if (statsRoundEl) {
+            // Show epoch number without limit if totalRounds is null
+            if (data.totalRounds === null || data.totalRounds === undefined) {
+                statsRoundEl.textContent = `Epoch ${data.currentRound || 0}`;
+            } else {
+                statsRoundEl.textContent = `${data.currentRound || 0}/${data.totalRounds || 10}`;
+            }
+        }
         
         // Update message with connected clients info
         const messageEl = document.getElementById('status-message');
