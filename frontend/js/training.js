@@ -80,11 +80,26 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
         closeConfigModal();
         updateTrainingStatus('active', config.numRounds);
         
-        // Refresh training status
+        // Wait longer for demo to complete and events to be indexed (it runs automatically in backend)
+        // The backend submits 5 client updates, posts scores, and publishes model
+        console.log('Waiting for demo simulation to complete...');
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+        
+        // Refresh training status to show completed demo
+        console.log('Refreshing training status...');
         await refreshTrainingStatus();
         
-        // Show success message
-        alert(`Training started successfully!\nEpoch ID: ${result.epochId}\nTransaction: ${result.transactionHash}`);
+        // Refresh again after a short delay to ensure events are indexed
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await refreshTrainingStatus();
+        
+        // Show success message with demo results
+        const demoInfo = result.demo || {};
+        alert(`Training started and demo completed!\n\nEpoch ID: ${result.epochId}\n` +
+              `Clients Submitted: ${demoInfo.clientsSubmitted || 0}\n` +
+              `Scores Posted: ${demoInfo.scoresPosted ? 'Yes' : 'No'}\n` +
+              `Model Published: ${demoInfo.modelPublished ? 'Yes' : 'No'}\n\n` +
+              `The dashboard now shows the complete pipeline.`);
         
     } catch (error) {
         console.error('Error starting training:', error);
@@ -114,7 +129,12 @@ function updateTrainingStatus(status, rounds = 10) {
     if (status === 'active') {
         statusEl.textContent = 'Training Active';
         statusEl.className = 'training-status-large active';
-        messageEl.textContent = 'Training in progress...';
+        // Show more informative message based on client count
+        if (connectedClients === 0) {
+            messageEl.textContent = 'Epoch started. Waiting for clients to submit updates...';
+        } else {
+            messageEl.textContent = `Training in progress... ${connectedClients} client(s) connected`;
+        }
         statsStatusEl.textContent = 'Active';
     } else {
         statusEl.textContent = 'Training Inactive';
@@ -141,7 +161,7 @@ async function refreshTrainingStatus() {
         totalRounds = data.totalRounds || 10;
         connectedClients = data.connectedClients || 0;
         
-        // Update UI
+        // Update UI (pass connectedClients for better messaging)
         updateTrainingStatus(data.status, data.totalRounds);
         
         // Update statistics
@@ -152,6 +172,16 @@ async function refreshTrainingStatus() {
         if (statsStatusEl) statsStatusEl.textContent = data.status === 'active' ? 'Active' : 'Inactive';
         if (statsClientsEl) statsClientsEl.textContent = data.connectedClients || 0;
         if (statsRoundEl) statsRoundEl.textContent = `${data.currentRound || 0}/${data.totalRounds || 10}`;
+        
+        // Update message with connected clients info
+        const messageEl = document.getElementById('status-message');
+        if (messageEl && data.status === 'active') {
+            if (data.connectedClients === 0) {
+                messageEl.textContent = 'Epoch started. Waiting for clients to submit updates...';
+            } else {
+                messageEl.textContent = `Training in progress... ${data.connectedClients} client(s) connected`;
+            }
+        }
         
     } catch (error) {
         console.error('Error refreshing training status:', error);

@@ -410,6 +410,7 @@ app.get('/api/training/status', async (req, res) => {
                 // Count unique submitters
                 const uniqueSubmitters = new Set(events.map(e => e.args.submitter));
                 connectedClients = uniqueSubmitters.size;
+                console.log(`[Status] Epoch ${latestEpoch}: Found ${updateCount} updates from ${connectedClients} unique clients`);
             } catch (e) {
                 console.error('Error fetching updates:', e);
             }
@@ -422,6 +423,7 @@ app.get('/api/training/status', async (req, res) => {
             currentRound: latestEpoch > 0 ? latestEpoch : 0,
             totalRounds: 10, // Default, can be configured
             connectedClients: connectedClients,
+            updateCount: updateCount, // Total number of updates submitted
             epochId: latestEpoch,
             published: epochInfo ? epochInfo.published : false
         });
@@ -493,6 +495,109 @@ app.post('/api/training/start', async (req, res) => {
         const tx = await epochManager.startEpoch(nextEpochId, modelHash);
         await tx.wait();
         
+        // AUTOMATIC DEMO: Simulate clients and complete pipeline
+        console.log(`[Demo] Starting automatic demo simulation for epoch ${nextEpochId}...`);
+        const demoResults = {
+            clientsSubmitted: 0,
+            scoresPosted: false,
+            modelPublished: false
+        };
+        
+        // Step 1: Submit client updates (5 clients)
+        const numClients = 5;
+        for (let i = 1; i <= numClients; i++) {
+            try {
+                const clientUpdate = {
+                    epoch: nextEpochId,
+                    clientId: `client-${i}`,
+                    timestamp: Math.floor(Date.now() / 1000),
+                    modelWeights: Array.from({ length: 10 }, () => Math.random()),
+                    loss: 0.5 - (i * 0.05),
+                    accuracy: 0.6 + (i * 0.04),
+                    round: nextEpochId
+                };
+                
+                const updateCid = `demo-client${i}-epoch${nextEpochId}-${Date.now()}`;
+                const updateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(clientUpdate)));
+                
+                console.log(`[Demo] Submitting client ${i}/${numClients} update...`);
+                const updateTx = await epochManager.submitUpdate(nextEpochId, updateCid, updateHash);
+                console.log(`[Demo] Client ${i} transaction sent: ${updateTx.hash}`);
+                const receipt = await updateTx.wait();
+                console.log(`[Demo] Client ${i} transaction confirmed in block ${receipt.blockNumber}`);
+                demoResults.clientsSubmitted++;
+                
+                // Small delay between submissions
+                if (i < numClients) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (error) {
+                console.error(`[Demo] Failed to submit client ${i} update:`, error.message);
+                console.error(`[Demo] Error details:`, error);
+            }
+        }
+        
+        // Wait a bit for events to be indexed
+        console.log(`[Demo] Waiting for events to be indexed...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Step 2: Post scores root
+        try {
+            // Retry mechanism to wait for events to be indexed
+            let events = [];
+            let retries = 5;
+            while (events.length === 0 && retries > 0) {
+                const filter = epochManager.filters.UpdateSubmitted(nextEpochId);
+                events = await epochManager.queryFilter(filter);
+                if (events.length === 0) {
+                    console.log(`[Demo] No events found yet, retrying... (${retries} retries left)`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    retries--;
+                } else {
+                    console.log(`[Demo] Found ${events.length} UpdateSubmitted events`);
+                }
+            }
+            
+            if (events.length > 0) {
+                const scores = events.map((e, idx) => ({
+                    submitter: e.args.submitter,
+                    score: 0.75 + (idx * 0.04)
+                }));
+                
+                const scoresData = scores.map(s => `${s.submitter}-${s.score.toFixed(4)}`).join('|');
+                const scoresRoot = ethers.keccak256(ethers.toUtf8Bytes(scoresData));
+                
+                const scoresTx = await epochManager.postScoresRoot(nextEpochId, scoresRoot);
+                await scoresTx.wait();
+                demoResults.scoresPosted = true;
+            }
+        } catch (error) {
+            console.error(`[Demo] Failed to post scores root:`, error.message);
+        }
+        
+        // Step 3: Publish aggregated model
+        try {
+            const globalModelCid = `aggregated-model-epoch${nextEpochId}-${Date.now()}`;
+            const globalModelData = {
+                epoch: nextEpochId,
+                aggregated: true,
+                timestamp: Math.floor(Date.now() / 1000),
+                participants: demoResults.clientsSubmitted,
+                avgLoss: 0.35,
+                avgAccuracy: 0.82,
+                modelVersion: `v1.${nextEpochId}`
+            };
+            const globalModelHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(globalModelData)));
+            
+            const publishTx = await epochManager.publishModel(nextEpochId, globalModelCid, globalModelHash);
+            await publishTx.wait();
+            demoResults.modelPublished = true;
+        } catch (error) {
+            console.error(`[Demo] Failed to publish model:`, error.message);
+        }
+        
+        console.log(`[Demo] Completed: ${demoResults.clientsSubmitted} clients, scores: ${demoResults.scoresPosted}, published: ${demoResults.modelPublished}`);
+        
         // Save training config (optional, for reference)
         const trainingConfig = {
             epochId: nextEpochId,
@@ -511,7 +616,8 @@ app.post('/api/training/start', async (req, res) => {
             epochId: nextEpochId,
             modelHash: modelHash,
             transactionHash: tx.hash,
-            config: trainingConfig
+            config: trainingConfig,
+            demo: demoResults
         });
     } catch (error) {
         console.error('Error starting training:', error);
@@ -535,6 +641,193 @@ app.post('/api/training/stop', async (req, res) => {
     } catch (error) {
         console.error('Error stopping training:', error);
         res.status(500).json({ error: 'Failed to stop training', message: error.message });
+    }
+});
+
+// Complete demo - simulate full pipeline (for demo purposes)
+app.post('/api/training/complete-demo', async (req, res) => {
+    try {
+        const { epochId } = req.body;
+        
+        if (!epochId) {
+            return res.status(400).json({ error: 'Epoch ID is required' });
+        }
+        
+        // Load deployment info
+        const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
+        const fs = await import('fs/promises');
+        const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));
+        const epochManagerAddress = deployData.addresses.EpochManager;
+        
+        // Check if PRIVATE_KEY is set
+        const privateKey = process.env.PRIVATE_KEY;
+        if (!privateKey) {
+            return res.status(500).json({ 
+                error: 'PRIVATE_KEY not configured', 
+                message: 'Backend requires PRIVATE_KEY in .env to complete demo' 
+            });
+        }
+        
+        // Create wallet
+        const wallet = new ethers.Wallet(privateKey, provider);
+        
+        // Load contract ABI
+        const epochManagerArtPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+        let epochManagerArt;
+        try {
+            epochManagerArt = JSON.parse(await fs.readFile(epochManagerArtPath, 'utf-8'));
+        } catch (e) {
+            const altPath = path.join(FRONTEND_PATH, '..', 'artifacts', 'contracts', 'EpochManager.sol', 'EpochManager.json');
+            epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
+        }
+        const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, wallet);
+        
+        // Check epoch exists
+        const epochInfo = await epochManager.epochs(epochId);
+        if (epochInfo.modelHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+            return res.status(404).json({ error: `Epoch ${epochId} not found or not started` });
+        }
+        
+        const results = {
+            epochId: epochId,
+            steps: []
+        };
+        
+        // Step 1: Submit client updates
+        console.log(`[Demo] Submitting client updates for epoch ${epochId}...`);
+        const numClients = 5;
+        const updateHashes = [];
+        
+        for (let i = 1; i <= numClients; i++) {
+            const clientUpdate = {
+                epoch: epochId,
+                clientId: `client-${i}`,
+                timestamp: Math.floor(Date.now() / 1000),
+                modelWeights: Array.from({ length: 10 }, () => Math.random()),
+                loss: 0.5 - (i * 0.05),
+                accuracy: 0.6 + (i * 0.04),
+                round: epochId
+            };
+            
+            const updateCid = `demo-client${i}-epoch${epochId}-${Date.now()}`;
+            const updateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(clientUpdate)));
+            updateHashes.push(updateHash);
+            
+            try {
+                const tx = await epochManager.submitUpdate(epochId, updateCid, updateHash);
+                await tx.wait();
+                results.steps.push({
+                    step: 'submit_update',
+                    client: i,
+                    transactionHash: tx.hash,
+                    success: true
+                });
+                
+                // Small delay between submissions
+                if (i < numClients) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (error) {
+                console.error(`[Demo] Failed to submit client ${i} update:`, error.message);
+                results.steps.push({
+                    step: 'submit_update',
+                    client: i,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        // Step 2: Post scores root
+        console.log(`[Demo] Posting scores root for epoch ${epochId}...`);
+        try {
+            // Get all submitted updates
+            const filter = epochManager.filters.UpdateSubmitted(epochId);
+            const events = await epochManager.queryFilter(filter);
+            
+            // Create dummy scores
+            const scores = events.map((e, idx) => ({
+                submitter: e.args.submitter,
+                score: 0.75 + (idx * 0.04)
+            }));
+            
+            // Compute Merkle root (simplified)
+            const scoresData = scores.map(s => `${s.submitter}-${s.score.toFixed(4)}`).join('|');
+            const scoresRoot = ethers.keccak256(ethers.toUtf8Bytes(scoresData));
+            
+            const tx = await epochManager.postScoresRoot(epochId, scoresRoot);
+            await tx.wait();
+            results.steps.push({
+                step: 'post_scores',
+                transactionHash: tx.hash,
+                scoresRoot: scoresRoot,
+                success: true
+            });
+        } catch (error) {
+            console.error(`[Demo] Failed to post scores root:`, error.message);
+            results.steps.push({
+                step: 'post_scores',
+                success: false,
+                error: error.message
+            });
+        }
+        
+        // Step 3: Publish aggregated model
+        console.log(`[Demo] Publishing aggregated model for epoch ${epochId}...`);
+        try {
+            const globalModelCid = `aggregated-model-epoch${epochId}-${Date.now()}`;
+            const globalModelData = {
+                epoch: epochId,
+                aggregated: true,
+                timestamp: Math.floor(Date.now() / 1000),
+                participants: numClients,
+                avgLoss: 0.35,
+                avgAccuracy: 0.82,
+                modelVersion: `v1.${epochId}`
+            };
+            const globalModelHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(globalModelData)));
+            
+            const tx = await epochManager.publishModel(epochId, globalModelCid, globalModelHash);
+            await tx.wait();
+            results.steps.push({
+                step: 'publish_model',
+                transactionHash: tx.hash,
+                globalModelCid: globalModelCid,
+                globalModelHash: globalModelHash,
+                success: true
+            });
+        } catch (error) {
+            console.error(`[Demo] Failed to publish model:`, error.message);
+            results.steps.push({
+                step: 'publish_model',
+                success: false,
+                error: error.message
+            });
+        }
+        
+        // Get final status
+        const filter = epochManager.filters.UpdateSubmitted(epochId);
+        const events = await epochManager.queryFilter(filter);
+        const uniqueSubmitters = new Set(events.map(e => e.args.submitter));
+        const finalEpochInfo = await epochManager.epochs(epochId);
+        
+        results.summary = {
+            totalUpdates: events.length,
+            uniqueClients: uniqueSubmitters.size,
+            scoresPosted: finalEpochInfo.scoresRoot !== '0x0000000000000000000000000000000000000000000000000000000000000000',
+            modelPublished: finalEpochInfo.published
+        };
+        
+        res.json({
+            success: true,
+            ...results
+        });
+    } catch (error) {
+        console.error('Error completing demo:', error);
+        res.status(500).json({ 
+            error: 'Failed to complete demo', 
+            message: error.message
+        });
     }
 });
 
