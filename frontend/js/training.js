@@ -198,10 +198,12 @@ async function refreshTrainingStatus() {
         if (statsClientsEl) statsClientsEl.textContent = data.connectedClients || 0;
         if (statsRoundEl) {
             // Show epoch number without limit if totalRounds is null
+            // Always show the epoch number, even if 0 (means no epochs yet)
+            const epochNum = data.currentRound || data.epochId || 0;
             if (data.totalRounds === null || data.totalRounds === undefined) {
-                statsRoundEl.textContent = `Epoch ${data.currentRound || 0}`;
+                statsRoundEl.textContent = epochNum > 0 ? `Epoch ${epochNum}` : 'Epoch 0';
             } else {
-                statsRoundEl.textContent = `${data.currentRound || 0}/${data.totalRounds || 10}`;
+                statsRoundEl.textContent = `${epochNum}/${data.totalRounds || 10}`;
             }
         }
         

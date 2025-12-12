@@ -429,9 +429,10 @@ app.get('/api/training/status', async (req, res) => {
         
         const isActive = latestEpoch > 0 && epochInfo && !epochInfo.published;
         
+        // Always show latest epoch data, even if published (for display purposes)
         res.json({
             status: isActive ? 'active' : 'inactive',
-            currentRound: latestEpoch > 0 ? latestEpoch : 0,
+            currentRound: latestEpoch, // Always show latest epoch number, even if published
             totalRounds: null, // No limit - epochs can continue indefinitely
             connectedClients: updateCount > 0 ? updateCount : connectedClients, // Show update count for demo (all from same wallet)
             updateCount: updateCount, // Total number of updates submitted
