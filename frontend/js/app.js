@@ -552,10 +552,25 @@ function updateEpochProgress(epochData) {
     const progressFill = document.getElementById('epoch-progress-fill');
     const progressText = document.getElementById('epoch-progress-text');
 
-    // Check if published (handle boolean true, string "true", or check for published events)
-    const isPublished = epochInfo.published === true || 
-                       epochInfo.published === 'true' || 
-                       (epochData.events && epochData.events.modelPublished && epochData.events.modelPublished.length > 0);
+    // Check if published (handle boolean true, string "true", BigNumber, or check for published events/model data)
+    const hasPublishedEvents = epochData.events && epochData.events.modelPublished && epochData.events.modelPublished.length > 0;
+    const hasGlobalModel = epochInfo.globalModelCid || epochInfo.globalModelHash;
+    const publishedFlag = epochInfo.published === true || 
+                          epochInfo.published === 'true' || 
+                          epochInfo.published === 1 ||
+                          String(epochInfo.published) === 'true';
+    
+    const isPublished = publishedFlag || hasPublishedEvents || (hasGlobalModel && epochInfo.scoresRoot);
+    
+    console.log('[Progress] Epoch published check:', {
+        publishedFlag,
+        hasPublishedEvents,
+        hasGlobalModel,
+        scoresRoot: !!epochInfo.scoresRoot,
+        isPublished,
+        publishedValue: epochInfo.published,
+        publishedType: typeof epochInfo.published
+    });
 
     if (isPublished) {
         if (progressFill) {
