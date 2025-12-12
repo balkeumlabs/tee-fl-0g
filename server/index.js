@@ -541,8 +541,16 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
             modelPublished: false
         };
         
-        // Step 1: Submit client updates (5 clients)
+        // Step 1: Submit client updates (5 clients) - each from a different wallet
         const numClients = 5;
+        // Generate unique wallets for each client (derived from main wallet)
+        const clientWallets = [];
+        for (let i = 0; i < numClients; i++) {
+            // Create deterministic wallets by deriving from private key + client index
+            const clientPrivateKey = ethers.keccak256(ethers.toUtf8Bytes(`${privateKey}-client-${i}`));
+            clientWallets.push(new ethers.Wallet(clientPrivateKey, provider));
+        }
+        
         for (let i = 1; i <= numClients; i++) {
             try {
                 const clientUpdate = {
@@ -558,8 +566,12 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
                 const updateCid = `demo-client${i}-epoch${nextEpochId}-${Date.now()}`;
                 const updateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(clientUpdate)));
                 
-                console.log(`[Demo] Submitting client ${i}/${numClients} update...`);
-                const updateTx = await epochManager.submitUpdate(nextEpochId, updateCid, updateHash);
+                // Use different wallet for each client
+                const clientWallet = clientWallets[i - 1];
+                const clientEpochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, clientWallet);
+                
+                console.log(`[Demo] Submitting client ${i}/${numClients} update from ${clientWallet.address}...`);
+                const updateTx = await clientEpochManager.submitUpdate(nextEpochId, updateCid, updateHash);
                 console.log(`[Demo] Client ${i} transaction sent: ${updateTx.hash}`);
                 const receipt = await updateTx.wait();
                 console.log(`[Demo] Client ${i} transaction confirmed in block ${receipt.blockNumber}`);
