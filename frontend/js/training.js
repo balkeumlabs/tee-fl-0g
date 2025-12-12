@@ -61,14 +61,36 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             model: formData.get('model')
         };
         
-        // Send to backend API
-        const response = await fetch(`${API_BASE}/api/training/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(config)
-        });
+        // Send to backend API (with longer timeout for blockchain transactions)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+        
+        let response;
+        try {
+            response = await fetch(`${API_BASE}/api/training/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config),
+                signal: controller.signal
+            });
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out. The training is still processing in the background. Please refresh the page in a few moments.');
+            }
+            throw error;
+        }
+        clearTimeout(timeoutId);
+        
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response received:', text.substring(0, 200));
+            throw new Error(`Server returned ${contentType} instead of JSON. Response: ${text.substring(0, 100)}...`);
+        }
         
         const result = await response.json();
         
