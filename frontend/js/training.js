@@ -106,13 +106,25 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
                 if (statusData && statusData.epochId && statusData.epochId >= result.epochId && statusData.published) {
                     clearInterval(pollInterval);
                     console.log('Demo completed!');
-                    // Refresh dashboard
+                    // Start auto-refresh on dashboard for 5 minutes
+                    if (typeof window.startAutoRefresh === 'function') {
+                        window.startAutoRefresh();
+                    }
+                    // Refresh dashboard if we're on the dashboard page
                     if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
-                        window.location.reload();
+                        if (typeof window.refreshDashboard === 'function') {
+                            await window.refreshDashboard();
+                        } else {
+                            window.location.reload();
+                        }
                     }
                 } else if (pollCount >= maxPolls) {
                     clearInterval(pollInterval);
                     console.log('Polling timeout - demo may still be processing');
+                    // Start auto-refresh anyway (demo might still complete)
+                    if (typeof window.startAutoRefresh === 'function') {
+                        window.startAutoRefresh();
+                    }
                 }
             }, 5000); // Poll every 5 seconds
         }).catch((error) => {
