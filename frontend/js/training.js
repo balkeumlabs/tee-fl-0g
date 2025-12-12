@@ -136,10 +136,10 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
 // Training status
 let trainingStatus = 'inactive';
 let currentRound = 0;
-let totalRounds = 10;
+let totalRounds = null; // Can be null (no limit)
 let connectedClients = 0;
 
-function updateTrainingStatus(status, rounds = 10) {
+function updateTrainingStatus(status, rounds = null) {
     trainingStatus = status;
     totalRounds = rounds;
     
