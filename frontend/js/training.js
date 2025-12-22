@@ -186,23 +186,23 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             
             console.log('Training started successfully:', result);
             
-            // CRITICAL: Immediately refresh dashboard to show new epoch
-            // The backend has already completed all transactions and verified the epoch is queryable
+            // CRITICAL: If on dashboard, refresh it to show new epoch
+            // If on training page, stay on training page (user requested this)
             if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
                 console.log('Immediately refreshing dashboard to show new epoch...');
                 if (typeof window.refreshDashboard === 'function') {
                     // Wait a moment for backend to finish, then refresh
                     setTimeout(async () => {
                         await window.refreshDashboard();
-                    }, 1000);
+                    }, 2000); // Increased to 2 seconds to ensure backend is ready
                 } else {
                     window.location.reload();
                 }
             } else {
-                // If on training page, navigate to dashboard to see the new epoch
-                console.log('Navigating to dashboard to see new epoch...');
-                setTimeout(() => {
-                    window.location.href = '/index.html';
+                // Stay on training page - just refresh the training status
+                console.log('Training started - staying on training page and refreshing status...');
+                setTimeout(async () => {
+                    await refreshTrainingStatus();
                 }, 2000);
             }
             

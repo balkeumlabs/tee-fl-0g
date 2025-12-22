@@ -48,8 +48,8 @@ let trainingStatusMonitorInterval = null; // Monitor training status continuousl
 let autoRefreshEndTime = null; // Timestamp when auto-refresh should stop
 
 // Load data from backend API with timeout and optimized retry logic
-async function loadData(retries = 2) {
-    const REQUEST_TIMEOUT = 10000; // 10 second timeout per request (increased for slow networks)
+async function loadData(retries = 3) {
+    const REQUEST_TIMEOUT = 15000; // 15 second timeout per request (increased for slow networks/blockchain queries)
     
     // Create abort controller for timeout
     const createTimeoutController = () => {
@@ -80,7 +80,7 @@ async function loadData(retries = 2) {
                     })
                     .catch(err => {
                         if (err.name === 'AbortError') {
-                            throw new Error('Deployment API request timed out after 10 seconds');
+                            throw new Error('Deployment API request timed out after 15 seconds');
                         }
                         throw err;
                     }),
@@ -100,7 +100,7 @@ async function loadData(retries = 2) {
                     })
                     .catch(err => {
                         if (err.name === 'AbortError') {
-                            throw new Error('Latest epoch API request timed out after 10 seconds');
+                            throw new Error('Latest epoch API request timed out after 15 seconds');
                         }
                         throw err;
                     })

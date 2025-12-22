@@ -31,7 +31,7 @@ const FRONTEND_PATH = process.env.FRONTEND_PATH || path.join(__dirname, '..', 'f
 let latestEpochCache = {
     epochId: null,
     timestamp: 0,
-    ttl: 30000 // Cache for 30 seconds
+    ttl: 10000 // Cache for 10 seconds (reduced to catch new epochs faster)
 };
 
 // Demo mode state (for testing without blockchain)
@@ -124,11 +124,18 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             return res.json(demoMode.epochData);
         }
         
-        // Check cache first (fast path)
+        // Check cache first (fast path) - BUT invalidate if it's too old (might miss new epochs)
         let latestEpoch = getCachedLatestEpoch();
-        if (latestEpoch !== null) {
-            console.log(`[Latest Epoch] Using cached value: ${latestEpoch}`);
+        const cacheAge = latestEpoch !== null ? (Date.now() - latestEpochCache.timestamp) : Infinity;
+        
+        // If cache is older than 10 seconds, don't trust it (new epoch might have been created)
+        if (latestEpoch !== null && cacheAge < 10000) {
+            console.log(`[Latest Epoch] Using cached value: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s)`);
         } else {
+            if (latestEpoch !== null) {
+                console.log(`[Latest Epoch] Cache too old (${Math.round(cacheAge/1000)}s), searching for latest epoch...`);
+            }
+            latestEpoch = null; // Force search
             // Find latest epoch - optimized search with timeout protection
             // Strategy: Check small range around likely latest epoch, then expand if needed
             latestEpoch = 0;
