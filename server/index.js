@@ -128,8 +128,9 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         let latestEpoch = getCachedLatestEpoch();
         const cacheAge = latestEpoch !== null ? (Date.now() - latestEpochCache.timestamp) : Infinity;
         
-        // If cache is older than 10 seconds, don't trust it (new epoch might have been created)
-        if (latestEpoch !== null && cacheAge < 10000) {
+        // CRITICAL: If cache is older than 5 seconds, don't trust it (new epoch might have been created)
+        // Reduced from 10 seconds to 5 seconds for faster detection
+        if (latestEpoch !== null && cacheAge < 5000) {
             console.log(`[Latest Epoch] Using cached value: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s)`);
         } else {
             if (latestEpoch !== null) {

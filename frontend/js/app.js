@@ -921,9 +921,9 @@ function startTrainingStatusMonitoring() {
         
         // Always check for new epochs, even if training is inactive
         try {
-            // Add timeout to prevent hanging
+            // Add timeout to prevent hanging - increased for slow blockchain queries
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout (same as loadData)
             
             const response = await fetch(`${API_BASE}/api/epoch/latest`, { 
                 cache: 'no-cache',
