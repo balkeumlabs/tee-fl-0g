@@ -632,6 +632,11 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         const tx = await epochManager.startEpoch(nextEpochId, modelHash);
         await tx.wait();
         
+        // Invalidate cache since we just created a new epoch
+        latestEpochCache.epochId = null;
+        latestEpochCache.timestamp = 0;
+        console.log(`[Cache] Invalidated latest epoch cache (new epoch ${nextEpochId} created)`);
+        
         // AUTOMATIC DEMO: Simulate clients and complete pipeline
         console.log(`[Demo] Starting automatic demo simulation for epoch ${nextEpochId}...`);
         const demoResults = {
