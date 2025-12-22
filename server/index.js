@@ -27,6 +27,27 @@ const HOST = process.env.HOST || '0.0.0.0';
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://evmrpc.0g.ai';
 const FRONTEND_PATH = process.env.FRONTEND_PATH || path.join(__dirname, '..', 'frontend');
 
+// Cache for latest epoch (to avoid expensive searches)
+let latestEpochCache = {
+    epochId: null,
+    timestamp: 0,
+    ttl: 30000 // Cache for 30 seconds
+};
+
+// Helper to get cached latest epoch or null if expired
+function getCachedLatestEpoch() {
+    if (latestEpochCache.epochId && (Date.now() - latestEpochCache.timestamp) < latestEpochCache.ttl) {
+        return latestEpochCache.epochId;
+    }
+    return null;
+}
+
+// Helper to update cache
+function updateLatestEpochCache(epochId) {
+    latestEpochCache.epochId = epochId;
+    latestEpochCache.timestamp = Date.now();
+}
+
 // Initialize Express app
 const app = express();
 
@@ -89,70 +110,94 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch - use optimized approach: check recent epochs first, then fallback to events
-        // Strategy: Check recent epochs (last 50) first for speed, then use events if needed
-        let latestEpoch = 0;
-        
-        // First: Quick check of recent epochs (most likely to be the latest)
-        // Start from a high number and work down - check last 50 epochs
-        const recentCheckStart = 300; // Check up to epoch 300
-        const recentCheckCount = 50; // Check last 50 epochs
-        for (let i = recentCheckStart; i >= Math.max(1, recentCheckStart - recentCheckCount); i--) {
-            try {
-                const info = await epochManager.epochs(i);
-                // Epoch exists if modelHash is non-zero (epoch was started)
-                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    latestEpoch = i;
-                    console.log(`[Latest Epoch] Found epoch ${i} via recent epoch check`);
-                    break; // Stop at first valid epoch (highest since we're going down)
-                }
-            } catch (e) {
-                // Contract call failed, continue
-                continue;
-            }
-        }
-        
-        // Fallback: If recent check didn't find anything, try querying events (but with timeout protection)
-        if (latestEpoch === 0) {
-            try {
-                console.log('[Latest Epoch] Recent check found nothing, trying event query...');
-                const epochStartedFilter = epochManager.filters.EpochStarted();
-                // Add timeout to event query (5 seconds max)
-                const eventQueryPromise = epochManager.queryFilter(epochStartedFilter);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Event query timeout')), 5000)
-                );
+        // Check cache first (fast path)
+        let latestEpoch = getCachedLatestEpoch();
+        if (latestEpoch !== null) {
+            console.log(`[Latest Epoch] Using cached value: ${latestEpoch}`);
+        } else {
+            // Find latest epoch - optimized search with timeout protection
+            // Strategy: Check small range around likely latest epoch, then expand if needed
+            latestEpoch = 0;
+            const SEARCH_TIMEOUT = 8000; // 8 second max for entire search
+            
+            // Start search with timeout
+            const searchPromise = (async () => {
+                // Step 1: Check last 20 epochs (most likely to contain latest)
+                const checkStart = 100; // Start from epoch 100 (reasonable upper bound)
+                const checkCount = 20; // Check last 20 epochs
                 
-                const allEpochStartedEvents = await Promise.race([eventQueryPromise, timeoutPromise]);
-                
-                if (allEpochStartedEvents && allEpochStartedEvents.length > 0) {
-                    // Find the highest epochId from all EpochStarted events
-                    const epochIds = allEpochStartedEvents.map(e => {
-                        const epochId = e.args.epochId;
-                        return typeof epochId === 'bigint' ? Number(epochId) : parseInt(epochId.toString());
-                    });
-                    latestEpoch = Math.max(...epochIds);
-                    console.log(`[Latest Epoch] Found ${allEpochStartedEvents.length} EpochStarted events, highest epoch: ${latestEpoch}`);
-                }
-            } catch (e) {
-                console.error('[Latest Epoch] Event query failed or timed out, trying full search:', e.message);
-            }
-        }
-        
-        // Final fallback: Full search from 300 down to 1 (slower but comprehensive)
-        if (latestEpoch === 0) {
-            console.log('[Latest Epoch] Falling back to full epoch search...');
-            for (let i = 300; i >= 1; i--) {
-                try {
-                    const info = await epochManager.epochs(i);
-                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                        latestEpoch = i;
-                        console.log(`[Latest Epoch] Found epoch ${i} via full search`);
+                // Check in batches of 5 in parallel for speed
+                for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
+                    const batchEnd = Math.max(1, batchStart - 4);
+                    const batchPromises = [];
+                    
+                    for (let i = batchStart; i >= batchEnd; i--) {
+                        batchPromises.push(
+                            epochManager.epochs(i)
+                                .then(info => {
+                                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                        return i;
+                                    }
+                                    return 0;
+                                })
+                                .catch(() => 0)
+                        );
+                    }
+                    
+                    const batchResults = await Promise.all(batchPromises);
+                    const foundEpoch = Math.max(...batchResults);
+                    
+                    if (foundEpoch > 0) {
+                        latestEpoch = foundEpoch;
+                        console.log(`[Latest Epoch] Found epoch ${foundEpoch} via parallel batch search`);
                         break;
                     }
-                } catch (e) {
-                    continue;
                 }
+                
+                // Step 2: If not found, try event query (with shorter timeout)
+                if (latestEpoch === 0) {
+                    try {
+                        const epochStartedFilter = epochManager.filters.EpochStarted();
+                        const eventQueryPromise = epochManager.queryFilter(epochStartedFilter);
+                        const eventTimeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Event query timeout')), 3000)
+                        );
+                        
+                        const allEpochStartedEvents = await Promise.race([eventQueryPromise, eventTimeoutPromise]);
+                        
+                        if (allEpochStartedEvents && allEpochStartedEvents.length > 0) {
+                            const epochIds = allEpochStartedEvents.map(e => {
+                                const epochId = e.args.epochId;
+                                return typeof epochId === 'bigint' ? Number(epochId) : parseInt(epochId.toString());
+                            });
+                            latestEpoch = Math.max(...epochIds);
+                            console.log(`[Latest Epoch] Found ${allEpochStartedEvents.length} events, highest: ${latestEpoch}`);
+                        }
+                    } catch (e) {
+                        console.warn('[Latest Epoch] Event query failed:', e.message);
+                    }
+                }
+                
+                return latestEpoch;
+            })();
+            
+            // Race search against timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Epoch search timeout')), SEARCH_TIMEOUT)
+            );
+            
+            try {
+                latestEpoch = await Promise.race([searchPromise, timeoutPromise]);
+            } catch (e) {
+                console.error('[Latest Epoch] Search timed out or failed:', e.message);
+                // If search fails, try to use training status endpoint's latest epoch
+                // (it has a simpler search that might work)
+                latestEpoch = 0;
+            }
+            
+            // Update cache if we found something
+            if (latestEpoch > 0) {
+                updateLatestEpochCache(latestEpoch);
             }
         }
         
