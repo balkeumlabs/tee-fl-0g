@@ -176,6 +176,23 @@
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #10b981;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
         .btn-stop {
             background: var(--bg-secondary);
             color: var(--text-secondary);
