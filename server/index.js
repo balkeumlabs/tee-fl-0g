@@ -284,9 +284,20 @@ app.get('/api/epoch/latest', async (req, res) => {
 });
 
 // Get epoch data (from JSON file or blockchain)
-app.get('/api/epoch/:epochNumber', async (req, res) => {
+app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
     try {
         const epochNumber = req.params.epochNumber;
+        
+        // Prevent "latest" from being treated as an epoch number
+        if (epochNumber === 'latest') {
+            return res.status(400).json({ error: 'Use /api/epoch/latest endpoint instead' });
+        }
+        
+        // Validate epoch number is numeric
+        const epochNum = parseInt(epochNumber);
+        if (isNaN(epochNum) || epochNum <= 0) {
+            return res.status(400).json({ error: 'Invalid epoch number' });
+        }
         const epochDataPath = path.join(FRONTEND_PATH, 'data', `epoch_${epochNumber}_mainnet_data.json`);
         const fs = await import('fs/promises');
         
@@ -316,14 +327,14 @@ app.get('/api/epoch/:epochNumber', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Get epoch info from blockchain
-        const epochInfo = await epochManager.epochs(epochNumber);
+        // Get epoch info from blockchain (use validated numeric value)
+        const epochInfo = await epochManager.epochs(epochNum);
         
         // Fetch all events for this epoch
-        const epochStartedFilter = epochManager.filters.EpochStarted(epochNumber);
-        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(epochNumber);
-        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(epochNumber);
-        const modelPublishedFilter = epochManager.filters.ModelPublished(epochNumber);
+        const epochStartedFilter = epochManager.filters.EpochStarted(epochNum);
+        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(epochNum);
+        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(epochNum);
+        const modelPublishedFilter = epochManager.filters.ModelPublished(epochNum);
         
         const [epochStartedEvents, updateEvents, scoresEvents, publishedEvents] = await Promise.all([
             epochManager.queryFilter(epochStartedFilter).catch(() => []),
@@ -334,7 +345,7 @@ app.get('/api/epoch/:epochNumber', async (req, res) => {
         
         // Build epoch data structure to match frontend expectations
         const epochData = {
-            epochId: parseInt(epochNumber),
+            epochId: epochNum,
             modelHash: epochInfo.modelHash,
             scoresRoot: epochInfo.scoresRoot !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.scoresRoot : null,
             globalModelCid: epochInfo.globalModelCid || null,
