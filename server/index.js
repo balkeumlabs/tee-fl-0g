@@ -274,6 +274,16 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             }
         }
         
+        // CRITICAL: Ensure latestEpoch is a valid number (not string "latest" or 0)
+        if (typeof latestEpoch !== 'number' || isNaN(latestEpoch) || latestEpoch <= 0) {
+            console.error(`[Latest Epoch] Invalid epoch ID: ${latestEpoch} (type: ${typeof latestEpoch})`);
+            return res.status(500).json({
+                error: 'Invalid epoch ID',
+                message: `Epoch ID must be a positive number, got: ${latestEpoch}`,
+                code: 'INVALID_EPOCH_ID'
+            });
+        }
+        
         // Fetch epoch data using the existing endpoint logic
         let epochInfo;
         try {
@@ -287,11 +297,12 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             });
         }
         
-        // Fetch all events for this epoch
-        const epochStartedFilter = epochManager.filters.EpochStarted(latestEpoch);
-        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(latestEpoch);
-        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(latestEpoch);
-        const modelPublishedFilter = epochManager.filters.ModelPublished(latestEpoch);
+        // Fetch all events for this epoch (ensure latestEpoch is a number)
+        const epochNum = Number(latestEpoch);
+        const epochStartedFilter = epochManager.filters.EpochStarted(epochNum);
+        const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(epochNum);
+        const scoresPostedFilter = epochManager.filters.ScoresRootPosted(epochNum);
+        const modelPublishedFilter = epochManager.filters.ModelPublished(epochNum);
         
         const [epochStartedEvents, updateEvents, scoresEvents, publishedEvents] = await Promise.all([
             epochManager.queryFilter(epochStartedFilter).catch(() => []),
