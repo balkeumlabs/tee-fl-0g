@@ -585,7 +585,7 @@ app.get('/api/training/status', asyncHandler(async (req, res) => {
         console.error('Error fetching training status:', error);
         res.status(500).json({ error: 'Failed to fetch training status', message: error.message });
     }
-});
+}));
 
 // Start training (start new epoch)
 app.post('/api/training/start', asyncHandler(async (req, res) => {
