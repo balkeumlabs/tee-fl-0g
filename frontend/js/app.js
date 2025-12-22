@@ -743,9 +743,17 @@ async function initDashboard() {
     const data = await loadData();
 
     if (!data) {
-        console.error('Failed to load data');
+        console.error('[Init] Failed to load data - API may be slow or unavailable');
         if (currentEpochIdEl) {
             currentEpochIdEl.textContent = 'Error';
+        }
+        // Show user-friendly error message
+        const errorMsg = document.createElement('div');
+        errorMsg.style.cssText = 'padding: 1rem; margin: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c33;';
+        errorMsg.textContent = '⚠️ Failed to load dashboard data. The API may be slow or unavailable. Please try refreshing the page.';
+        const container = document.querySelector('.container');
+        if (container) {
+            container.insertBefore(errorMsg, container.firstChild);
         }
         return;
     }
