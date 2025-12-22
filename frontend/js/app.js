@@ -1052,7 +1052,13 @@ async function refreshDashboard(silent = false) {
         }
         
         // Always update epoch ID in UI to ensure it's current
-        updateEpochId(currentEpochId);
+        // Only update if we have a valid epoch ID (not 0 or null)
+        if (currentEpochId && currentEpochId > 0) {
+            updateEpochId(currentEpochId);
+        } else {
+            console.error('[Refresh] Invalid epoch ID received:', currentEpochId);
+            // Don't update UI with invalid data - keep showing last known epoch
+        }
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);
