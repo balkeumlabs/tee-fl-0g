@@ -14,22 +14,47 @@ let dashboardAutoRefreshInterval = null;
 let trainingStatusMonitorInterval = null; // Monitor training status continuously
 let autoRefreshEndTime = null; // Timestamp when auto-refresh should stop
 
-// Load data from backend API with retry logic
-async function loadData(retries = 3) {
+// Load data from backend API with timeout and optimized retry logic
+async function loadData(retries = 2) {
+    const REQUEST_TIMEOUT = 8000; // 8 second timeout per request
+    
+    // Create abort controller for timeout
+    const createTimeoutController = () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+        return { controller, timeoutId };
+    };
+    
     for (let i = 0; i < retries; i++) {
         try {
+            const deployController = createTimeoutController();
+            const epochController = createTimeoutController();
+            
             const [deployData, epochData] = await Promise.all([
-                fetch(`${API_BASE}/api/deployment`, { cache: 'no-cache' })
+                fetch(`${API_BASE}/api/deployment`, { 
+                    cache: 'no-cache',
+                    signal: deployController.controller.signal
+                })
                     .then(r => {
+                        clearTimeout(deployController.timeoutId);
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
                         return r.json();
                     }),
-                fetch(`${API_BASE}/api/epoch/latest`, { cache: 'no-cache' })
+                fetch(`${API_BASE}/api/epoch/latest`, { 
+                    cache: 'no-cache',
+                    signal: epochController.controller.signal
+                })
                     .then(r => {
+                        clearTimeout(epochController.timeoutId);
                         if (!r.ok) {
                             // Fallback to epoch 1 if latest fails
-                            return fetch(`${API_BASE}/api/epoch/1`, { cache: 'no-cache' })
+                            const fallbackController = createTimeoutController();
+                            return fetch(`${API_BASE}/api/epoch/1`, { 
+                                cache: 'no-cache',
+                                signal: fallbackController.controller.signal
+                            })
                                 .then(r2 => {
+                                    clearTimeout(fallbackController.timeoutId);
                                     if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
                                     return r2.json();
                                 });
@@ -44,8 +69,8 @@ async function loadData(retries = 3) {
             if (i === retries - 1) {
                 return null;
             }
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            // Shorter wait before retry (500ms instead of 1s+)
+            await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
         }
     }
     return null;
