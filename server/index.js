@@ -122,9 +122,10 @@ app.get('/api/epoch/latest', async (req, res) => {
             
             // Start search with timeout
             const searchPromise = (async () => {
-                // Step 1: Check last 20 epochs (most likely to contain latest)
-                const checkStart = 100; // Start from epoch 100 (reasonable upper bound)
-                const checkCount = 20; // Check last 20 epochs
+                // Step 1: Check last 10 epochs (most likely to contain latest)
+                // Use a reasonable starting point based on typical usage
+                const checkStart = 50; // Start from epoch 50 (reasonable upper bound for most cases)
+                const checkCount = 10; // Check last 10 epochs only
                 
                 // Check in batches of 5 in parallel for speed
                 for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
