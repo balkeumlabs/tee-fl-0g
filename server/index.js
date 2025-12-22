@@ -122,10 +122,30 @@ app.get('/api/epoch/latest', async (req, res) => {
             
             // Start search with timeout
             const searchPromise = (async () => {
-                // Step 1: Check last 10 epochs (most likely to contain latest)
-                // Use a reasonable starting point based on typical usage
-                const checkStart = 50; // Start from epoch 50 (reasonable upper bound for most cases)
-                const checkCount = 10; // Check last 10 epochs only
+                // Step 1: Use training status endpoint to get a hint about latest epoch
+                // This is faster than searching blindly
+                let hintEpoch = 0;
+                try {
+                    // Quick check: use the same logic as training status (checks 1-100)
+                    // But we'll use it as a hint, not the final answer
+                    for (let i = 100; i >= 1; i--) {
+                        try {
+                            const info = await epochManager.epochs(i);
+                            if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                hintEpoch = i;
+                                break; // Found a valid epoch, use as hint
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore hint errors
+                }
+                
+                // Step 2: Check around the hint epoch (if found) or check recent range
+                let checkStart = hintEpoch > 0 ? hintEpoch + 5 : 50; // Check 5 epochs above hint, or start from 50
+                const checkCount = 15; // Check 15 epochs total
                 
                 // Check in batches of 5 in parallel for speed
                 for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
