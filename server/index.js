@@ -124,14 +124,47 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             return res.json(demoMode.epochData);
         }
         
-        // Check cache first (fast path) - BUT invalidate if it's too old (might miss new epochs)
+        // Check cache first (fast path) - BUT always verify it exists on blockchain
         let latestEpoch = getCachedLatestEpoch();
         const cacheAge = latestEpoch !== null ? (Date.now() - latestEpochCache.timestamp) : Infinity;
         
-        // CRITICAL: If cache is older than 5 seconds, don't trust it (new epoch might have been created)
-        // Reduced from 10 seconds to 5 seconds for faster detection
+        // CRITICAL: If we have a cached epoch, verify it exists on blockchain first
+        // This ensures we don't return stale cache if a new epoch was just created
         if (latestEpoch !== null && cacheAge < 5000) {
-            console.log(`[Latest Epoch] Using cached value: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s)`);
+            try {
+                // Quick check: verify cached epoch exists on blockchain
+                const cachedEpochInfo = await epochManager.epochs(latestEpoch);
+                if (cachedEpochInfo && cachedEpochInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    // Cached epoch exists - but check if there's a newer one by checking next few epochs
+                    let foundNewer = false;
+                    for (let checkEpoch = latestEpoch + 1; checkEpoch <= latestEpoch + 5; checkEpoch++) {
+                        try {
+                            const nextEpochInfo = await epochManager.epochs(checkEpoch);
+                            if (nextEpochInfo && nextEpochInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                latestEpoch = checkEpoch;
+                                foundNewer = true;
+                                console.log(`[Latest Epoch] Found newer epoch ${checkEpoch} beyond cached ${latestEpochCache.epochId}`);
+                                updateLatestEpochCache(checkEpoch);
+                                break;
+                            }
+                        } catch (e) {
+                            // Epoch doesn't exist, continue
+                            break;
+                        }
+                    }
+                    if (!foundNewer) {
+                        console.log(`[Latest Epoch] Using cached value: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s, verified on blockchain)`);
+                    }
+                } else {
+                    // Cached epoch doesn't exist - force search
+                    console.log(`[Latest Epoch] Cached epoch ${latestEpoch} not found on blockchain, searching...`);
+                    latestEpoch = null;
+                }
+            } catch (error) {
+                // Error checking cached epoch - force search
+                console.log(`[Latest Epoch] Error verifying cached epoch, searching...: ${error.message}`);
+                latestEpoch = null;
+            }
         } else {
             if (latestEpoch !== null) {
                 console.log(`[Latest Epoch] Cache too old (${Math.round(cacheAge/1000)}s), searching for latest epoch...`);
