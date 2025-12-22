@@ -122,30 +122,34 @@ app.get('/api/epoch/latest', async (req, res) => {
             
             // Start search with timeout
             const searchPromise = (async () => {
-                // Step 1: Use training status endpoint to get a hint about latest epoch
-                // This is faster than searching blindly
-                let hintEpoch = 0;
+                // Step 1: Try event query first (fastest if events are indexed)
+                // This is the most reliable way to find the latest epoch
                 try {
-                    // Quick check: use the same logic as training status (checks 1-100)
-                    // But we'll use it as a hint, not the final answer
-                    for (let i = 100; i >= 1; i--) {
-                        try {
-                            const info = await epochManager.epochs(i);
-                            if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                                hintEpoch = i;
-                                break; // Found a valid epoch, use as hint
-                            }
-                        } catch (e) {
-                            continue;
-                        }
+                    const epochStartedFilter = epochManager.filters.EpochStarted();
+                    const eventQueryPromise = epochManager.queryFilter(epochStartedFilter);
+                    const eventTimeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Event query timeout')), 4000)
+                    );
+                    
+                    const allEpochStartedEvents = await Promise.race([eventQueryPromise, eventTimeoutPromise]);
+                    
+                    if (allEpochStartedEvents && allEpochStartedEvents.length > 0) {
+                        const epochIds = allEpochStartedEvents.map(e => {
+                            const epochId = e.args.epochId;
+                            return typeof epochId === 'bigint' ? Number(epochId) : parseInt(epochId.toString());
+                        });
+                        latestEpoch = Math.max(...epochIds);
+                        console.log(`[Latest Epoch] Found ${allEpochStartedEvents.length} events, highest: ${latestEpoch}`);
                     }
                 } catch (e) {
-                    // Ignore hint errors
+                    console.warn('[Latest Epoch] Event query failed, falling back to direct search:', e.message);
                 }
                 
-                // Step 2: Check around the hint epoch (if found) or check recent range
-                let checkStart = hintEpoch > 0 ? hintEpoch + 5 : 50; // Check 5 epochs above hint, or start from 50
-                const checkCount = 15; // Check 15 epochs total
+                // Step 2: If events didn't work, check recent epochs in parallel batches
+                if (latestEpoch === 0) {
+                    // Check from epoch 30 down to 1 (covers most realistic scenarios)
+                    const checkStart = 30;
+                    const checkCount = 20; // Check 20 epochs
                 
                 // Check in batches of 5 in parallel for speed
                 for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
@@ -175,29 +179,6 @@ app.get('/api/epoch/latest', async (req, res) => {
                     }
                 }
                 
-                // Step 2: If not found, try event query (with shorter timeout)
-                if (latestEpoch === 0) {
-                    try {
-                        const epochStartedFilter = epochManager.filters.EpochStarted();
-                        const eventQueryPromise = epochManager.queryFilter(epochStartedFilter);
-                        const eventTimeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Event query timeout')), 3000)
-                        );
-                        
-                        const allEpochStartedEvents = await Promise.race([eventQueryPromise, eventTimeoutPromise]);
-                        
-                        if (allEpochStartedEvents && allEpochStartedEvents.length > 0) {
-                            const epochIds = allEpochStartedEvents.map(e => {
-                                const epochId = e.args.epochId;
-                                return typeof epochId === 'bigint' ? Number(epochId) : parseInt(epochId.toString());
-                            });
-                            latestEpoch = Math.max(...epochIds);
-                            console.log(`[Latest Epoch] Found ${allEpochStartedEvents.length} events, highest: ${latestEpoch}`);
-                        }
-                    } catch (e) {
-                        console.warn('[Latest Epoch] Event query failed:', e.message);
-                    }
-                }
                 
                 return latestEpoch;
             })();
