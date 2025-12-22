@@ -654,46 +654,38 @@ function updateEpochProgress(epochData) {
     const progressFill = document.getElementById('epoch-progress-fill');
     const progressText = document.getElementById('epoch-progress-text');
 
-    // Check if published (handle boolean true, string "true", BigNumber, or check for published events/model data)
-    const hasPublishedEvents = epochData.events && epochData.events.modelPublished && epochData.events.modelPublished.length > 0;
-    const hasGlobalModel = epochInfo.globalModelCid || epochInfo.globalModelHash;
-    const publishedFlag = epochInfo.published === true || 
-                          epochInfo.published === 'true' || 
-                          epochInfo.published === 1 ||
-                          String(epochInfo.published) === 'true';
+    // Calculate progress based on completed steps (always use step-based calculation)
+    let progress = 0;
+    let completedSteps = 0;
+    const totalSteps = 4;
     
-    const isPublished = publishedFlag || hasPublishedEvents || (hasGlobalModel && epochInfo.scoresRoot);
-    
-    // Only log when status changes (reduces console noise)
-    const currentProgress = progressFill ? progressFill.style.width : '0%';
-    if (isPublished && currentProgress !== '100%') {
-        console.log('[Progress] Epoch published - setting to 100%');
+    if (epochData.events) {
+        if (epochData.events.epochStarted && epochData.events.epochStarted.length > 0) {
+            progress += 25;
+            completedSteps++;
+        }
+        if (epochData.events.updatesSubmitted && epochData.events.updatesSubmitted.length > 0) {
+            progress += 25;
+            completedSteps++;
+        }
+        if (epochData.events.scoresPosted && epochData.events.scoresPosted.length > 0) {
+            progress += 25;
+            completedSteps++;
+        }
+        if (epochData.events.modelPublished && epochData.events.modelPublished.length > 0) {
+            progress += 25;
+            completedSteps++;
+        }
     }
-
-    if (isPublished) {
-        if (progressFill) {
-            progressFill.style.width = '100%';
-        }
-        if (progressText) {
-            progressText.textContent = '100% Complete';
-        }
-    } else {
-        // Epoch is active but not published yet
-        // Calculate progress based on completed steps
-        let progress = 0;
-        if (epochData.events) {
-            if (epochData.events.epochStarted && epochData.events.epochStarted.length > 0) progress += 25;
-            if (epochData.events.updatesSubmitted && epochData.events.updatesSubmitted.length > 0) progress += 25;
-            if (epochData.events.scoresPosted && epochData.events.scoresPosted.length > 0) progress += 25;
-            if (epochData.events.modelPublished && epochData.events.modelPublished.length > 0) progress += 25;
-        }
-        
-        if (progressFill) {
-            progressFill.style.width = `${progress}%`;
-        }
-        if (progressText) {
-            progressText.textContent = progress === 100 ? '100% Complete' : 'In Progress';
-        }
+    
+    // Only show 100% if ALL steps are completed
+    const isComplete = completedSteps === totalSteps;
+    
+    if (progressFill) {
+        progressFill.style.width = `${progress}%`;
+    }
+    if (progressText) {
+        progressText.textContent = isComplete ? '100% Complete' : 'In Progress';
     }
 }
 
