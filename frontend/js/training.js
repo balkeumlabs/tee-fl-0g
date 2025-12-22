@@ -39,6 +39,36 @@ document.getElementById('config-modal').addEventListener('click', (e) => {
     }
 });
 
+// Check if demo mode is enabled
+function isDemoModeEnabled() {
+    const toggle = document.getElementById('demo-mode-toggle');
+    return toggle ? toggle.checked : false;
+}
+
+// Update demo mode indicator
+function updateDemoModeIndicator() {
+    const indicator = document.getElementById('demo-mode-indicator');
+    const isDemo = isDemoModeEnabled();
+    if (indicator) {
+        if (isDemo) {
+            indicator.textContent = '(Testing without blockchain)';
+            indicator.style.color = '#10b981';
+        } else {
+            indicator.textContent = '(Real blockchain training)';
+            indicator.style.color = '#9333ea';
+        }
+    }
+}
+
+// Initialize demo mode toggle
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('demo-mode-toggle');
+    if (toggle) {
+        toggle.addEventListener('change', updateDemoModeIndicator);
+        updateDemoModeIndicator(); // Set initial state
+    }
+});
+
 // Form submission
 document.getElementById('config-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -61,12 +91,24 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             model: formData.get('model')
         };
         
+        // Check if demo mode is enabled
+        const isDemo = isDemoModeEnabled();
+        const apiEndpoint = isDemo ? '/api/training/start-demo' : '/api/training/start';
+        
         // Close modal immediately - don't wait for response (training happens in background)
         closeConfigModal();
         updateTrainingStatus('active', null); // Don't use numRounds - backend returns null for totalRounds
         
+        // Show mode indicator in status message
+        const statusMessage = document.getElementById('status-message');
+        if (statusMessage) {
+            statusMessage.textContent = isDemo 
+                ? 'Starting demo training (simulating pipeline...)' 
+                : 'Starting training on blockchain...';
+        }
+        
         // Send to backend API (fire and forget - don't block UI)
-        fetch(`${API_BASE}/api/training/start`, {
+        fetch(`${API_BASE}${apiEndpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -92,9 +134,10 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             
             console.log('Training started successfully:', result);
             
-            // Poll for completion (demo takes 60-90 seconds)
+            // Poll for completion (demo is faster, real training takes longer)
             let pollCount = 0;
-            const maxPolls = 30; // 30 polls * 5 seconds = 150 seconds max
+            const maxPolls = isDemo ? 40 : 30; // Demo: 40 polls * 2s = 80s, Real: 30 polls * 5s = 150s
+            const pollInterval = isDemo ? 2000 : 5000; // Demo polls every 2s, real every 5s
             
             const pollInterval = setInterval(async () => {
                 pollCount++;
@@ -126,7 +169,7 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
                         window.startAutoRefresh();
                     }
                 }
-            }, 5000); // Poll every 5 seconds
+            }, pollInterval);
         }).catch((error) => {
             console.error('Error starting training:', error);
             updateTrainingStatus('inactive', null);

@@ -373,6 +373,20 @@
                     </h2>
                     <div class="training-status-large inactive" id="training-status">Training Inactive</div>
                     <p class="status-message" id="status-message">Ready to start a new training session</p>
+                    <div class="demo-toggle-container" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary, #f5f5f5); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <label for="demo-mode-toggle" style="font-weight: 500; cursor: pointer; user-select: none;">
+                                🎮 Demo Mode (No Tokens)
+                            </label>
+                            <span id="demo-mode-indicator" style="font-size: 0.75rem; color: var(--text-secondary, #666);">
+                                (Testing without blockchain)
+                            </span>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                            <input type="checkbox" id="demo-mode-toggle" style="opacity: 0; width: 0; height: 0;">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.4s; border-radius: 26px;"></span>
+                        </label>
+                    </div>
                     <div class="action-buttons">
                         <button class="btn-start" onclick="openConfigModal()">
                             <span>▶</span>
