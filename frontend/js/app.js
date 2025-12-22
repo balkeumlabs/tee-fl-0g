@@ -880,10 +880,17 @@ function startTrainingStatusMonitoring() {
                 // If we detect a new epoch, refresh the dashboard
                 if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
                     console.log(`🔄 Monitor detected new epoch: ${currentEpochId} (was ${lastKnownEpochId})`);
+                    // Update lastKnownEpochId immediately to prevent race conditions
+                    lastKnownEpochId = currentEpochId;
                     // Refresh dashboard to show new epoch
                     await refreshDashboard(true);
                 } else if (lastKnownEpochId === null) {
                     lastKnownEpochId = currentEpochId;
+                } else if (currentEpochId !== lastKnownEpochId) {
+                    // Epoch changed (could be lower or higher) - update it
+                    console.log(`🔄 Monitor: Epoch changed from ${lastKnownEpochId} to ${currentEpochId}`);
+                    lastKnownEpochId = currentEpochId;
+                    await refreshDashboard(true);
                 }
             }
         } catch (error) {
@@ -999,35 +1006,31 @@ async function refreshDashboard(silent = false) {
         const { deployData, epochData } = data;
         const currentEpochId = epochData.epochId || 1;
 
-        // Detect new epoch and switch to it immediately
-        if (lastKnownEpochId !== null && currentEpochId !== lastKnownEpochId) {
+        // Always update to show the latest epoch, even if it's the same
+        // This ensures we're always showing the most current data
+        if (lastKnownEpochId === null) {
+            // First load
+            lastKnownEpochId = currentEpochId;
+        } else if (currentEpochId !== lastKnownEpochId) {
+            // Epoch changed - update immediately
             if (currentEpochId > lastKnownEpochId) {
                 console.log(`🔄 New epoch detected: ${currentEpochId} (was ${lastKnownEpochId}) - switching immediately`);
-                // Start auto-refresh if not already running and training is active
-                if (!dashboardAutoRefreshInterval) {
-                    const trainingActive = await isTrainingActive();
-                    if (trainingActive) {
-                        startAutoRefresh();
-                    }
-                }
             } else {
                 console.log(`🔄 Epoch changed: ${currentEpochId} (was ${lastKnownEpochId})`);
             }
-            // Force update to show new epoch immediately
             lastKnownEpochId = currentEpochId;
-            updateEpochId(currentEpochId);
-            displayPipelineSteps(epochData); // Show pipeline steps for new epoch immediately
-            updateEpochProgress(epochData);
-        } else if (lastKnownEpochId === null) {
-            // First load
-            lastKnownEpochId = currentEpochId;
+            
+            // Start auto-refresh if not already running and training is active
+            if (!dashboardAutoRefreshInterval) {
+                const trainingActive = await isTrainingActive();
+                if (trainingActive) {
+                    startAutoRefresh();
+                }
+            }
         }
-
-        // Always update epoch ID in UI (in case it changed)
-        if (currentEpochId !== lastKnownEpochId) {
-            lastKnownEpochId = currentEpochId;
-            updateEpochId(currentEpochId);
-        }
+        
+        // Always update epoch ID in UI to ensure it's current
+        updateEpochId(currentEpochId);
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);

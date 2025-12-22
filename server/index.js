@@ -89,37 +89,39 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch using optimized search approach
-        // Strategy: Check in larger steps first, then narrow down to find the highest valid epoch
+        // Find latest epoch - check for ANY epoch that exists (even if not published)
+        // An epoch exists if the contract call succeeds (doesn't throw)
+        // We want the HIGHEST epoch number that exists, regardless of published status
         let latestEpoch = 0;
         let startCheck = 200; // Check up to epoch 200
         let stepSize = 10; // Check every 10th epoch first
         let foundRange = null; // Track the range where we found valid epochs
         
         // First pass: Quick scan in larger steps to find the approximate range
+        // Check if epoch exists (contract call succeeds) - don't check modelHash yet
         for (let i = startCheck; i >= 1; i -= stepSize) {
             try {
                 const info = await epochManager.epochs(i);
-                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    // Found a valid epoch - this is our upper bound
-                    foundRange = { upper: i, lower: Math.max(1, i - stepSize + 1) };
-                    break;
-                }
+                // Epoch exists if contract call succeeded (even if modelHash is zero)
+                // This catches newly started epochs that haven't been published yet
+                foundRange = { upper: i, lower: Math.max(1, i - stepSize + 1) };
+                break;
             } catch (e) {
+                // Epoch doesn't exist, continue searching
                 continue;
             }
         }
         
-        // Second pass: If we found a range, search it thoroughly to find the highest valid epoch
+        // Second pass: If we found a range, search it thoroughly to find the highest existing epoch
         if (foundRange) {
             for (let j = foundRange.upper; j >= foundRange.lower; j--) {
                 try {
                     const checkInfo = await epochManager.epochs(j);
-                    if (checkInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                        latestEpoch = j; // This is the highest valid epoch in this range
-                        break; // Stop immediately since we're going from high to low
-                    }
+                    // Epoch exists - this is the highest valid epoch in this range
+                    latestEpoch = j;
+                    break; // Stop immediately since we're going from high to low
                 } catch (e) {
+                    // Epoch doesn't exist, continue
                     continue;
                 }
             }
@@ -130,10 +132,9 @@ app.get('/api/epoch/latest', async (req, res) => {
             for (let i = 50; i >= 1; i--) {
                 try {
                     const info = await epochManager.epochs(i);
-                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                        latestEpoch = i;
-                        break; // Stop at first valid epoch (highest since we're going down)
-                    }
+                    // Epoch exists
+                    latestEpoch = i;
+                    break; // Stop at first existing epoch (highest since we're going down)
                 } catch (e) {
                     continue;
                 }
