@@ -808,6 +808,136 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
     }
 }));
 
+// Demo mode: Start training without blockchain (for testing)
+app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
+    console.log('[Demo Mode] Starting demo training (no blockchain)...');
+    
+    try {
+        const { numRounds, minClients, localEpochs, batchSize, learningRate, model } = req.body;
+        const numClients = minClients || 5;
+        
+        // Generate demo epoch data
+        const demoEpochId = demoMode.currentEpoch ? demoMode.currentEpoch.epochId + 1 : 1;
+        const now = Date.now();
+        
+        // Simulate epoch start
+        const modelHash = ethers.keccak256(ethers.toUtf8Bytes(`demo-epoch-${demoEpochId}-${now}`));
+        const globalModelCid = `aggregated-model-epoch${demoEpochId}-${now}`;
+        const globalModelHash = ethers.keccak256(ethers.toUtf8Bytes(globalModelCid));
+        const scoresRoot = ethers.keccak256(ethers.toUtf8Bytes(`scores-epoch-${demoEpochId}-${now}`));
+        
+        // Create demo epoch data structure
+        const epochData = {
+            epochId: demoEpochId,
+            modelHash: modelHash,
+            scoresRoot: scoresRoot,
+            globalModelCid: globalModelCid,
+            globalModelHash: globalModelHash,
+            published: false,
+            startTime: now,
+            events: {
+                epochStarted: [{
+                    args: {
+                        epochId: demoEpochId,
+                        modelHash: modelHash,
+                        timestamp: Math.floor(now / 1000)
+                    },
+                    blockNumber: 1000000 + demoEpochId,
+                    transactionHash: `0x${'0'.repeat(64)}`
+                }],
+                updateSubmitted: [],
+                scoresRootPosted: [],
+                modelPublished: []
+            }
+        };
+        
+        // Enable demo mode
+        demoMode.enabled = true;
+        demoMode.currentEpoch = {
+            epochId: demoEpochId,
+            published: false,
+            startTime: now
+        };
+        demoMode.epochData = epochData;
+        demoMode.startTime = now;
+        
+        console.log(`[Demo Mode] Created demo epoch ${demoEpochId} with ${numClients} clients`);
+        
+        // Return immediately, then simulate pipeline steps asynchronously
+        res.json({
+            success: true,
+            epochId: demoEpochId,
+            message: 'Demo training started (simulating pipeline steps...)',
+            demo: true
+        });
+        
+        // Simulate pipeline steps with delays (async, doesn't block response)
+        setTimeout(async () => {
+            console.log(`[Demo Mode] Simulating ${numClients} client updates...`);
+            
+            // Step 1: Simulate client updates
+            for (let i = 1; i <= numClients; i++) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const updateCid = `demo-client${i}-epoch${demoEpochId}-${now}`;
+                const updateHash = ethers.keccak256(ethers.toUtf8Bytes(updateCid));
+                
+                epochData.events.updateSubmitted.push({
+                    args: {
+                        epochId: demoEpochId,
+                        submitter: `0x${'1'.repeat(40)}`,
+                        updateCid: updateCid,
+                        updateHash: updateHash
+                    },
+                    blockNumber: 1000000 + demoEpochId + i,
+                    transactionHash: `0x${i.toString().padStart(64, '0')}`
+                });
+                
+                console.log(`[Demo Mode] Client ${i}/${numClients} update simulated`);
+            }
+            
+            // Step 2: Simulate scores root posted
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            epochData.events.scoresRootPosted.push({
+                args: {
+                    epochId: demoEpochId,
+                    scoresRoot: scoresRoot
+                },
+                blockNumber: 1000000 + demoEpochId + numClients + 1,
+                transactionHash: `0x${'2'.repeat(64)}`
+            });
+            console.log(`[Demo Mode] Scores root posted`);
+            
+            // Step 3: Simulate model published
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            epochData.events.modelPublished.push({
+                args: {
+                    epochId: demoEpochId,
+                    globalModelCid: globalModelCid,
+                    globalModelHash: globalModelHash
+                },
+                blockNumber: 1000000 + demoEpochId + numClients + 2,
+                transactionHash: `0x${'3'.repeat(64)}`
+            });
+            
+            // Mark as published
+            epochData.published = true;
+            demoMode.currentEpoch.published = true;
+            
+            console.log(`[Demo Mode] Model published - demo epoch ${demoEpochId} complete!`);
+        }, 100);
+        
+    } catch (error) {
+        console.error('[Demo Mode] Error starting demo:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                error: 'Failed to start demo training', 
+                message: error.message 
+            });
+        }
+    }
+}));
+
 // Stop training (not implemented in contract, but we can track status)
 app.post('/api/training/stop', async (req, res) => {
     try {
