@@ -664,15 +664,11 @@ function updateEpochProgress(epochData) {
     
     const isPublished = publishedFlag || hasPublishedEvents || (hasGlobalModel && epochInfo.scoresRoot);
     
-    console.log('[Progress] Epoch published check:', {
-        publishedFlag,
-        hasPublishedEvents,
-        hasGlobalModel,
-        scoresRoot: !!epochInfo.scoresRoot,
-        isPublished,
-        publishedValue: epochInfo.published,
-        publishedType: typeof epochInfo.published
-    });
+    // Only log when status changes (reduces console noise)
+    const currentProgress = progressFill ? progressFill.style.width : '0%';
+    if (isPublished && currentProgress !== '100%') {
+        console.log('[Progress] Epoch published - setting to 100%');
+    }
 
     if (isPublished) {
         if (progressFill) {
