@@ -150,35 +150,35 @@ app.get('/api/epoch/latest', async (req, res) => {
                     // Check from epoch 30 down to 1 (covers most realistic scenarios)
                     const checkStart = 30;
                     const checkCount = 20; // Check 20 epochs
-                
-                // Check in batches of 5 in parallel for speed
-                for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
-                    const batchEnd = Math.max(1, batchStart - 4);
-                    const batchPromises = [];
                     
-                    for (let i = batchStart; i >= batchEnd; i--) {
-                        batchPromises.push(
-                            epochManager.epochs(i)
-                                .then(info => {
-                                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                                        return i;
-                                    }
-                                    return 0;
-                                })
-                                .catch(() => 0)
-                        );
-                    }
-                    
-                    const batchResults = await Promise.all(batchPromises);
-                    const foundEpoch = Math.max(...batchResults);
-                    
-                    if (foundEpoch > 0) {
-                        latestEpoch = foundEpoch;
-                        console.log(`[Latest Epoch] Found epoch ${foundEpoch} via parallel batch search`);
-                        break;
+                    // Check in batches of 5 in parallel for speed
+                    for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
+                        const batchEnd = Math.max(1, batchStart - 4);
+                        const batchPromises = [];
+                        
+                        for (let i = batchStart; i >= batchEnd; i--) {
+                            batchPromises.push(
+                                epochManager.epochs(i)
+                                    .then(info => {
+                                        if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                            return i;
+                                        }
+                                        return 0;
+                                    })
+                                    .catch(() => 0)
+                            );
+                        }
+                        
+                        const batchResults = await Promise.all(batchPromises);
+                        const foundEpoch = Math.max(...batchResults);
+                        
+                        if (foundEpoch > 0) {
+                            latestEpoch = foundEpoch;
+                            console.log(`[Latest Epoch] Found epoch ${foundEpoch} via parallel batch search`);
+                            break;
+                        }
                     }
                 }
-                
                 
                 return latestEpoch;
             })();
