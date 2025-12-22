@@ -89,45 +89,50 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch using optimized binary search approach
-        // Start from a higher number and work backwards in larger steps
+        // Find latest epoch using optimized search approach
+        // Strategy: Check in larger steps first, then narrow down to find the highest valid epoch
         let latestEpoch = 0;
         let startCheck = 200; // Check up to epoch 200
         let stepSize = 10; // Check every 10th epoch first
+        let foundRange = null; // Track the range where we found valid epochs
         
-        // First pass: Quick scan in larger steps
+        // First pass: Quick scan in larger steps to find the approximate range
         for (let i = startCheck; i >= 1; i -= stepSize) {
             try {
                 const info = await epochManager.epochs(i);
                 if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    // Found a valid epoch, now check the range between this and next step
-                    const lowerBound = Math.max(1, i - stepSize + 1);
-                    for (let j = i; j >= lowerBound; j--) {
-                        try {
-                            const checkInfo = await epochManager.epochs(j);
-                            if (checkInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                                latestEpoch = j;
-                                break;
-                            }
-                        } catch (e) {
-                            continue;
-                        }
-                    }
-                    if (latestEpoch > 0) break;
+                    // Found a valid epoch - this is our upper bound
+                    foundRange = { upper: i, lower: Math.max(1, i - stepSize + 1) };
+                    break;
                 }
             } catch (e) {
                 continue;
             }
         }
         
-        // Fallback: If still not found, do a more thorough search from lower numbers
+        // Second pass: If we found a range, search it thoroughly to find the highest valid epoch
+        if (foundRange) {
+            for (let j = foundRange.upper; j >= foundRange.lower; j--) {
+                try {
+                    const checkInfo = await epochManager.epochs(j);
+                    if (checkInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                        latestEpoch = j; // This is the highest valid epoch in this range
+                        break; // Stop immediately since we're going from high to low
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+        }
+        
+        // Fallback: If still not found, do a thorough search from epoch 50 down
         if (latestEpoch === 0) {
             for (let i = 50; i >= 1; i--) {
                 try {
                     const info = await epochManager.epochs(i);
                     if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
                         latestEpoch = i;
-                        break;
+                        break; // Stop at first valid epoch (highest since we're going down)
                     }
                 } catch (e) {
                     continue;
