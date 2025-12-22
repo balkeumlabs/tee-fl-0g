@@ -16,12 +16,14 @@ let autoRefreshEndTime = null; // Timestamp when auto-refresh should stop
 
 // Load data from backend API with timeout and optimized retry logic
 async function loadData(retries = 2) {
-    const REQUEST_TIMEOUT = 8000; // 8 second timeout per request
+    const REQUEST_TIMEOUT = 10000; // 10 second timeout per request (increased for slow networks)
     
     // Create abort controller for timeout
     const createTimeoutController = () => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+        }, REQUEST_TIMEOUT);
         return { controller, timeoutId };
     };
     
@@ -35,42 +37,57 @@ async function loadData(retries = 2) {
                     cache: 'no-cache',
                     signal: deployController.controller.signal
                 })
-                    .then(r => {
+                    .then(async r => {
                         clearTimeout(deployController.timeoutId);
-                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        if (!r.ok) {
+                            const errorText = await r.text().catch(() => 'Unknown error');
+                            throw new Error(`Deployment API failed: HTTP ${r.status} - ${errorText.substring(0, 100)}`);
+                        }
                         return r.json();
+                    })
+                    .catch(err => {
+                        if (err.name === 'AbortError') {
+                            throw new Error('Deployment API request timed out after 10 seconds');
+                        }
+                        throw err;
                     }),
                 fetch(`${API_BASE}/api/epoch/latest`, { 
                     cache: 'no-cache',
                     signal: epochController.controller.signal
                 })
-                    .then(r => {
+                    .then(async r => {
                         clearTimeout(epochController.timeoutId);
                         if (!r.ok) {
-                            // Fallback to epoch 1 if latest fails
-                            const fallbackController = createTimeoutController();
-                            return fetch(`${API_BASE}/api/epoch/1`, { 
-                                cache: 'no-cache',
-                                signal: fallbackController.controller.signal
-                            })
-                                .then(r2 => {
-                                    clearTimeout(fallbackController.timeoutId);
-                                    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-                                    return r2.json();
-                                });
+                            // Don't fallback to epoch 1 - if latest fails, return error
+                            // The monitoring will retry on next cycle
+                            const errorText = await r.text().catch(() => 'Unknown error');
+                            throw new Error(`Latest epoch API failed: HTTP ${r.status} - ${errorText.substring(0, 100)}`);
                         }
                         return r.json();
+                    })
+                    .catch(err => {
+                        if (err.name === 'AbortError') {
+                            throw new Error('Latest epoch API request timed out after 10 seconds');
+                        }
+                        throw err;
                     })
             ]);
 
             return { deployData, epochData };
         } catch (error) {
-            console.error(`Error loading data (attempt ${i + 1}/${retries}):`, error);
+            const errorMsg = error.message || error.toString();
+            console.error(`[LoadData] Error loading data (attempt ${i + 1}/${retries}):`, errorMsg);
+            
             if (i === retries - 1) {
+                // Last attempt failed - return null but log clearly
+                console.error('[LoadData] All retry attempts failed. Dashboard will show error state.');
                 return null;
             }
-            // Shorter wait before retry (500ms instead of 1s+)
-            await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+            
+            // Wait before retry (exponential backoff: 500ms, 1000ms)
+            const waitTime = 500 * (i + 1);
+            console.log(`[LoadData] Retrying in ${waitTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
         }
     }
     return null;
