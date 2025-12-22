@@ -34,6 +34,14 @@ let latestEpochCache = {
     ttl: 30000 // Cache for 30 seconds
 };
 
+// Demo mode state (for testing without blockchain)
+let demoMode = {
+    enabled: false,
+    currentEpoch: null,
+    epochData: null,
+    startTime: null
+};
+
 // Helper to get cached latest epoch or null if expired
 function getCachedLatestEpoch() {
     if (latestEpochCache.epochId && (Date.now() - latestEpochCache.timestamp) < latestEpochCache.ttl) {
@@ -109,6 +117,12 @@ app.get('/api/epoch/latest', async (req, res) => {
             epochManagerArt = JSON.parse(await fs.readFile(altPath, 'utf-8'));
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
+        
+        // Check demo mode first (if enabled, return demo data)
+        if (demoMode.enabled && demoMode.epochData) {
+            console.log(`[Latest Epoch] Returning demo epoch ${demoMode.epochData.epochId}`);
+            return res.json(demoMode.epochData);
+        }
         
         // Check cache first (fast path)
         let latestEpoch = getCachedLatestEpoch();
@@ -474,8 +488,25 @@ app.get('/api/contracts', async (req, res) => {
 
 // Training API endpoints
 // Get training status
-app.get('/api/training/status', async (req, res) => {
+app.get('/api/training/status', asyncHandler(async (req, res) => {
     try {
+        // Check demo mode first
+        if (demoMode.enabled && demoMode.currentEpoch) {
+            const updateCount = demoMode.epochData?.events?.updateSubmitted?.length || 0;
+            const isActive = !demoMode.currentEpoch.published;
+            
+            return res.json({
+                status: isActive ? 'active' : 'inactive',
+                currentRound: demoMode.currentEpoch.epochId,
+                totalRounds: null,
+                connectedClients: updateCount,
+                updateCount: updateCount,
+                epochId: demoMode.currentEpoch.epochId,
+                published: demoMode.currentEpoch.published,
+                demo: true
+            });
+        }
+        
         const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
         const fs = await import('fs/promises');
         const deployData = JSON.parse(await fs.readFile(deployDataPath, 'utf-8'));

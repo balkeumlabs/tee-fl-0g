@@ -387,6 +387,85 @@ function initializeCharts() {
     });
 }
 
+// Demo mode: Start training without blockchain
+async function startDemoTraining() {
+    const numClients = 5; // Default demo clients
+    
+    if (!confirm(`Start demo training with ${numClients} simulated clients?\n\nThis will simulate the full pipeline without using any blockchain tokens.`)) {
+        return;
+    }
+    
+    const statusMessage = document.getElementById('status-message');
+    if (statusMessage) {
+        statusMessage.textContent = 'Starting demo training (simulating pipeline...)';
+    }
+    
+    updateTrainingStatus('active', null);
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/training/start-demo`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                numRounds: 1,
+                minClients: numClients,
+                localEpochs: 1,
+                batchSize: 32,
+                learningRate: 0.01,
+                model: 'demo-model'
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || error.error || 'Failed to start demo');
+        }
+        
+        const result = await response.json();
+        console.log('Demo training started:', result);
+        
+        // Poll for completion
+        let pollCount = 0;
+        const maxPolls = 40; // 40 polls * 2 seconds = 80 seconds max
+        
+        const pollInterval = setInterval(async () => {
+            pollCount++;
+            await refreshTrainingStatus();
+            
+            const statusData = await fetch(`${API_BASE}/api/training/status`).then(r => r.json()).catch(() => null);
+            
+            if (statusData && statusData.demo && statusData.published) {
+                clearInterval(pollInterval);
+                console.log('Demo completed!');
+                if (statusMessage) {
+                    statusMessage.textContent = `Demo completed! Epoch ${statusData.epochId} published.`;
+                }
+                // Refresh dashboard if on dashboard page
+                if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+                    if (typeof window.refreshDashboard === 'function') {
+                        await window.refreshDashboard();
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            } else if (pollCount >= maxPolls) {
+                clearInterval(pollInterval);
+                console.log('Polling timeout');
+            }
+        }, 2000); // Poll every 2 seconds (demo is faster)
+        
+    } catch (error) {
+        console.error('Demo training failed:', error);
+        updateTrainingStatus('inactive', null);
+        if (statusMessage) {
+            statusMessage.textContent = `Demo failed: ${error.message}`;
+        }
+        alert(`Failed to start demo: ${error.message}`);
+    }
+}
+
 // Export chart data
 function exportChartData(type) {
     let data, filename;
