@@ -503,7 +503,7 @@ app.get('/api/training/status', asyncHandler(async (req, res) => {
     try {
         // Check demo mode first
         if (demoMode.enabled && demoMode.currentEpoch) {
-            const updateCount = demoMode.epochData?.events?.updateSubmitted?.length || 0;
+            const updateCount = demoMode.epochData?.events?.updatesSubmitted?.length || 0;
             const isActive = !demoMode.currentEpoch.published;
             
             return res.json({
