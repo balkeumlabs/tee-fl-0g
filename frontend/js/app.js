@@ -760,7 +760,7 @@ function startAutoRefresh() {
     // Set end time to 5 minutes from now
     autoRefreshEndTime = Date.now() + (5 * 60 * 1000); // 5 minutes
     
-    // Refresh every 10 seconds
+    // Refresh every 3 seconds for smooth real-time progress during video recording
     dashboardAutoRefreshInterval = setInterval(async () => {
         // Check if 5 minutes have passed
         if (Date.now() >= autoRefreshEndTime) {
@@ -781,7 +781,7 @@ function startAutoRefresh() {
             console.log('Auto-refresh stopped - epoch completed (100% progress)');
             return;
         }
-    }, 10000); // Every 10 seconds
+    }, 3000); // Every 3 seconds for smooth real-time updates
     
     console.log('Auto-refresh started for 5 minutes');
 }
