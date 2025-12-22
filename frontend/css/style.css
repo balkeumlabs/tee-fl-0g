@@ -789,6 +789,33 @@ body {
     border-color: var(--success-color);
 }
 
+.pipeline-step.pending {
+    background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+    border-color: var(--warning-color);
+    opacity: 0.8;
+}
+
+.pipeline-step.pending .step-icon {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #fbbf24 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.pipeline-step.pending .step-pulse {
+    background: var(--warning-color);
+    animation: pulsePending 2s infinite;
+}
+
+@keyframes pulsePending {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.2;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0;
+    }
+}
+
 .pipeline-step:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);

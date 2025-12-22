@@ -121,52 +121,91 @@ function displayDeploymentInfo(deployData) {
 
 // Display pipeline steps
 function displayPipelineSteps(epochData) {
-    if (!epochData || !epochData.events) return;
+    if (!epochData || !epochData.events) {
+        // If no events, mark all steps as pending
+        updatePipelineStepStatus(1, false);
+        updatePipelineStepStatus(2, false);
+        updatePipelineStepStatus(3, false);
+        updatePipelineStepStatus(4, false);
+        return;
+    }
 
     const events = epochData.events;
 
-    // Step 1: Start Epoch
+    // Step 1: Start Epoch - Update status and details
+    const step1Completed = events.epochStarted && events.epochStarted.length > 0;
+    updatePipelineStepStatus(1, step1Completed);
     const step1 = document.getElementById('step-1-details');
-    if (step1 && events.epochStarted && events.epochStarted.length > 0) {
+    if (step1 && step1Completed) {
         const event = events.epochStarted[0];
         step1.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>Hash: ${formatHash(event.modelHash)}</div>
             <a href="${createExplorerLink('tx', event.transactionHash)}" target="_blank" class="explorer-link" style="font-size: 0.75rem;">View TX →</a>
         `;
+    } else if (step1 && !step1Completed) {
+        step1.innerHTML = '<div style="color: var(--text-secondary);">Waiting for epoch to start...</div>';
     }
 
-    // Step 2: Submit Update
+    // Step 2: Submit Update - Update status and details
+    const step2Completed = events.updatesSubmitted && events.updatesSubmitted.length > 0;
+    updatePipelineStepStatus(2, step2Completed);
     const step2 = document.getElementById('step-2-details');
-    if (step2 && events.updatesSubmitted && events.updatesSubmitted.length > 0) {
+    if (step2 && step2Completed) {
         const event = events.updatesSubmitted[0];
+        const updateCount = events.updatesSubmitted.length;
         step2.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
+            <div>Updates: ${updateCount} submitted</div>
             <div>CID: ${event.updateCid}</div>
             <a href="${createExplorerLink('tx', event.transactionHash)}" target="_blank" class="explorer-link" style="font-size: 0.75rem;">View TX →</a>
         `;
+    } else if (step2 && !step2Completed) {
+        step2.innerHTML = '<div style="color: var(--text-secondary);">Waiting for client updates...</div>';
     }
 
-    // Step 3: Compute Scores
+    // Step 3: Compute Scores - Update status and details
+    const step3Completed = events.scoresPosted && events.scoresPosted.length > 0;
+    updatePipelineStepStatus(3, step3Completed);
     const step3 = document.getElementById('step-3-details');
-    if (step3 && events.scoresPosted && events.scoresPosted.length > 0) {
+    if (step3 && step3Completed) {
         const event = events.scoresPosted[0];
         step3.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>Root: ${formatHash(event.scoresRoot)}</div>
             <a href="${createExplorerLink('tx', event.transactionHash)}" target="_blank" class="explorer-link" style="font-size: 0.75rem;">View TX →</a>
         `;
+    } else if (step3 && !step3Completed) {
+        step3.innerHTML = '<div style="color: var(--text-secondary);">Waiting for scores computation...</div>';
     }
 
-    // Step 4: Publish Model
+    // Step 4: Publish Model - Update status and details
+    const step4Completed = events.modelPublished && events.modelPublished.length > 0;
+    updatePipelineStepStatus(4, step4Completed);
     const step4 = document.getElementById('step-4-details');
-    if (step4 && events.modelPublished && events.modelPublished.length > 0) {
+    if (step4 && step4Completed) {
         const event = events.modelPublished[0];
         step4.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>CID: ${event.globalModelCid}</div>
             <a href="${createExplorerLink('tx', event.transactionHash)}" target="_blank" class="explorer-link" style="font-size: 0.75rem;">View TX →</a>
         `;
+    } else if (step4 && !step4Completed) {
+        step4.innerHTML = '<div style="color: var(--text-secondary);">Waiting for model publication...</div>';
+    }
+}
+
+// Update pipeline step visual status (completed/pending)
+function updatePipelineStepStatus(stepNumber, completed) {
+    const stepElement = document.querySelector(`.pipeline-step[data-step="${stepNumber}"]`);
+    if (!stepElement) return;
+
+    if (completed) {
+        stepElement.classList.add('completed');
+        stepElement.classList.remove('pending');
+    } else {
+        stepElement.classList.remove('completed');
+        stepElement.classList.add('pending');
     }
 }
 
@@ -647,6 +686,9 @@ function updateFullHashes(epochData) {
     }
 }
 
+// Track last known epoch to detect new epochs
+let lastKnownEpochId = null;
+
 // Initialize dashboard
 async function initDashboard() {
     const data = await loadData();
@@ -659,7 +701,11 @@ async function initDashboard() {
     const { deployData, epochData } = data;
 
     // Update epoch ID in UI
-    updateEpochId(epochData.epochId || 1);
+    const currentEpochId = epochData.epochId || 1;
+    updateEpochId(currentEpochId);
+    
+    // Track epoch ID
+    lastKnownEpochId = currentEpochId;
 
     // Display all sections
     displayDeploymentInfo(deployData);
@@ -685,6 +731,13 @@ async function initDashboard() {
 
     // Update full hashes
     updateFullHashes(epochData);
+
+    // Check if training is active and start auto-refresh
+    const trainingActive = await isTrainingActive();
+    if (trainingActive) {
+        console.log('Training is active - starting real-time updates');
+        startAutoRefresh();
+    }
 
     // Smooth scroll on load
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -750,40 +803,93 @@ function stopNetworkHealthPolling() {
     }
 }
 
-// Start auto-refresh for 5 minutes after training starts
+// Track training state
+let trainingActiveState = false;
+
+// Check if training is active
+async function isTrainingActive() {
+    try {
+        const response = await fetch(`${API_BASE}/api/training/status`, { cache: 'no-cache' });
+        if (!response.ok) return false;
+        const data = await response.json();
+        const isActive = data.status === 'active';
+        
+        // If training just became active and we're not already polling, start auto-refresh
+        if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
+            console.log('Training became active - starting real-time updates');
+            startAutoRefresh();
+        }
+        
+        trainingActiveState = isActive;
+        return isActive;
+    } catch (error) {
+        console.error('Error checking training status:', error);
+        return false;
+    }
+}
+
+// Start auto-refresh with intelligent polling
 function startAutoRefresh() {
     // Clear any existing auto-refresh
     if (dashboardAutoRefreshInterval) {
         clearInterval(dashboardAutoRefreshInterval);
     }
     
-    // Set end time to 5 minutes from now
-    autoRefreshEndTime = Date.now() + (5 * 60 * 1000); // 5 minutes
+    let isActive = false;
+    let completedAt = null;
+    const ACTIVE_POLL_INTERVAL = 1000; // 1 second during active training
+    const POST_COMPLETION_POLL_INTERVAL = 1000; // 1 second for 1 minute after completion
+    const POST_COMPLETION_DURATION = 60 * 1000; // 1 minute after completion
     
-    // Refresh every 3 seconds for smooth real-time progress during video recording
-    dashboardAutoRefreshInterval = setInterval(async () => {
-        // Check if 5 minutes have passed
-        if (Date.now() >= autoRefreshEndTime) {
-            clearInterval(dashboardAutoRefreshInterval);
-            dashboardAutoRefreshInterval = null;
-            console.log('Auto-refresh stopped after 5 minutes');
-            return;
-        }
+    // Refresh function
+    const refresh = async () => {
+        // Check training status
+        const trainingActive = await isTrainingActive();
+        const progressText = document.getElementById('epoch-progress-text');
+        const isCompleted = progressText && progressText.textContent.includes('100% Complete');
         
         // Refresh dashboard
         await refreshDashboard();
         
-        // Check if progress is 100% (epoch published) - if so, stop auto-refresh
-        const progressText = document.getElementById('epoch-progress-text');
-        if (progressText && progressText.textContent.includes('100% Complete')) {
+        // Track state changes
+        if (trainingActive && !isActive) {
+            // Training just became active
+            isActive = true;
+            completedAt = null;
+            console.log('Training active - switching to 1-second polling');
+        } else if (!trainingActive && isActive) {
+            // Training just became inactive
+            isActive = false;
+            if (isCompleted) {
+                completedAt = Date.now();
+                console.log('Training completed - continuing 1-second polling for 1 minute');
+            }
+        }
+        
+        // Stop conditions
+        if (isCompleted && completedAt) {
+            // If completed and 1 minute has passed, stop
+            if (Date.now() >= completedAt + POST_COMPLETION_DURATION) {
+                clearInterval(dashboardAutoRefreshInterval);
+                dashboardAutoRefreshInterval = null;
+                console.log('Auto-refresh stopped - 1 minute after completion');
+                return;
+            }
+        } else if (!trainingActive && !isCompleted && !completedAt) {
+            // Training inactive and not completed - stop polling
             clearInterval(dashboardAutoRefreshInterval);
             dashboardAutoRefreshInterval = null;
-            console.log('Auto-refresh stopped - epoch completed (100% progress)');
+            console.log('Auto-refresh stopped - training inactive');
             return;
         }
-    }, 3000); // Every 3 seconds for smooth real-time updates
+    };
     
-    console.log('Auto-refresh started for 5 minutes');
+    // Start with 1-second polling (training is likely active when this is called)
+    dashboardAutoRefreshInterval = setInterval(refresh, ACTIVE_POLL_INTERVAL);
+    console.log('Auto-refresh started - polling every 1 second during training');
+    
+    // Initial refresh
+    refresh();
 }
 
 // Refresh dashboard data
@@ -806,9 +912,20 @@ async function refreshDashboard() {
         }
 
         const { deployData, epochData } = data;
+        const currentEpochId = epochData.epochId || 1;
+
+        // Detect new epoch and switch to it immediately
+        if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
+            console.log(`New epoch detected: ${currentEpochId} (was ${lastKnownEpochId})`);
+            // Start auto-refresh if not already running
+            if (!dashboardAutoRefreshInterval) {
+                startAutoRefresh();
+            }
+        }
+        lastKnownEpochId = currentEpochId;
 
         // Update epoch ID in UI
-        updateEpochId(epochData.epochId || 1);
+        updateEpochId(currentEpochId);
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);
