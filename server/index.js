@@ -89,56 +89,43 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch - an epoch exists if modelHash is non-zero (set by startEpoch)
-        // Solidity mappings return zero values for non-existent keys, so we check modelHash
-        // We want the HIGHEST epoch number that has been started (modelHash != 0)
+        // Find latest epoch by querying EpochStarted events - this is the most reliable method
+        // Query all EpochStarted events and find the highest epochId
         let latestEpoch = 0;
-        let startCheck = 200; // Check up to epoch 200
-        let stepSize = 10; // Check every 10th epoch first
-        let foundRange = null; // Track the range where we found valid epochs
-        
-        // First pass: Quick scan in larger steps to find the approximate range
-        for (let i = startCheck; i >= 1; i -= stepSize) {
-            try {
-                const info = await epochManager.epochs(i);
-                // Epoch exists if modelHash is non-zero (epoch was started)
-                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    foundRange = { upper: i, lower: Math.max(1, i - stepSize + 1) };
-                    break;
-                }
-            } catch (e) {
-                // Contract call failed, continue searching
-                continue;
+        try {
+            const epochStartedFilter = epochManager.filters.EpochStarted();
+            const allEpochStartedEvents = await epochManager.queryFilter(epochStartedFilter);
+            
+            if (allEpochStartedEvents.length > 0) {
+                // Find the highest epochId from all EpochStarted events
+                const epochIds = allEpochStartedEvents.map(e => {
+                    const epochId = e.args.epochId;
+                    return typeof epochId === 'bigint' ? Number(epochId) : parseInt(epochId.toString());
+                });
+                latestEpoch = Math.max(...epochIds);
+                console.log(`[Latest Epoch] Found ${allEpochStartedEvents.length} EpochStarted events, highest epoch: ${latestEpoch}`);
             }
+        } catch (e) {
+            console.error('Error querying EpochStarted events, falling back to direct search:', e);
         }
         
-        // Second pass: If we found a range, search it thoroughly to find the highest existing epoch
-        if (foundRange) {
-            for (let j = foundRange.upper; j >= foundRange.lower; j--) {
-                try {
-                    const checkInfo = await epochManager.epochs(j);
-                    // Epoch exists if modelHash is non-zero
-                    if (checkInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                        latestEpoch = j; // This is the highest valid epoch in this range
-                        break; // Stop immediately since we're going from high to low
-                    }
-                } catch (e) {
-                    // Contract call failed, continue
-                    continue;
-                }
-            }
-        }
-        
-        // Fallback: If still not found, do a thorough search from epoch 50 down
+        // Fallback: If event query failed or returned 0, do a direct search
+        // This is slower but more reliable if events aren't indexed properly
         if (latestEpoch === 0) {
-            for (let i = 50; i >= 1; i--) {
+            console.log('[Latest Epoch] Falling back to direct epoch search...');
+            // Search from a reasonable high number down to 1
+            // Start from 300 to account for future epochs
+            for (let i = 300; i >= 1; i--) {
                 try {
                     const info = await epochManager.epochs(i);
+                    // Epoch exists if modelHash is non-zero (epoch was started)
                     if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
                         latestEpoch = i;
+                        console.log(`[Latest Epoch] Found epoch ${i} via direct search`);
                         break; // Stop at first valid epoch (highest since we're going down)
                     }
                 } catch (e) {
+                    // Contract call failed, continue
                     continue;
                 }
             }
