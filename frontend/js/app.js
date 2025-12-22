@@ -968,10 +968,16 @@ function startTrainingStatusMonitoring() {
                 console.log('Training detected as active - starting real-time updates');
                 trainingActiveState = true;
                 startAutoRefresh();
+                // Speed up monitoring to 1 second for step-by-step video recording
+                clearInterval(trainingStatusMonitorInterval);
+                trainingStatusMonitorInterval = setInterval(arguments.callee, 1000);
             } else if (!isActive && trainingActiveState) {
                 // Training just became inactive
                 trainingActiveState = false;
                 console.log('Training became inactive');
+                // Slow down monitoring back to 2 seconds
+                clearInterval(trainingStatusMonitorInterval);
+                trainingStatusMonitorInterval = setInterval(arguments.callee, 2000);
             }
         } catch (error) {
             console.error('[Monitor] Error in monitoring cycle:', error);

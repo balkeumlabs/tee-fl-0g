@@ -782,10 +782,10 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         const tx = await epochManager.startEpoch(nextEpochId, modelHash);
         await tx.wait();
         
-        // Invalidate cache since we just created a new epoch
-        latestEpochCache.epochId = null;
-        latestEpochCache.timestamp = 0;
-        console.log(`[Cache] Invalidated latest epoch cache (new epoch ${nextEpochId} created)`);
+        // CRITICAL: Update cache IMMEDIATELY with new epoch ID (before verification)
+        // This ensures dashboard can find the new epoch right away, even if events aren't fully indexed yet
+        updateLatestEpochCache(nextEpochId);
+        console.log(`[Cache] Updated cache with new epoch ${nextEpochId} IMMEDIATELY (before verification)`);
         
         // AUTOMATIC DEMO: Simulate clients and complete pipeline
         console.log(`[Demo] Starting automatic demo simulation for epoch ${nextEpochId}...`);
@@ -927,9 +927,8 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
             // Don't fail - epoch was created, just may need more time to index
         }
         
-        // Update cache with the new epoch ID so it's immediately available
-        updateLatestEpochCache(nextEpochId);
-        console.log(`[Cache] Updated cache with new epoch ${nextEpochId}`);
+        // Cache already updated immediately after epoch creation - no need to update again
+        // This ensures dashboard finds the new epoch right away
         
         // Save training config (optional, for reference)
         const trainingConfig = {
