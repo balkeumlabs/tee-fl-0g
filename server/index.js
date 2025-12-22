@@ -89,17 +89,49 @@ app.get('/api/epoch/latest', async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Find latest epoch (check up to epoch 100)
+        // Find latest epoch using optimized binary search approach
+        // Start from a higher number and work backwards in larger steps
         let latestEpoch = 0;
-        for (let i = 100; i >= 1; i--) {
+        let startCheck = 200; // Check up to epoch 200
+        let stepSize = 10; // Check every 10th epoch first
+        
+        // First pass: Quick scan in larger steps
+        for (let i = startCheck; i >= 1; i -= stepSize) {
             try {
                 const info = await epochManager.epochs(i);
                 if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    latestEpoch = i;
-                    break;
+                    // Found a valid epoch, now check the range between this and next step
+                    const lowerBound = Math.max(1, i - stepSize + 1);
+                    for (let j = i; j >= lowerBound; j--) {
+                        try {
+                            const checkInfo = await epochManager.epochs(j);
+                            if (checkInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                latestEpoch = j;
+                                break;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    if (latestEpoch > 0) break;
                 }
             } catch (e) {
                 continue;
+            }
+        }
+        
+        // Fallback: If still not found, do a more thorough search from lower numbers
+        if (latestEpoch === 0) {
+            for (let i = 50; i >= 1; i--) {
+                try {
+                    const info = await epochManager.epochs(i);
+                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                        latestEpoch = i;
+                        break;
+                    }
+                } catch (e) {
+                    continue;
+                }
             }
         }
         

@@ -692,10 +692,19 @@ let lastKnownEpochId = null;
 
 // Initialize dashboard
 async function initDashboard() {
+    // Show loading state immediately
+    const currentEpochIdEl = document.getElementById('current-epoch-id');
+    if (currentEpochIdEl) {
+        currentEpochIdEl.textContent = 'Loading...';
+    }
+    
     const data = await loadData();
 
     if (!data) {
         console.error('Failed to load data');
+        if (currentEpochIdEl) {
+            currentEpochIdEl.textContent = 'Error';
+        }
         return;
     }
 
