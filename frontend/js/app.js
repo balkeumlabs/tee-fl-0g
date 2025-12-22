@@ -832,9 +832,29 @@ function startTrainingStatusMonitoring() {
         clearInterval(trainingStatusMonitorInterval);
     }
     
-    // Check training status every 2 seconds
+    // Check training status and latest epoch every 2 seconds
     trainingStatusMonitorInterval = setInterval(async () => {
         const isActive = await isTrainingActive();
+        
+        // Always check for new epochs, even if training is inactive
+        try {
+            const response = await fetch(`${API_BASE}/api/epoch/latest`, { cache: 'no-cache' });
+            if (response.ok) {
+                const epochData = await response.json();
+                const currentEpochId = epochData.epochId || 1;
+                
+                // If we detect a new epoch, refresh the dashboard
+                if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
+                    console.log(`🔄 Monitor detected new epoch: ${currentEpochId} (was ${lastKnownEpochId})`);
+                    // Refresh dashboard to show new epoch
+                    await refreshDashboard(true);
+                } else if (lastKnownEpochId === null) {
+                    lastKnownEpochId = currentEpochId;
+                }
+            }
+        } catch (error) {
+            console.error('Error checking latest epoch in monitor:', error);
+        }
         
         // If training just became active and we're not already polling, start auto-refresh
         if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
@@ -848,7 +868,7 @@ function startTrainingStatusMonitoring() {
         }
     }, 2000); // Check every 2 seconds
     
-    console.log('Training status monitoring started');
+    console.log('Training status monitoring started (checks for new epochs continuously)');
 }
 
 // Stop training status monitoring
@@ -946,11 +966,18 @@ async function refreshDashboard(silent = false) {
         const currentEpochId = epochData.epochId || 1;
 
         // Detect new epoch and switch to it immediately
-        if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
-            console.log(`🔄 New epoch detected: ${currentEpochId} (was ${lastKnownEpochId}) - switching immediately`);
-            // Start auto-refresh if not already running
-            if (!dashboardAutoRefreshInterval) {
-                startAutoRefresh();
+        if (lastKnownEpochId !== null && currentEpochId !== lastKnownEpochId) {
+            if (currentEpochId > lastKnownEpochId) {
+                console.log(`🔄 New epoch detected: ${currentEpochId} (was ${lastKnownEpochId}) - switching immediately`);
+                // Start auto-refresh if not already running and training is active
+                if (!dashboardAutoRefreshInterval) {
+                    const trainingActive = await isTrainingActive();
+                    if (trainingActive) {
+                        startAutoRefresh();
+                    }
+                }
+            } else {
+                console.log(`🔄 Epoch changed: ${currentEpochId} (was ${lastKnownEpochId})`);
             }
             // Force update to show new epoch immediately
             lastKnownEpochId = currentEpochId;
