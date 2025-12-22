@@ -868,11 +868,22 @@ function startTrainingStatusMonitoring() {
     
     // Check training status and latest epoch every 2 seconds
     trainingStatusMonitorInterval = setInterval(async () => {
-        const isActive = await isTrainingActive();
+        try {
+            const isActive = await isTrainingActive();
         
         // Always check for new epochs, even if training is inactive
         try {
-            const response = await fetch(`${API_BASE}/api/epoch/latest`, { cache: 'no-cache' });
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
+            const response = await fetch(`${API_BASE}/api/epoch/latest`, { 
+                cache: 'no-cache',
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
             if (response.ok) {
                 const epochData = await response.json();
                 const currentEpochId = epochData.epochId || 1;
@@ -892,20 +903,31 @@ function startTrainingStatusMonitoring() {
                     lastKnownEpochId = currentEpochId;
                     await refreshDashboard(true);
                 }
+            } else {
+                console.warn(`[Monitor] API returned ${response.status}, epoch check skipped this cycle`);
             }
         } catch (error) {
-            console.error('Error checking latest epoch in monitor:', error);
+            if (error.name === 'AbortError') {
+                console.warn('[Monitor] Epoch check timed out, will retry next cycle');
+            } else {
+                console.error('[Monitor] Error checking latest epoch:', error.message);
+            }
+            // Don't break monitoring on error - continue checking
         }
         
-        // If training just became active and we're not already polling, start auto-refresh
-        if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
-            console.log('Training detected as active - starting real-time updates');
-            trainingActiveState = true;
-            startAutoRefresh();
-        } else if (!isActive && trainingActiveState) {
-            // Training just became inactive
-            trainingActiveState = false;
-            console.log('Training became inactive');
+            // If training just became active and we're not already polling, start auto-refresh
+            if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
+                console.log('Training detected as active - starting real-time updates');
+                trainingActiveState = true;
+                startAutoRefresh();
+            } else if (!isActive && trainingActiveState) {
+                // Training just became inactive
+                trainingActiveState = false;
+                console.log('Training became inactive');
+            }
+        } catch (error) {
+            console.error('[Monitor] Error in monitoring cycle:', error);
+            // Continue monitoring even if one cycle fails
         }
     }, 2000); // Check every 2 seconds
     
