@@ -23,14 +23,14 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
-// Modal functions
-function openConfigModal() {
+// Modal functions (make them globally available)
+window.openConfigModal = function() {
     document.getElementById('config-modal').classList.add('active');
-}
+};
 
-function closeConfigModal() {
+window.closeConfigModal = function() {
     document.getElementById('config-modal').classList.remove('active');
-}
+};
 
 // Close modal on overlay click
 document.getElementById('config-modal').addEventListener('click', (e) => {
@@ -137,7 +137,7 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             // Poll for completion (demo is faster, real training takes longer)
             let pollCount = 0;
             const maxPolls = isDemo ? 40 : 30; // Demo: 40 polls * 2s = 80s, Real: 30 polls * 5s = 150s
-            const pollInterval = isDemo ? 2000 : 5000; // Demo polls every 2s, real every 5s
+            const pollDelay = isDemo ? 2000 : 5000; // Demo polls every 2s, real every 5s
             
             const pollInterval = setInterval(async () => {
                 pollCount++;
@@ -169,7 +169,7 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
                         window.startAutoRefresh();
                     }
                 }
-            }, pollInterval);
+            }, pollDelay);
         }).catch((error) => {
             console.error('Error starting training:', error);
             updateTrainingStatus('inactive', null);
