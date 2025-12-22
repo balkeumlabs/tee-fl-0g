@@ -956,8 +956,16 @@ function startTrainingStatusMonitoring() {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.warn('[Monitor] Epoch check timed out, will retry next cycle');
+                consecutiveTimeouts++;
+                // Only log timeout errors occasionally to avoid console spam
+                // Log once every 10 timeouts
+                if (!window._timeoutErrorCount) window._timeoutErrorCount = 0;
+                window._timeoutErrorCount++;
+                if (window._timeoutErrorCount % 10 === 0) {
+                    console.warn(`[Monitor] Epoch check timed out (${window._timeoutErrorCount} times). This is normal if blockchain queries are slow. Will continue retrying.`);
+                }
             } else {
+                consecutiveTimeouts = 0; // Reset on non-timeout errors
                 console.error('[Monitor] Error checking latest epoch:', error.message);
             }
             // Don't break monitoring on error - continue checking
