@@ -11,6 +11,7 @@ const BLOCK_NUMBER_POLL_INTERVAL = null; // null = disabled, or set to milliseco
 let networkHealthInterval = null;
 let blockNumberInterval = null;
 let dashboardAutoRefreshInterval = null;
+let trainingStatusMonitorInterval = null; // Monitor training status continuously
 let autoRefreshEndTime = null; // Timestamp when auto-refresh should stop
 
 // Load data from backend API with retry logic
@@ -739,6 +740,9 @@ async function initDashboard() {
         startAutoRefresh();
     }
 
+    // Start continuous training status monitoring (checks every 2 seconds)
+    startTrainingStatusMonitoring();
+
     // Smooth scroll on load
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -801,6 +805,7 @@ function stopNetworkHealthPolling() {
         clearInterval(dashboardAutoRefreshInterval);
         dashboardAutoRefreshInterval = null;
     }
+    stopTrainingStatusMonitoring();
 }
 
 // Track training state
@@ -813,18 +818,44 @@ async function isTrainingActive() {
         if (!response.ok) return false;
         const data = await response.json();
         const isActive = data.status === 'active';
-        
-        // If training just became active and we're not already polling, start auto-refresh
-        if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
-            console.log('Training became active - starting real-time updates');
-            startAutoRefresh();
-        }
-        
-        trainingActiveState = isActive;
         return isActive;
     } catch (error) {
         console.error('Error checking training status:', error);
         return false;
+    }
+}
+
+// Start continuous monitoring of training status
+function startTrainingStatusMonitoring() {
+    // Clear any existing monitor
+    if (trainingStatusMonitorInterval) {
+        clearInterval(trainingStatusMonitorInterval);
+    }
+    
+    // Check training status every 2 seconds
+    trainingStatusMonitorInterval = setInterval(async () => {
+        const isActive = await isTrainingActive();
+        
+        // If training just became active and we're not already polling, start auto-refresh
+        if (isActive && !trainingActiveState && !dashboardAutoRefreshInterval) {
+            console.log('Training detected as active - starting real-time updates');
+            trainingActiveState = true;
+            startAutoRefresh();
+        } else if (!isActive && trainingActiveState) {
+            // Training just became inactive
+            trainingActiveState = false;
+            console.log('Training became inactive');
+        }
+    }, 2000); // Check every 2 seconds
+    
+    console.log('Training status monitoring started');
+}
+
+// Stop training status monitoring
+function stopTrainingStatusMonitoring() {
+    if (trainingStatusMonitorInterval) {
+        clearInterval(trainingStatusMonitorInterval);
+        trainingStatusMonitorInterval = null;
     }
 }
 
@@ -848,21 +879,21 @@ function startAutoRefresh() {
         const progressText = document.getElementById('epoch-progress-text');
         const isCompleted = progressText && progressText.textContent.includes('100% Complete');
         
-        // Refresh dashboard
-        await refreshDashboard();
+        // Refresh dashboard (silent mode to avoid button flicker)
+        await refreshDashboard(true);
         
         // Track state changes
         if (trainingActive && !isActive) {
             // Training just became active
             isActive = true;
             completedAt = null;
-            console.log('Training active - switching to 1-second polling');
+            console.log('✅ Training active - real-time updates at 1-second intervals');
         } else if (!trainingActive && isActive) {
             // Training just became inactive
             isActive = false;
             if (isCompleted) {
                 completedAt = Date.now();
-                console.log('Training completed - continuing 1-second polling for 1 minute');
+                console.log('✅ Training completed - continuing updates for 1 minute');
             }
         }
         
@@ -872,14 +903,14 @@ function startAutoRefresh() {
             if (Date.now() >= completedAt + POST_COMPLETION_DURATION) {
                 clearInterval(dashboardAutoRefreshInterval);
                 dashboardAutoRefreshInterval = null;
-                console.log('Auto-refresh stopped - 1 minute after completion');
+                console.log('⏹️ Auto-refresh stopped - 1 minute after completion');
                 return;
             }
         } else if (!trainingActive && !isCompleted && !completedAt) {
             // Training inactive and not completed - stop polling
             clearInterval(dashboardAutoRefreshInterval);
             dashboardAutoRefreshInterval = null;
-            console.log('Auto-refresh stopped - training inactive');
+            console.log('⏹️ Auto-refresh stopped - training inactive');
             return;
         }
     };
@@ -893,9 +924,9 @@ function startAutoRefresh() {
 }
 
 // Refresh dashboard data
-async function refreshDashboard() {
+async function refreshDashboard(silent = false) {
     const refreshBtn = document.getElementById('refresh-btn');
-    if (refreshBtn) {
+    if (refreshBtn && !silent) {
         refreshBtn.classList.add('loading');
         refreshBtn.disabled = true;
     }
@@ -904,7 +935,7 @@ async function refreshDashboard() {
         const data = await loadData();
         if (!data) {
             console.error('Failed to refresh data');
-            if (refreshBtn) {
+            if (refreshBtn && !silent) {
                 refreshBtn.classList.remove('loading');
                 refreshBtn.disabled = false;
             }
@@ -916,20 +947,30 @@ async function refreshDashboard() {
 
         // Detect new epoch and switch to it immediately
         if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
-            console.log(`New epoch detected: ${currentEpochId} (was ${lastKnownEpochId})`);
+            console.log(`🔄 New epoch detected: ${currentEpochId} (was ${lastKnownEpochId}) - switching immediately`);
             // Start auto-refresh if not already running
             if (!dashboardAutoRefreshInterval) {
                 startAutoRefresh();
             }
+            // Force update to show new epoch immediately
+            lastKnownEpochId = currentEpochId;
+            updateEpochId(currentEpochId);
+            displayPipelineSteps(epochData); // Show pipeline steps for new epoch immediately
+            updateEpochProgress(epochData);
+        } else if (lastKnownEpochId === null) {
+            // First load
+            lastKnownEpochId = currentEpochId;
         }
-        lastKnownEpochId = currentEpochId;
 
-        // Update epoch ID in UI
-        updateEpochId(currentEpochId);
+        // Always update epoch ID in UI (in case it changed)
+        if (currentEpochId !== lastKnownEpochId) {
+            lastKnownEpochId = currentEpochId;
+            updateEpochId(currentEpochId);
+        }
 
         // Update sections that might have changed
         displayDeploymentInfo(deployData);
-        displayPipelineSteps(epochData);
+        displayPipelineSteps(epochData); // Always update pipeline steps to show real-time progress
         await displayTransactions(epochData);
         displayEpochSummary(epochData);
         updateLastUpdated();
@@ -937,12 +978,17 @@ async function refreshDashboard() {
         updateEpochProgress(epochData); // Update progress bar
         updateFullHashes(epochData);
         
-        // Also refresh network health
-        await fetchNetworkHealth();
+        // Also refresh network health (but less frequently to avoid overload)
+        // Only refresh network health every 10 seconds
+        const now = Date.now();
+        if (!window.lastNetworkHealthCheck || (now - window.lastNetworkHealthCheck) > 10000) {
+            await fetchNetworkHealth();
+            window.lastNetworkHealthCheck = now;
+        }
     } catch (error) {
         console.error('Error refreshing dashboard:', error);
     } finally {
-        if (refreshBtn) {
+        if (refreshBtn && !silent) {
             refreshBtn.classList.remove('loading');
             refreshBtn.disabled = false;
         }
