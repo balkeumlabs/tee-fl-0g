@@ -856,8 +856,8 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                     blockNumber: 1000000 + demoEpochId,
                     transactionHash: `0x${'0'.repeat(64)}`
                 }],
-                updateSubmitted: [],
-                scoresRootPosted: [],
+                updatesSubmitted: [], // Frontend expects plural
+                scoresPosted: [], // Frontend expects scoresPosted, not scoresRootPosted
                 modelPublished: []
             }
         };
@@ -893,7 +893,7 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                 const updateCid = `demo-client${i}-epoch${demoEpochId}-${now}`;
                 const updateHash = ethers.keccak256(ethers.toUtf8Bytes(updateCid));
                 
-                epochData.events.updateSubmitted.push({
+                epochData.events.updatesSubmitted.push({
                     args: {
                         epochId: demoEpochId,
                         submitter: `0x${'1'.repeat(40)}`,
@@ -901,7 +901,9 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                         updateHash: updateHash
                     },
                     blockNumber: 1000000 + demoEpochId + i,
-                    transactionHash: `0x${i.toString().padStart(64, '0')}`
+                    transactionHash: `0x${i.toString().padStart(64, '0')}`,
+                    updateCid: updateCid, // Add directly for frontend compatibility
+                    scoresRoot: null // Not needed for this step
                 });
                 
                 console.log(`[Demo Mode] Client ${i}/${numClients} update simulated`);
@@ -909,13 +911,14 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
             
             // Step 2: Simulate scores root posted
             await new Promise(resolve => setTimeout(resolve, 2000));
-            epochData.events.scoresRootPosted.push({
+            epochData.events.scoresPosted.push({
                 args: {
                     epochId: demoEpochId,
                     scoresRoot: scoresRoot
                 },
                 blockNumber: 1000000 + demoEpochId + numClients + 1,
-                transactionHash: `0x${'2'.repeat(64)}`
+                transactionHash: `0x${'2'.repeat(64)}`,
+                scoresRoot: scoresRoot // Add directly for frontend compatibility
             });
             console.log(`[Demo Mode] Scores root posted`);
             
