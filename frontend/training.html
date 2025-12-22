@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .training-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 1rem;
         }
@@ -24,20 +24,48 @@
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(99, 102, 241, 0.1);
         }
-        .training-header h1 {
-            margin-bottom: 0.5rem;
+        .training-header .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-        .training-nav {
-            margin-top: 1rem;
+        .training-header .logo-section {
+            flex: 1;
         }
-        .training-nav a {
-            color: var(--primary-color);
-            text-decoration: none;
-            margin-right: 1rem;
+        .training-header .title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
         }
-        .training-nav a:hover {
-            text-decoration: underline;
+        .training-header .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        .training-header .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .page-banner {
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: var(--border-radius);
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            margin: 0;
         }
         .tabs {
             display: flex;
@@ -290,12 +318,32 @@
     <div class="training-container">
         <!-- Header -->
         <div class="training-header">
-            <h1>Federated Learning Pipeline Training</h1>
-            <p class="subtitle">Manage training sessions and monitor performance</p>
-            <div class="training-nav">
-                <a href="index.html">← Back to Dashboard</a>
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="title">TEE-FL-0G</h1>
+                    <p class="subtitle">Federated Learning on 0G Mainnet</p>
+                </div>
+                <div class="header-actions">
+                    <div class="status-badge">
+                        <span class="status-dot active"></span>
+                        <span class="status-text">Mainnet Active</span>
+                    </div>
+                    <a href="index.html" class="refresh-btn" style="text-decoration: none; margin-right: 0.5rem;" title="Dashboard">
+                        <span class="refresh-icon">📊</span>
+                        <span class="refresh-text">Dashboard</span>
+                    </a>
+                    <button class="refresh-btn" onclick="refreshTrainingStatus()" title="Refresh data">
+                        <span class="refresh-icon">↻</span>
+                        <span class="refresh-text">Refresh</span>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Page Banner -->
+        <section class="page-banner">
+            <h2 class="page-title">Training</h2>
+        </section>
 
         <!-- Tabs -->
         <div class="tabs">

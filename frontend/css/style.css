@@ -202,6 +202,24 @@ body {
     }
 }
 
+/* Page Banner */
+.page-banner {
+    margin-bottom: 2rem;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    margin: 0;
+}
+
 /* Overview Section */
 .overview-section {
     margin-bottom: 3rem;
