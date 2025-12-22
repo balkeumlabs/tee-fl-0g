@@ -100,7 +100,7 @@ app.get('/api/deployment', async (req, res) => {
 });
 
 // Get latest epoch data (MUST be before /api/epoch/:epochNumber to avoid route conflict)
-app.get('/api/epoch/latest', async (req, res) => {
+app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
     try {
         const deployDataPath = path.join(FRONTEND_PATH, 'data', 'deploy.mainnet.json');
         const fs = await import('fs/promises');
@@ -281,7 +281,7 @@ app.get('/api/epoch/latest', async (req, res) => {
         console.error('Error fetching latest epoch:', error);
         res.status(500).json({ error: 'Failed to fetch latest epoch', message: error.message });
     }
-});
+}));
 
 // Get epoch data (from JSON file or blockchain)
 app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
@@ -387,7 +387,7 @@ app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
         console.error(`Error loading epoch ${req.params.epochNumber} data:`, error);
         res.status(500).json({ error: `Failed to load epoch ${req.params.epochNumber} data`, message: error.message });
     }
-});
+}));
 
 // Get storage upload data
 app.get('/api/storage', async (req, res) => {
