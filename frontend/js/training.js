@@ -1,6 +1,39 @@
 // Training Interface JavaScript
 const API_BASE = window.location.origin;
 
+// Global error display system (same as dashboard)
+function showGlobalError(message, details = '', errorCode = '') {
+    const banner = document.getElementById('global-error-banner');
+    const messageEl = document.getElementById('global-error-message');
+    const detailsEl = document.getElementById('global-error-details');
+    
+    if (banner && messageEl) {
+        messageEl.textContent = message;
+        if (detailsEl) {
+            detailsEl.textContent = details ? `Details: ${details}` : '';
+            if (errorCode) {
+                detailsEl.textContent += ` | Error Code: ${errorCode}`;
+            }
+        }
+        banner.style.display = 'block';
+        
+        // Log to console with clear marker
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('🚨 GLOBAL ERROR DISPLAYED TO USER');
+        console.error('Message:', message);
+        if (details) console.error('Details:', details);
+        if (errorCode) console.error('Error Code:', errorCode);
+        console.error('═══════════════════════════════════════════════════════════');
+    }
+}
+
+function hideGlobalError() {
+    const banner = document.getElementById('global-error-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -126,13 +159,52 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             const result = await response.json();
             
             if (!response.ok) {
-                console.error('Training start failed:', result);
+                console.error('═══════════════════════════════════════════════════════════');
+                console.error('🚨 TRAINING START FAILED');
+                console.error('Response:', result);
+                console.error('═══════════════════════════════════════════════════════════');
+                
                 updateTrainingStatus('inactive', null);
-                alert(`Failed to start training: ${result.message || result.error || 'Unknown error'}`);
+                
+                // Show detailed error message
+                const errorMsg = result.message || result.error || 'Unknown error';
+                const errorDetails = result.details || result.suggestion || '';
+                const errorCode = result.code || 'TRAINING_START_FAILED';
+                
+                // Use global error display if available, otherwise use alert
+                if (typeof showGlobalError === 'function') {
+                    showGlobalError(
+                        `Failed to start training: ${errorMsg}`,
+                        errorDetails,
+                        errorCode
+                    );
+                } else {
+                    alert(`Failed to start training:\n\n${errorMsg}\n\n${errorDetails ? `Details: ${errorDetails}` : ''}\n\nError Code: ${errorCode}`);
+                }
                 return;
             }
             
             console.log('Training started successfully:', result);
+            
+            // CRITICAL: Immediately refresh dashboard to show new epoch
+            // The backend has already completed all transactions and verified the epoch is queryable
+            if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+                console.log('Immediately refreshing dashboard to show new epoch...');
+                if (typeof window.refreshDashboard === 'function') {
+                    // Wait a moment for backend to finish, then refresh
+                    setTimeout(async () => {
+                        await window.refreshDashboard();
+                    }, 1000);
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                // If on training page, navigate to dashboard to see the new epoch
+                console.log('Navigating to dashboard to see new epoch...');
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 2000);
+            }
             
             // Poll for completion (demo is faster, real training takes longer)
             let pollCount = 0;
@@ -148,7 +220,7 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
                 // Check if new epoch is published (demo completed)
                 if (statusData && statusData.epochId && statusData.epochId >= result.epochId && statusData.published) {
                     clearInterval(pollInterval);
-                    console.log('Demo completed!');
+                    console.log('Training completed!');
                     // Start auto-refresh on dashboard for 5 minutes
                     if (typeof window.startAutoRefresh === 'function') {
                         window.startAutoRefresh();
@@ -163,17 +235,35 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
                     }
                 } else if (pollCount >= maxPolls) {
                     clearInterval(pollInterval);
-                    console.log('Polling timeout - demo may still be processing');
-                    // Start auto-refresh anyway (demo might still complete)
+                    console.log('Polling timeout - training may still be processing');
+                    // Start auto-refresh anyway (training might still complete)
                     if (typeof window.startAutoRefresh === 'function') {
                         window.startAutoRefresh();
                     }
                 }
             }, pollDelay);
         }).catch((error) => {
-            console.error('Error starting training:', error);
+            console.error('═══════════════════════════════════════════════════════════');
+            console.error('🚨 ERROR STARTING TRAINING (NETWORK/EXCEPTION)');
+            console.error('Error:', error.message);
+            console.error('Stack:', error.stack);
+            console.error('═══════════════════════════════════════════════════════════');
+            
             updateTrainingStatus('inactive', null);
-            alert(`Failed to start training: ${error.message}\n\nThe training may still be processing in the background. Please refresh the page in a few moments.`);
+            
+            const errorMsg = error.message || 'Network error or exception occurred';
+            const errorDetails = 'The training request may have been sent but the response was not received. Please check the dashboard to see if training started.';
+            
+            // Use global error display if available, otherwise use alert
+            if (typeof showGlobalError === 'function') {
+                showGlobalError(
+                    `Failed to start training: ${errorMsg}`,
+                    errorDetails,
+                    'TRAINING_NETWORK_ERROR'
+                );
+            } else {
+                alert(`Failed to start training:\n\n${errorMsg}\n\n${errorDetails}`);
+            }
         });
         
     } catch (error) {

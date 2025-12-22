@@ -40,6 +40,18 @@
             </div>
         </header>
 
+        <!-- Global Error Display (hidden by default) -->
+        <div id="global-error-banner" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; background: #fee; border-bottom: 2px solid #f33; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+            <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <strong style="color: #c33; font-size: 1.1rem;">⚠️ Error Detected</strong>
+                    <div id="global-error-message" style="color: #c33; margin-top: 0.5rem; font-size: 0.95rem;"></div>
+                    <div id="global-error-details" style="color: #a33; margin-top: 0.25rem; font-size: 0.85rem; font-family: monospace;"></div>
+                </div>
+                <button onclick="document.getElementById('global-error-banner').style.display='none'" style="background: #f33; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold;">✕ Close</button>
+            </div>
+        </div>
+
         <!-- Page Banner -->
         <section class="page-banner">
             <h2 class="page-title">Dashboard</h2>

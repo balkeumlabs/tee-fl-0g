@@ -161,9 +161,10 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
                 
                 // Step 2: If events didn't work, check recent epochs in parallel batches
                 if (latestEpoch === 0) {
-                    // Check from epoch 30 down to 1 (covers most realistic scenarios)
-                    const checkStart = 30;
-                    const checkCount = 20; // Check 20 epochs
+                    // First, check if we have a cached epoch ID to start from
+                    const cachedEpoch = getCachedLatestEpoch();
+                    const checkStart = cachedEpoch ? Math.max(cachedEpoch + 10, 50) : 50; // Start higher if we have cache
+                    const checkCount = 50; // Check 50 epochs (increased from 20)
                     
                     // Check in batches of 5 in parallel for speed
                     for (let batchStart = checkStart; batchStart >= Math.max(1, checkStart - checkCount); batchStart -= 5) {
@@ -174,7 +175,8 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
                             batchPromises.push(
                                 epochManager.epochs(i)
                                     .then(info => {
-                                        if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                        // Check if epoch exists (any non-zero modelHash means it exists)
+                                        if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
                                             return i;
                                         }
                                         return 0;
@@ -217,12 +219,73 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             }
         }
         
+        // Fallback: If search failed but we have a cached epoch, try using it
         if (latestEpoch === 0) {
-            return res.status(404).json({ error: 'No epochs found' });
+            const cachedEpoch = getCachedLatestEpoch();
+            if (cachedEpoch !== null && cachedEpoch > 0) {
+                console.log(`[Latest Epoch] Using cached epoch ${cachedEpoch} as fallback`);
+                latestEpoch = cachedEpoch;
+            }
+        }
+        
+        if (latestEpoch === 0) {
+            // Final fallback: Try checking higher epoch numbers (in case epoch is beyond our search range)
+            console.log('[Latest Epoch] Trying fallback: checking higher epoch numbers...');
+            try {
+                // Check epochs 100-200 in batches (for cases where many epochs have been created)
+                for (let batchStart = 200; batchStart >= 100; batchStart -= 10) {
+                    const batchEnd = Math.max(100, batchStart - 9);
+                    const batchPromises = [];
+                    
+                    for (let i = batchStart; i >= batchEnd; i--) {
+                        batchPromises.push(
+                            epochManager.epochs(i)
+                                .then(info => {
+                                    if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                        return i;
+                                    }
+                                    return 0;
+                                })
+                                .catch(() => 0)
+                        );
+                    }
+                    
+                    const batchResults = await Promise.all(batchPromises);
+                    const foundEpoch = Math.max(...batchResults);
+                    
+                    if (foundEpoch > 0) {
+                        latestEpoch = foundEpoch;
+                        console.log(`[Latest Epoch] Found epoch ${foundEpoch} via extended range fallback`);
+                        updateLatestEpochCache(latestEpoch);
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn('[Latest Epoch] Extended range fallback failed:', e.message);
+            }
+            
+            if (latestEpoch === 0) {
+                return res.status(404).json({ 
+                    error: 'No epochs found',
+                    message: 'Could not find any epochs. This may indicate that no training has been started yet, or there is a network/indexing issue.',
+                    suggestion: 'Try starting a new training session, or wait a few moments and refresh.',
+                    code: 'NO_EPOCHS_FOUND'
+                });
+            }
         }
         
         // Fetch epoch data using the existing endpoint logic
-        const epochInfo = await epochManager.epochs(latestEpoch);
+        let epochInfo;
+        try {
+            epochInfo = await epochManager.epochs(latestEpoch);
+        } catch (error) {
+            console.error(`[Latest Epoch] Error fetching epoch ${latestEpoch} info:`, error.message);
+            return res.status(500).json({
+                error: 'Failed to fetch epoch data',
+                message: `Could not retrieve data for epoch ${latestEpoch}`,
+                details: error.message
+            });
+        }
         
         // Fetch all events for this epoch
         const epochStartedFilter = epochManager.filters.EpochStarted(latestEpoch);
@@ -278,8 +341,18 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         
         res.json(epochData);
     } catch (error) {
-        console.error('Error fetching latest epoch:', error);
-        res.status(500).json({ error: 'Failed to fetch latest epoch', message: error.message });
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('🚨 ERROR FETCHING LATEST EPOCH');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('═══════════════════════════════════════════════════════════');
+        
+        res.status(500).json({ 
+            error: 'Failed to fetch latest epoch',
+            message: error.message || 'Unknown error occurred while fetching epoch data',
+            code: 'EPOCH_FETCH_ERROR',
+            suggestion: 'Please try refreshing the page. If the issue persists, check the server logs.'
+        });
     }
 }));
 
@@ -655,19 +728,34 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, wallet);
         
         // Find next available epoch ID
+        // Strategy: Check recent epochs first (most likely), then expand if needed
         let nextEpochId = 1;
-        for (let i = 1; i <= 100; i++) {
+        let highestFoundEpoch = 0;
+        
+        // First, find the highest existing epoch (check 1-300)
+        // Check in reverse order for efficiency (newer epochs first)
+        for (let i = 300; i >= 1; i--) {
             try {
                 const info = await epochManager.epochs(i);
-                if (info.modelHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    nextEpochId = i;
-                    break;
+                if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    highestFoundEpoch = i;
+                    break; // Found highest epoch, next one will be i+1
                 }
             } catch (e) {
-                nextEpochId = i;
-                break;
+                // Epoch doesn't exist, continue searching
+                continue;
             }
         }
+        
+        // Next epoch is one after the highest found
+        nextEpochId = highestFoundEpoch + 1;
+        
+        // Validate nextEpochId is reasonable (safety check)
+        if (nextEpochId > 1000) {
+            console.warn(`[Training Start] Warning: Next epoch ID (${nextEpochId}) is very high. This may indicate an issue.`);
+        }
+        
+        console.log(`[Training Start] Found highest epoch: ${highestFoundEpoch}, next epoch will be: ${nextEpochId}`);
         
         // Generate model hash for new epoch
         const modelHash = ethers.keccak256(ethers.toUtf8Bytes(`epoch-${nextEpochId}-${Date.now()}-${learningRate || '0.01'}`));
@@ -784,6 +872,47 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         
         console.log(`[Demo] Completed: ${demoResults.clientsSubmitted} clients, scores: ${demoResults.scoresPosted}, published: ${demoResults.modelPublished}`);
         
+        // CRITICAL: Wait for events to be fully indexed before returning
+        // This ensures the frontend can immediately find the new epoch
+        console.log(`[Training Start] Waiting for events to be indexed (5 seconds)...`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // CRITICAL: Verify epoch is queryable before returning
+        // This ensures the frontend can immediately find the new epoch
+        let epochVerified = false;
+        let verificationAttempts = 0;
+        const maxVerificationAttempts = 10; // Increased from 5 to 10 for better reliability
+        
+        console.log(`[Training Start] Verifying epoch ${nextEpochId} is queryable...`);
+        
+        while (!epochVerified && verificationAttempts < maxVerificationAttempts) {
+            try {
+                const epochInfo = await epochManager.epochs(nextEpochId);
+                if (epochInfo && epochInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    epochVerified = true;
+                    console.log(`[Training Start] ✓ Epoch ${nextEpochId} verified as queryable`);
+                    break;
+                } else {
+                    console.log(`[Training Start] Epoch ${nextEpochId} not yet queryable, waiting... (attempt ${verificationAttempts + 1}/${maxVerificationAttempts})`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    verificationAttempts++;
+                }
+            } catch (error) {
+                console.log(`[Training Start] Error verifying epoch, retrying... (attempt ${verificationAttempts + 1}/${maxVerificationAttempts}): ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                verificationAttempts++;
+            }
+        }
+        
+        if (!epochVerified) {
+            console.warn(`[Training Start] ⚠️ WARNING: Could not verify epoch ${nextEpochId} after ${maxVerificationAttempts} attempts. Epoch may still be queryable, but there may be indexing delays.`);
+            // Don't fail - epoch was created, just may need more time to index
+        }
+        
+        // Update cache with the new epoch ID so it's immediately available
+        updateLatestEpochCache(nextEpochId);
+        console.log(`[Cache] Updated cache with new epoch ${nextEpochId}`);
+        
         // Save training config (optional, for reference)
         const trainingConfig = {
             epochId: nextEpochId,
@@ -803,18 +932,36 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
             modelHash: modelHash,
             transactionHash: tx.hash,
             config: trainingConfig,
-            demo: demoResults
+            demo: demoResults,
+            epochVerified: epochVerified,
+            message: epochVerified 
+                ? `Training started successfully. Epoch ${nextEpochId} is ready.`
+                : `Training started successfully. Epoch ${nextEpochId} created but may need a few moments to be fully indexed.`
         });
     } catch (error) {
-        console.error('Error starting training:', error);
-        console.error('Error stack:', error.stack);
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('🚨 ERROR STARTING TRAINING');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('Code:', error.code);
+        console.error('Reason:', error.reason);
+        console.error('═══════════════════════════════════════════════════════════');
+        
         // Always return JSON, never HTML
         if (!res.headersSent) {
-            res.status(500).json({ 
-                error: 'Failed to start training', 
+            const errorDetails = {
+                error: 'Failed to start training',
                 message: error.message || 'Unknown error',
-                details: error.reason || error.code || 'No additional details'
-            });
+                code: error.code || 'UNKNOWN_ERROR',
+                reason: error.reason || 'No additional details',
+                suggestion: error.code === 'INSUFFICIENT_FUNDS' 
+                    ? 'Insufficient funds for transaction. Please add more tokens to your wallet.'
+                    : error.code === 'NETWORK_ERROR'
+                    ? 'Network error. Please check your connection and try again.'
+                    : 'Please check the server logs for more details and try again.'
+            };
+            
+            res.status(500).json(errorDetails);
         }
     }
 }));
@@ -853,6 +1000,8 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                         modelHash: modelHash,
                         timestamp: Math.floor(now / 1000)
                     },
+                    epochId: demoEpochId.toString(),
+                    modelHash: modelHash, // Add directly for frontend compatibility
                     blockNumber: 1000000 + demoEpochId,
                     transactionHash: `0x${'0'.repeat(64)}`
                 }],
@@ -900,10 +1049,12 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                         updateCid: updateCid,
                         updateHash: updateHash
                     },
-                    blockNumber: 1000000 + demoEpochId + i,
-                    transactionHash: `0x${i.toString().padStart(64, '0')}`,
+                    epochId: demoEpochId.toString(),
+                    submitter: `0x${'1'.repeat(40)}`, // Add directly for frontend compatibility
                     updateCid: updateCid, // Add directly for frontend compatibility
-                    scoresRoot: null // Not needed for this step
+                    updateHash: updateHash, // Add directly for frontend compatibility
+                    blockNumber: 1000000 + demoEpochId + i,
+                    transactionHash: `0x${i.toString().padStart(64, '0')}`
                 });
                 
                 console.log(`[Demo Mode] Client ${i}/${numClients} update simulated`);
@@ -916,9 +1067,10 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                     epochId: demoEpochId,
                     scoresRoot: scoresRoot
                 },
+                epochId: demoEpochId.toString(),
+                scoresRoot: scoresRoot, // Add directly for frontend compatibility
                 blockNumber: 1000000 + demoEpochId + numClients + 1,
-                transactionHash: `0x${'2'.repeat(64)}`,
-                scoresRoot: scoresRoot // Add directly for frontend compatibility
+                transactionHash: `0x${'2'.repeat(64)}`
             });
             console.log(`[Demo Mode] Scores root posted`);
             
@@ -930,6 +1082,9 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
                     globalModelCid: globalModelCid,
                     globalModelHash: globalModelHash
                 },
+                epochId: demoEpochId.toString(),
+                globalModelCid: globalModelCid, // Add directly for frontend compatibility
+                globalModelHash: globalModelHash, // Add directly for frontend compatibility
                 blockNumber: 1000000 + demoEpochId + numClients + 2,
                 transactionHash: `0x${'3'.repeat(64)}`
             });
@@ -1204,4 +1359,5 @@ process.on('SIGINT', () => {
     console.log('SIGINT signal received: closing HTTP server');
     process.exit(0);
 });
+
 

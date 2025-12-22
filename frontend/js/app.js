@@ -2,6 +2,39 @@
 const BLOCK_EXPLORER_BASE = 'https://chainscan.0g.ai';
 const API_BASE = window.location.origin; // Use same origin (works for both local and AWS)
 
+// Global error display system
+function showGlobalError(message, details = '', errorCode = '') {
+    const banner = document.getElementById('global-error-banner');
+    const messageEl = document.getElementById('global-error-message');
+    const detailsEl = document.getElementById('global-error-details');
+    
+    if (banner && messageEl) {
+        messageEl.textContent = message;
+        if (detailsEl) {
+            detailsEl.textContent = details ? `Details: ${details}` : '';
+            if (errorCode) {
+                detailsEl.textContent += ` | Error Code: ${errorCode}`;
+            }
+        }
+        banner.style.display = 'block';
+        
+        // Log to console with clear marker
+        console.error('═══════════════════════════════════════════════════════════');
+        console.error('🚨 GLOBAL ERROR DISPLAYED TO USER');
+        console.error('Message:', message);
+        if (details) console.error('Details:', details);
+        if (errorCode) console.error('Error Code:', errorCode);
+        console.error('═══════════════════════════════════════════════════════════');
+    }
+}
+
+function hideGlobalError() {
+    const banner = document.getElementById('global-error-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
 // Polling intervals (in milliseconds)
 // Set to null to disable auto-polling (only refresh manually)
 // Recommended: 5-10 minutes for cost efficiency, or null for manual-only
@@ -81,6 +114,11 @@ async function loadData(retries = 2) {
             if (i === retries - 1) {
                 // Last attempt failed - return null but log clearly
                 console.error('[LoadData] All retry attempts failed. Dashboard will show error state.');
+                showGlobalError(
+                    'Failed to load dashboard data after multiple attempts',
+                    errorMsg,
+                    'API_LOAD_FAILED'
+                );
                 return null;
             }
             
@@ -735,14 +773,11 @@ async function initDashboard() {
         if (currentEpochIdEl) {
             currentEpochIdEl.textContent = 'Error';
         }
-        // Show user-friendly error message
-        const errorMsg = document.createElement('div');
-        errorMsg.style.cssText = 'padding: 1rem; margin: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c33;';
-        errorMsg.textContent = '⚠️ Failed to load dashboard data. The API may be slow or unavailable. Please try refreshing the page.';
-        const container = document.querySelector('.container');
-        if (container) {
-            container.insertBefore(errorMsg, container.firstChild);
-        }
+        showGlobalError(
+            'Failed to load dashboard data',
+            'The API may be slow or unavailable. Please check your connection and try refreshing the page.',
+            'DASHBOARD_LOAD_FAILED'
+        );
         return;
     }
 
