@@ -292,6 +292,24 @@ function updatePipelineStepStatus(stepNumber, completed) {
 
 // Fetch gas cost for a transaction (via backend API) with retry logic
 async function fetchGasCost(txHash, retries = 3) {
+    // Skip if txHash is invalid, empty, or is a demo mode fake hash
+    // Demo mode uses fake hashes like 0x0000... or 0x3333...
+    if (!txHash || txHash === '0x' || txHash.length < 10) {
+        return null;
+    }
+    
+    // Check if this is a demo mode fake transaction hash
+    // Demo hashes are all zeros or all same character (like 0x3333...)
+    const hashWithoutPrefix = txHash.slice(2);
+    const firstChar = hashWithoutPrefix[0];
+    const isDemoHash = hashWithoutPrefix === '0'.repeat(64) || 
+                       hashWithoutPrefix === firstChar.repeat(64);
+    
+    if (isDemoHash) {
+        // Skip fetching gas for demo mode transactions (they don't exist on blockchain)
+        return null;
+    }
+    
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(`${API_BASE}/api/transaction/receipt`, {
@@ -305,7 +323,7 @@ async function fetchGasCost(txHash, retries = 3) {
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    // Transaction not found - don't retry
+                    // Transaction not found (likely demo mode or invalid hash) - don't retry, don't log
                     return null;
                 }
                 throw new Error(`HTTP ${response.status}`);
@@ -320,7 +338,10 @@ async function fetchGasCost(txHash, retries = 3) {
             }
             return null;
         } catch (error) {
-            console.error(`Error fetching gas for ${txHash} (attempt ${i + 1}/${retries}):`, error);
+            // Only log errors that aren't 404s (which are expected for demo mode)
+            if (error.message && !error.message.includes('404')) {
+                console.error(`Error fetching gas for ${txHash} (attempt ${i + 1}/${retries}):`, error);
+            }
             if (i === retries - 1) {
                 return null;
             }
@@ -914,6 +935,9 @@ function startTrainingStatusMonitoring() {
         clearInterval(trainingStatusMonitorInterval);
     }
     
+    // Track consecutive timeouts at function scope
+    let consecutiveTimeouts = 0;
+    
     // Check training status and latest epoch every 2 seconds
     trainingStatusMonitorInterval = setInterval(async () => {
         try {
@@ -933,6 +957,7 @@ function startTrainingStatusMonitoring() {
             clearTimeout(timeoutId);
             
             if (response.ok) {
+                consecutiveTimeouts = 0; // Reset timeout counter on success
                 const epochData = await response.json();
                 const currentEpochId = epochData.epochId || 1;
                 
