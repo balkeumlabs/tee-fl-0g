@@ -119,7 +119,9 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
         // Check demo mode first (if enabled, return demo data)
-        if (demoMode.enabled && demoMode.epochData) {
+        // BUT allow bypassing demo mode with ?forceBlockchain=true query parameter
+        const forceBlockchain = req.query.forceBlockchain === 'true';
+        if (demoMode.enabled && demoMode.epochData && !forceBlockchain) {
             console.log(`[Latest Epoch] Returning demo epoch ${demoMode.epochData.epochId}`);
             return res.json(demoMode.epochData);
         }
