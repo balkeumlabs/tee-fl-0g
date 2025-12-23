@@ -890,27 +890,98 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, wallet);
         
         // Find next available epoch ID
-        // Strategy: Check recent epochs first (most likely), then expand if needed
+        // OPTIMIZATION: Use cached latest epoch as starting point to avoid slow sequential search
         let nextEpochId = 1;
         let highestFoundEpoch = 0;
         
-        // First, find the highest existing epoch (check 1-300)
-        // Check in reverse order for efficiency (newer epochs first)
-        for (let i = 300; i >= 1; i--) {
-            try {
-                const info = await epochManager.epochs(i);
-                if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    highestFoundEpoch = i;
-                    break; // Found highest epoch, next one will be i+1
-                }
-            } catch (e) {
-                // Epoch doesn't exist, continue searching
-                continue;
+        // Strategy 1: Check cache first (fastest - no blockchain calls)
+        const cachedLatestEpoch = getCachedLatestEpoch();
+        if (cachedLatestEpoch !== null && cachedLatestEpoch > 0) {
+            console.log(`[Training Start] Using cached latest epoch ${cachedLatestEpoch} as starting point`);
+            // Verify cached epoch exists and check next few epochs in parallel
+            const checkEpochs = [];
+            for (let i = cachedLatestEpoch; i <= cachedLatestEpoch + 5; i++) {
+                checkEpochs.push(
+                    epochManager.epochs(i)
+                        .then(info => {
+                            if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                return i;
+                            }
+                            return 0;
+                        })
+                        .catch(() => 0)
+                );
+            }
+            
+            const results = await Promise.all(checkEpochs);
+            highestFoundEpoch = Math.max(...results);
+            
+            if (highestFoundEpoch > 0) {
+                console.log(`[Training Start] Found highest epoch ${highestFoundEpoch} via cache-based parallel check`);
+                nextEpochId = highestFoundEpoch + 1;
+            } else {
+                // Cache was wrong, fall back to search
+                console.log(`[Training Start] Cache-based check failed, falling back to search...`);
+                highestFoundEpoch = 0;
             }
         }
         
-        // Next epoch is one after the highest found
-        nextEpochId = highestFoundEpoch + 1;
+        // Strategy 2: If cache didn't work, do optimized parallel batch search
+        if (highestFoundEpoch === 0) {
+            console.log(`[Training Start] Starting optimized parallel epoch search...`);
+            const searchStart = cachedLatestEpoch ? Math.max(cachedLatestEpoch - 10, 50) : 50; // Start from cache-10 or 50
+            const searchRange = 50; // Check 50 epochs
+            
+            // Check in parallel batches of 10 for speed
+            for (let batchStart = searchStart; batchStart >= Math.max(1, searchStart - searchRange); batchStart -= 10) {
+                const batchEnd = Math.max(1, batchStart - 9);
+                const batchPromises = [];
+                
+                for (let i = batchStart; i >= batchEnd; i--) {
+                    batchPromises.push(
+                        epochManager.epochs(i)
+                            .then(info => {
+                                if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                    return i;
+                                }
+                                return 0;
+                            })
+                            .catch(() => 0)
+                    );
+                }
+                
+                const batchResults = await Promise.all(batchPromises);
+                const foundEpoch = Math.max(...batchResults);
+                
+                if (foundEpoch > 0) {
+                    highestFoundEpoch = foundEpoch;
+                    console.log(`[Training Start] Found highest epoch ${foundEpoch} via parallel batch search`);
+                    break;
+                }
+            }
+            
+            // If still not found, check epochs 1-10 as fallback
+            if (highestFoundEpoch === 0) {
+                console.log(`[Training Start] Checking epochs 1-10 as final fallback...`);
+                const fallbackPromises = [];
+                for (let i = 10; i >= 1; i--) {
+                    fallbackPromises.push(
+                        epochManager.epochs(i)
+                            .then(info => {
+                                if (info && info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                    return i;
+                                }
+                                return 0;
+                            })
+                            .catch(() => 0)
+                    );
+                }
+                const fallbackResults = await Promise.all(fallbackPromises);
+                highestFoundEpoch = Math.max(...fallbackResults);
+            }
+            
+            nextEpochId = highestFoundEpoch + 1;
+        }
         
         // Validate nextEpochId is reasonable (safety check)
         if (nextEpochId > 1000) {
