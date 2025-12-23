@@ -1160,6 +1160,21 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
     }
 }));
 
+// Disable demo mode (to show actual blockchain data)
+app.post('/api/training/disable-demo', asyncHandler(async (req, res) => {
+    console.log('[Demo Mode] Disabling demo mode to show blockchain data...');
+    demoMode.enabled = false;
+    demoMode.currentEpoch = null;
+    demoMode.epochData = null;
+    demoMode.startTime = null;
+    console.log('[Demo Mode] Demo mode disabled. Dashboard will now show blockchain data.');
+    res.json({
+        success: true,
+        message: 'Demo mode disabled. Dashboard will show actual blockchain data.',
+        demoMode: false
+    });
+}));
+
 // Stop training (not implemented in contract, but we can track status)
 app.post('/api/training/stop', async (req, res) => {
     try {
