@@ -142,10 +142,11 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         let latestEpoch = getCachedLatestEpoch();
         const cacheAge = latestEpoch !== null ? (Date.now() - latestEpochCache.timestamp) : Infinity;
         
-        // FAST PATH: If cache was just updated (< 10s ago), return it immediately without verification
+        // REASON 12 FIX: FAST PATH - Relaxed conditions for faster access
+        // If cache was just updated (< 15s ago, increased from 10s), return it immediately without verification
         // This is critical for dashboard updates right after training starts
-        if (latestEpoch !== null && latestEpochCache.justUpdated && cacheAge < 10000) {
-            console.log(`[Latest Epoch] FAST PATH: Using just-updated cache: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s, skipping verification)`);
+        if (latestEpoch !== null && latestEpochCache.justUpdated && cacheAge < 15000) {
+            console.log(`[Latest Epoch] ✅ FAST PATH: Using just-updated cache: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s, skipping verification)`);
             // Skip to fetching epoch data directly - no verification needed
         }
         // MEDIUM PATH: If cache is fresh (< 10s) but not just updated, do quick verification
@@ -923,12 +924,17 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         
         // Start epoch on blockchain
         const tx = await epochManager.startEpoch(nextEpochId, modelHash);
-        await tx.wait();
+        const receipt = await tx.wait();
         
-        // CRITICAL: Update cache IMMEDIATELY with new epoch ID (before verification)
-        // This ensures dashboard can find the new epoch right away, even if events aren't fully indexed yet
+        // REASON 1 FIX: Update cache SYNCHRONOUSLY and IMMEDIATELY after transaction confirms
+        // Do this BEFORE any other async operations to ensure cache is ready
         updateLatestEpochCache(nextEpochId);
-        console.log(`[Cache] Updated cache with new epoch ${nextEpochId} IMMEDIATELY (before verification)`);
+        console.log(`[Cache] ✅ Updated cache with new epoch ${nextEpochId} IMMEDIATELY after block ${receipt.blockNumber}`);
+        
+        // REASON 7 FIX: Invalidate any old cache entries by ensuring justUpdated flag is set
+        // This prevents returning stale cached epochs
+        latestEpochCache.justUpdated = true;
+        console.log(`[Cache] ✅ Set justUpdated flag for fast path access`);
         
         // AUTOMATIC DEMO: Simulate clients and complete pipeline
         console.log(`[Demo] Starting automatic demo simulation for epoch ${nextEpochId}...`);

@@ -231,28 +231,49 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             }
             
             console.log('Training started successfully:', result);
+            const newEpochId = result.epochId || result.currentRound;
+            console.log(`[Training Start] New epoch ID: ${newEpochId}`);
             
-            // CRITICAL: Immediately refresh dashboard multiple times to catch new epoch
-            // The cache is updated on backend, so dashboard should see it right away
-            if (typeof window.refreshDashboard === 'function') {
-                console.log('🔄 Immediately refreshing dashboard to show new epoch...');
-                // Refresh immediately (with small delay to let backend cache update)
-                setTimeout(() => {
-                    window.refreshDashboard();
-                }, 500);
-                // Refresh again after 1 second
-                setTimeout(() => {
-                    window.refreshDashboard();
-                }, 1000);
-                // Refresh again after 2 seconds
-                setTimeout(() => {
-                    window.refreshDashboard();
-                }, 2000);
-                // Refresh again after 3 seconds
-                setTimeout(() => {
-                    window.refreshDashboard();
-                }, 3000);
+            // REASON 2 FIX: Reset lastKnownEpochId to force dashboard to detect new epoch
+            if (typeof window !== 'undefined' && window.lastKnownEpochId !== undefined) {
+                console.log(`[Fix] Resetting lastKnownEpochId from ${window.lastKnownEpochId} to null to force update`);
+                window.lastKnownEpochId = null;
             }
+            
+            // REASON 11 FIX: Dispatch custom event so dashboard can listen and react immediately
+            if (typeof window !== 'undefined') {
+                const trainingStartEvent = new CustomEvent('trainingStarted', { 
+                    detail: { epochId: newEpochId, timestamp: Date.now() } 
+                });
+                window.dispatchEvent(trainingStartEvent);
+                console.log(`[Fix] Dispatched trainingStarted event with epoch ${newEpochId}`);
+            }
+            
+            // REASON 3 FIX: Immediately refresh dashboard with error handling and retry logic
+            const refreshDashboardWithRetry = async (attempt = 1, maxAttempts = 5) => {
+                try {
+                    if (typeof window.refreshDashboard === 'function') {
+                        console.log(`[Fix] Refreshing dashboard (attempt ${attempt}/${maxAttempts})...`);
+                        await window.refreshDashboard();
+                        console.log(`[Fix] Dashboard refresh successful (attempt ${attempt})`);
+                    } else {
+                        console.warn('[Fix] refreshDashboard function not available');
+                    }
+                } catch (error) {
+                    console.error(`[Fix] Dashboard refresh failed (attempt ${attempt}):`, error);
+                    if (attempt < maxAttempts) {
+                        setTimeout(() => refreshDashboardWithRetry(attempt + 1, maxAttempts), 1000 * attempt);
+                    }
+                }
+            };
+            
+            // REASON 6 FIX: Multiple refresh attempts with exponential backoff to handle race conditions
+            console.log('🔄 Immediately refreshing dashboard to show new epoch...');
+            setTimeout(() => refreshDashboardWithRetry(1, 5), 200);   // 200ms
+            setTimeout(() => refreshDashboardWithRetry(2, 5), 500);   // 500ms
+            setTimeout(() => refreshDashboardWithRetry(3, 5), 1000); // 1s
+            setTimeout(() => refreshDashboardWithRetry(4, 5), 2000); // 2s
+            setTimeout(() => refreshDashboardWithRetry(5, 5), 3000); // 3s
             
             // STAY ON TRAINING PAGE - Never navigate away or reload
             // Just refresh the training status to show the new epoch

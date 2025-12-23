@@ -791,6 +791,36 @@ function updateFullHashes(epochData) {
 // Track last known epoch to detect new epochs
 let lastKnownEpochId = null;
 
+// REASON 11 FIX: Listen for training start events and immediately refresh
+if (typeof window !== 'undefined') {
+    window.addEventListener('trainingStarted', async (event) => {
+        const epochId = event.detail?.epochId;
+        console.log(`[Fix] ✅ Received trainingStarted event for epoch ${epochId} - forcing immediate refresh`);
+        
+        // REASON 2 FIX: Reset lastKnownEpochId to force detection
+        lastKnownEpochId = null;
+        
+        // REASON 5 FIX: Force immediate refresh without waiting for monitoring
+        if (typeof refreshDashboard === 'function') {
+            try {
+                await refreshDashboard(true);
+                console.log(`[Fix] ✅ Dashboard refreshed immediately after training start event`);
+            } catch (error) {
+                console.error('[Fix] ❌ Error refreshing dashboard after training start:', error);
+            }
+        }
+    });
+    
+    // Expose lastKnownEpochId to window for training.js to reset it
+    Object.defineProperty(window, 'lastKnownEpochId', {
+        get: () => lastKnownEpochId,
+        set: (value) => { 
+            console.log(`[Fix] lastKnownEpochId reset from ${lastKnownEpochId} to ${value}`);
+            lastKnownEpochId = value; 
+        }
+    });
+}
+
 // Initialize dashboard
 async function initDashboard() {
     // Show loading state immediately
@@ -955,57 +985,80 @@ function startTrainingStatusMonitoring() {
         try {
             const isActive = await isTrainingActive();
         
-        // Always check for new epochs, even if training is inactive
+        // REASON 5 FIX: Always check for new epochs, even if training is inactive
+        // REASON 4 FIX: Reduced timeout to 8 seconds (was 15) for faster failure detection
+        // REASON 9 FIX: Add retry logic for network failures
         try {
-            // Add timeout to prevent hanging - increased for slow blockchain queries
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout (same as loadData)
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout (reduced from 15)
             
-            const response = await fetch(`${API_BASE}/api/epoch/latest`, { 
-                cache: 'no-cache',
-                signal: controller.signal
-            });
+            let response;
+            let retryCount = 0;
+            const maxRetries = 2;
+            
+            // REASON 9 FIX: Retry logic for network issues
+            while (retryCount <= maxRetries) {
+                try {
+                    response = await fetch(`${API_BASE}/api/epoch/latest?t=${Date.now()}`, { 
+                        cache: 'no-cache',
+                        signal: controller.signal,
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    break; // Success, exit retry loop
+                } catch (fetchError) {
+                    retryCount++;
+                    if (retryCount > maxRetries) {
+                        throw fetchError;
+                    }
+                    console.warn(`[Monitor] Fetch failed (attempt ${retryCount}/${maxRetries + 1}), retrying...`);
+                    await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Exponential backoff
+                }
+            }
             
             clearTimeout(timeoutId);
             
-            if (response.ok) {
+            if (response && response.ok) {
                 consecutiveTimeouts = 0; // Reset timeout counter on success
                 const epochData = await response.json();
                 const currentEpochId = epochData.epochId || 1;
                 
-                // If we detect a new epoch, refresh the dashboard
-                if (lastKnownEpochId !== null && currentEpochId > lastKnownEpochId) {
-                    console.log(`🔄 Monitor detected new epoch: ${currentEpochId} (was ${lastKnownEpochId})`);
-                    // Update lastKnownEpochId immediately to prevent race conditions
+                // REASON 2 FIX: Always update if epoch changed, even if lastKnownEpochId is null
+                // REASON 8 FIX: Better error handling - don't silently skip updates
+                if (lastKnownEpochId === null) {
+                    console.log(`[Monitor] Initial epoch detected: ${currentEpochId}`);
                     lastKnownEpochId = currentEpochId;
-                    // Refresh dashboard to show new epoch
+                    // Force refresh on initial detection
                     await refreshDashboard(true);
-                } else if (lastKnownEpochId === null) {
+                } else if (currentEpochId > lastKnownEpochId) {
+                    console.log(`🔄 Monitor detected new epoch: ${currentEpochId} (was ${lastKnownEpochId})`);
                     lastKnownEpochId = currentEpochId;
+                    await refreshDashboard(true);
                 } else if (currentEpochId !== lastKnownEpochId) {
                     // Epoch changed (could be lower or higher) - update it
                     console.log(`🔄 Monitor: Epoch changed from ${lastKnownEpochId} to ${currentEpochId}`);
                     lastKnownEpochId = currentEpochId;
                     await refreshDashboard(true);
                 }
-            } else {
+            } else if (response) {
                 console.warn(`[Monitor] API returned ${response.status}, epoch check skipped this cycle`);
             }
         } catch (error) {
             if (error.name === 'AbortError') {
                 consecutiveTimeouts++;
-                // Only log timeout errors occasionally to avoid console spam
-                // Log once every 10 timeouts
+                // REASON 4 FIX: Log timeout more frequently to help debug
                 if (!window._timeoutErrorCount) window._timeoutErrorCount = 0;
                 window._timeoutErrorCount++;
-                if (window._timeoutErrorCount % 10 === 0) {
+                if (window._timeoutErrorCount % 5 === 0) { // Log every 5 timeouts (was 10)
                     console.warn(`[Monitor] Epoch check timed out (${window._timeoutErrorCount} times). This is normal if blockchain queries are slow. Will continue retrying.`);
                 }
             } else {
                 consecutiveTimeouts = 0; // Reset on non-timeout errors
                 console.error('[Monitor] Error checking latest epoch:', error.message);
             }
-            // Don't break monitoring on error - continue checking
+            // REASON 10 FIX: Don't break monitoring on error - continue checking
         }
         
             // If training just became active and we're not already polling, start auto-refresh
@@ -1106,6 +1159,7 @@ function startAutoRefresh() {
 }
 
 // Refresh dashboard data
+// REASON 8 FIX: Enhanced error handling to prevent silent failures
 async function refreshDashboard(silent = false) {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn && !silent) {
@@ -1114,12 +1168,21 @@ async function refreshDashboard(silent = false) {
     }
 
     try {
+        console.log(`[RefreshDashboard] Starting refresh (silent: ${silent})...`);
         const data = await loadData();
         if (!data) {
-            console.error('Failed to refresh data');
+            console.error('[RefreshDashboard] ❌ Failed to refresh data - loadData returned null');
             if (refreshBtn && !silent) {
                 refreshBtn.classList.remove('loading');
                 refreshBtn.disabled = false;
+            }
+            // REASON 8 FIX: Don't silently fail - show error if not silent
+            if (!silent && typeof showGlobalError === 'function') {
+                showGlobalError(
+                    'Failed to refresh dashboard data',
+                    'The dashboard could not load the latest epoch data. Please try again.',
+                    'REFRESH_FAILED'
+                );
             }
             return;
         }
@@ -1164,6 +1227,8 @@ async function refreshDashboard(silent = false) {
         displayPipelineSteps(epochData); // Always update pipeline steps to show real-time progress
         await displayTransactions(epochData);
         displayEpochSummary(epochData);
+        
+        console.log(`[RefreshDashboard] ✅ Successfully refreshed - epoch ${currentEpochId}`);
         updateLastUpdated();
         calculateStatistics(epochData);
         updateEpochProgress(epochData); // Update progress bar
@@ -1177,7 +1242,22 @@ async function refreshDashboard(silent = false) {
             window.lastNetworkHealthCheck = now;
         }
     } catch (error) {
-        console.error('Error refreshing dashboard:', error);
+        // REASON 8 FIX: Enhanced error handling - don't silently fail
+        console.error('[RefreshDashboard] ❌ Error refreshing dashboard:', error);
+        console.error('[RefreshDashboard] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        
+        // Show error to user if not silent
+        if (!silent && typeof showGlobalError === 'function') {
+            showGlobalError(
+                'Failed to refresh dashboard',
+                error.message || 'An unexpected error occurred while refreshing the dashboard.',
+                'REFRESH_ERROR'
+            );
+        }
     } finally {
         if (refreshBtn && !silent) {
             refreshBtn.classList.remove('loading');
