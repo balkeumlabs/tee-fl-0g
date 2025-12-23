@@ -293,21 +293,33 @@ function updatePipelineStepStatus(stepNumber, completed) {
 // Fetch gas cost for a transaction (via backend API) with retry logic
 async function fetchGasCost(txHash, retries = 3) {
     // Skip if txHash is invalid, empty, or is a demo mode fake hash
-    // Demo mode uses fake hashes like 0x0000... or 0x3333...
+    // Demo mode uses fake hashes like 0x0000..., 0x3333..., or 0x0001... (padded)
     if (!txHash || txHash === '0x' || txHash.length < 10) {
         return null;
     }
     
     // Check if this is a demo mode fake transaction hash
-    // Demo hashes are all zeros or all same character (like 0x3333...)
+    // Demo hashes patterns:
+    // - All zeros: 0x0000...0000
+    // - All same character: 0x3333...3333
+    // - Padded with zeros: 0x0000...0001 (starts with many zeros)
     const hashWithoutPrefix = txHash.slice(2);
-    const firstChar = hashWithoutPrefix[0];
-    const isDemoHash = hashWithoutPrefix === '0'.repeat(64) || 
-                       hashWithoutPrefix === firstChar.repeat(64);
     
-    if (isDemoHash) {
-        // Skip fetching gas for demo mode transactions (they don't exist on blockchain)
-        return null;
+    // Check if all zeros
+    if (hashWithoutPrefix === '0'.repeat(64)) {
+        return null; // Demo hash - skip
+    }
+    
+    // Check if all same character (like 0x3333...)
+    const firstChar = hashWithoutPrefix[0];
+    if (hashWithoutPrefix === firstChar.repeat(64)) {
+        return null; // Demo hash - skip
+    }
+    
+    // Check if mostly zeros (padded pattern like 0x0000...0001)
+    // If first 60 characters are zeros, it's likely a demo hash
+    if (hashWithoutPrefix.slice(0, 60) === '0'.repeat(60)) {
+        return null; // Demo hash - skip
     }
     
     for (let i = 0; i < retries; i++) {
