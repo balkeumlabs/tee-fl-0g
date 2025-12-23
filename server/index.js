@@ -118,24 +118,18 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Check demo mode first (if enabled, return demo data OR indicate no demo data yet)
+        // Check demo mode first (if enabled, return demo data)
         // BUT allow bypassing demo mode with ?forceBlockchain=true query parameter
         const forceBlockchain = req.query.forceBlockchain === 'true';
-        if (demoMode.enabled && !forceBlockchain) {
-            if (demoMode.epochData) {
-                console.log(`[Latest Epoch] Returning demo epoch ${demoMode.epochData.epochId}`);
-                return res.json(demoMode.epochData);
-            } else {
-                // Demo mode is enabled but no demo data exists yet
-                // Return a message indicating demo training needs to be run
-                console.log(`[Latest Epoch] Demo mode enabled but no demo data exists yet`);
-                return res.status(404).json({ 
-                    error: 'No demo data available', 
-                    message: 'Demo mode is enabled but no demo training has been run yet. Please start a demo training session.',
-                    code: 'NO_DEMO_DATA',
-                    demoMode: true
-                });
-            }
+        if (demoMode.enabled && demoMode.epochData && !forceBlockchain) {
+            console.log(`[Latest Epoch] Returning demo epoch ${demoMode.epochData.epochId}`);
+            return res.json(demoMode.epochData);
+        }
+        
+        // If demo mode is enabled but no demo data exists, fall through to show blockchain data
+        // This provides better UX - dashboard still works even if demo training hasn't been run yet
+        if (demoMode.enabled && !demoMode.epochData && !forceBlockchain) {
+            console.log(`[Latest Epoch] Demo mode enabled but no demo data exists yet - falling back to blockchain data`);
         }
         
         // Check cache first (fast path) - BUT always verify it exists on blockchain
