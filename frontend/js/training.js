@@ -94,11 +94,57 @@ function updateDemoModeIndicator() {
 }
 
 // Initialize demo mode toggle
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const toggle = document.getElementById('demo-mode-toggle');
     if (toggle) {
-        toggle.addEventListener('change', updateDemoModeIndicator);
-        updateDemoModeIndicator(); // Set initial state
+        // Load current demo mode state from backend
+        try {
+            const response = await fetch(`${API_BASE}/api/training/demo-status`);
+            if (response.ok) {
+                const data = await response.json();
+                toggle.checked = data.demoMode || false;
+                updateDemoModeIndicator();
+            }
+        } catch (error) {
+            console.warn('Could not load demo mode status:', error);
+        }
+        
+        // Handle toggle changes - sync with backend
+        toggle.addEventListener('change', async (e) => {
+            const isEnabled = e.target.checked;
+            updateDemoModeIndicator();
+            
+            // Sync with backend
+            try {
+                const endpoint = isEnabled ? '/api/training/enable-demo' : '/api/training/disable-demo';
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`Demo mode ${isEnabled ? 'enabled' : 'disabled'}:`, data.message);
+                    
+                    // If dashboard is open, refresh it to show correct data
+                    if (typeof window.refreshDashboard === 'function') {
+                        setTimeout(() => {
+                            window.refreshDashboard();
+                        }, 500);
+                    }
+                } else {
+                    console.error('Failed to sync demo mode with backend');
+                    // Revert toggle if backend call failed
+                    toggle.checked = !isEnabled;
+                    updateDemoModeIndicator();
+                }
+            } catch (error) {
+                console.error('Error syncing demo mode:', error);
+                // Revert toggle if backend call failed
+                toggle.checked = !isEnabled;
+                updateDemoModeIndicator();
+            }
+        });
     }
 });
 

@@ -1160,6 +1160,29 @@ app.post('/api/training/start-demo', asyncHandler(async (req, res) => {
     }
 }));
 
+// Get demo mode status
+app.get('/api/training/demo-status', asyncHandler(async (req, res) => {
+    res.json({
+        demoMode: demoMode.enabled,
+        hasEpochData: !!demoMode.epochData,
+        currentEpochId: demoMode.currentEpoch?.epochId || null
+    });
+}));
+
+// Enable demo mode (to show demo data on dashboard)
+app.post('/api/training/enable-demo', asyncHandler(async (req, res) => {
+    console.log('[Demo Mode] Enabling demo mode...');
+    // Don't clear existing demo data - just enable the flag
+    // If no demo data exists, it will be created when demo training starts
+    demoMode.enabled = true;
+    console.log('[Demo Mode] Demo mode enabled. Dashboard will show demo data if available.');
+    res.json({
+        success: true,
+        message: 'Demo mode enabled. Dashboard will show demo data.',
+        demoMode: true
+    });
+}));
+
 // Disable demo mode (to show actual blockchain data)
 app.post('/api/training/disable-demo', asyncHandler(async (req, res) => {
     console.log('[Demo Mode] Disabling demo mode to show blockchain data...');
