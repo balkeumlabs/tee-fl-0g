@@ -31,7 +31,8 @@ const FRONTEND_PATH = process.env.FRONTEND_PATH || path.join(__dirname, '..', 'f
 let latestEpochCache = {
     epochId: null,
     timestamp: 0,
-    ttl: 10000 // Cache for 10 seconds (reduced to catch new epochs faster)
+    ttl: 30000, // 30 seconds TTL (increased for better cache hit rate)
+    justUpdated: false // Flag to indicate cache was just updated (fast path)
 };
 
 // Demo mode state (for testing without blockchain)
@@ -54,6 +55,11 @@ function getCachedLatestEpoch() {
 function updateLatestEpochCache(epochId) {
     latestEpochCache.epochId = epochId;
     latestEpochCache.timestamp = Date.now();
+    latestEpochCache.justUpdated = true;
+    // Clear the flag after 10 seconds (fast path window)
+    setTimeout(() => {
+        latestEpochCache.justUpdated = false;
+    }, 10000);
 }
 
 // Initialize Express app
@@ -132,22 +138,36 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             console.log(`[Latest Epoch] Demo mode enabled but no demo data exists yet - falling back to blockchain data`);
         }
         
-        // Check cache first (fast path) - BUT always verify it exists on blockchain
+        // Check cache first (fast path) - return immediately if cache is fresh
         let latestEpoch = getCachedLatestEpoch();
         const cacheAge = latestEpoch !== null ? (Date.now() - latestEpochCache.timestamp) : Infinity;
         
-        // CRITICAL: If we have a cached epoch, verify it exists on blockchain first
-        // This ensures we don't return stale cache if a new epoch was just created
-        if (latestEpoch !== null && cacheAge < 5000) {
+        // FAST PATH: If cache was just updated (< 10s ago), return it immediately without verification
+        // This is critical for dashboard updates right after training starts
+        if (latestEpoch !== null && latestEpochCache.justUpdated && cacheAge < 10000) {
+            console.log(`[Latest Epoch] FAST PATH: Using just-updated cache: ${latestEpoch} (age: ${Math.round(cacheAge/1000)}s, skipping verification)`);
+            // Skip to fetching epoch data directly - no verification needed
+        }
+        // MEDIUM PATH: If cache is fresh (< 10s) but not just updated, do quick verification
+        else if (latestEpoch !== null && cacheAge < 10000) {
             try {
-                // Quick check: verify cached epoch exists on blockchain
-                const cachedEpochInfo = await epochManager.epochs(latestEpoch);
+                // Quick check: verify cached epoch exists on blockchain (with timeout)
+                const verifyPromise = epochManager.epochs(latestEpoch);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Verification timeout')), 2000)
+                );
+                
+                const cachedEpochInfo = await Promise.race([verifyPromise, timeoutPromise]);
                 if (cachedEpochInfo && cachedEpochInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    // Cached epoch exists - but check if there's a newer one by checking next few epochs
+                    // Cached epoch exists - quickly check next 2 epochs (not 5) for speed
                     let foundNewer = false;
-                    for (let checkEpoch = latestEpoch + 1; checkEpoch <= latestEpoch + 5; checkEpoch++) {
+                    for (let checkEpoch = latestEpoch + 1; checkEpoch <= latestEpoch + 2; checkEpoch++) {
                         try {
-                            const nextEpochInfo = await epochManager.epochs(checkEpoch);
+                            const checkPromise = epochManager.epochs(checkEpoch);
+                            const checkTimeout = new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Check timeout')), 1000)
+                            );
+                            const nextEpochInfo = await Promise.race([checkPromise, checkTimeout]);
                             if (nextEpochInfo && nextEpochInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
                                 latestEpoch = checkEpoch;
                                 foundNewer = true;
@@ -169,9 +189,13 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
                     latestEpoch = null;
                 }
             } catch (error) {
-                // Error checking cached epoch - force search
-                console.log(`[Latest Epoch] Error verifying cached epoch, searching...: ${error.message}`);
-                latestEpoch = null;
+                // Error or timeout checking cached epoch - use cache anyway if it's very fresh (< 5s)
+                if (cacheAge < 5000) {
+                    console.log(`[Latest Epoch] Verification failed but cache is very fresh (${Math.round(cacheAge/1000)}s), using cache: ${latestEpoch}`);
+                } else {
+                    console.log(`[Latest Epoch] Error verifying cached epoch, searching...: ${error.message}`);
+                    latestEpoch = null;
+                }
             }
         } else {
             if (latestEpoch !== null) {
@@ -334,30 +358,65 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
         }
         
         // Fetch epoch data using the existing endpoint logic
+        // In fast path, use shorter timeout to prevent hanging
+        const isFastPath = latestEpochCache.justUpdated && cacheAge < 10000;
         let epochInfo;
         try {
-            epochInfo = await epochManager.epochs(latestEpoch);
+            const epochTimeout = isFastPath ? 2000 : 5000;
+            
+            const epochPromise = epochManager.epochs(latestEpoch);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Epoch fetch timeout')), epochTimeout)
+            );
+            
+            epochInfo = await Promise.race([epochPromise, timeoutPromise]);
         } catch (error) {
             console.error(`[Latest Epoch] Error fetching epoch ${latestEpoch} info:`, error.message);
-            return res.status(500).json({
-                error: 'Failed to fetch epoch data',
-                message: `Could not retrieve data for epoch ${latestEpoch}`,
-                details: error.message
-            });
+            // In fast path, if fetch fails, still try to return basic data from cache
+            if (isFastPath) {
+                console.log(`[Latest Epoch] Fast path: Epoch fetch failed but using cached epoch ${latestEpoch} anyway`);
+                // Continue with minimal data - events will be empty but epochId will be correct
+                epochInfo = {
+                    modelHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+                    scoresRoot: '0x0000000000000000000000000000000000000000000000000000000000000000',
+                    globalModelCid: null,
+                    globalModelHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+                    published: false
+                };
+            } else {
+                return res.status(500).json({
+                    error: 'Failed to fetch epoch data',
+                    message: `Could not retrieve data for epoch ${latestEpoch}`,
+                    details: error.message
+                });
+            }
         }
         
         // Fetch all events for this epoch (ensure latestEpoch is a number)
+        // In fast path mode, use shorter timeouts to prevent hanging
         const epochNum = Number(latestEpoch);
+        const eventTimeout = isFastPath ? 2000 : 5000; // 2s for fast path, 5s otherwise
+        
         const epochStartedFilter = epochManager.filters.EpochStarted(epochNum);
         const updateSubmittedFilter = epochManager.filters.UpdateSubmitted(epochNum);
         const scoresPostedFilter = epochManager.filters.ScoresRootPosted(epochNum);
         const modelPublishedFilter = epochManager.filters.ModelPublished(epochNum);
         
+        // Wrap event queries with timeouts to prevent hanging
+        const queryWithTimeout = (queryPromise, timeout) => {
+            return Promise.race([
+                queryPromise,
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Event query timeout')), timeout)
+                )
+            ]).catch(() => []); // Return empty array on timeout/error
+        };
+        
         const [epochStartedEvents, updateEvents, scoresEvents, publishedEvents] = await Promise.all([
-            epochManager.queryFilter(epochStartedFilter).catch(() => []),
-            epochManager.queryFilter(updateSubmittedFilter).catch(() => []),
-            epochManager.queryFilter(scoresPostedFilter).catch(() => []),
-            epochManager.queryFilter(modelPublishedFilter).catch(() => [])
+            queryWithTimeout(epochManager.queryFilter(epochStartedFilter), eventTimeout),
+            queryWithTimeout(epochManager.queryFilter(updateSubmittedFilter), eventTimeout),
+            queryWithTimeout(epochManager.queryFilter(scoresPostedFilter), eventTimeout),
+            queryWithTimeout(epochManager.queryFilter(modelPublishedFilter), eventTimeout)
         ]);
         
         // Structure data to match frontend expectations
@@ -668,20 +727,62 @@ app.get('/api/training/status', asyncHandler(async (req, res) => {
         }
         const epochManager = new ethers.Contract(epochManagerAddress, epochManagerArt.abi, provider);
         
-        // Check latest epoch (try epochs 1-100, starting from highest)
-        let latestEpoch = 0;
+        // Check latest epoch - use cache first for speed
+        let latestEpoch = getCachedLatestEpoch();
         let epochInfo = null;
         
-        for (let i = 100; i >= 1; i--) {
+        // If we have a cached epoch, verify it quickly (with timeout)
+        if (latestEpoch !== null) {
             try {
-                const info = await epochManager.epochs(i);
-                if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                    latestEpoch = i;
-                    epochInfo = info;
-                    break;
+                const verifyPromise = epochManager.epochs(latestEpoch);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Verification timeout')), 2000)
+                );
+                epochInfo = await Promise.race([verifyPromise, timeoutPromise]);
+                if (!epochInfo || epochInfo.modelHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    // Cached epoch invalid, search
+                    latestEpoch = null;
+                } else {
+                    // Check next 2 epochs quickly to see if there's a newer one
+                    for (let checkEpoch = latestEpoch + 1; checkEpoch <= latestEpoch + 2; checkEpoch++) {
+                        try {
+                            const checkPromise = epochManager.epochs(checkEpoch);
+                            const checkTimeout = new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Check timeout')), 1000)
+                            );
+                            const nextInfo = await Promise.race([checkPromise, checkTimeout]);
+                            if (nextInfo && nextInfo.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                                latestEpoch = checkEpoch;
+                                epochInfo = nextInfo;
+                                updateLatestEpochCache(checkEpoch);
+                                break;
+                            }
+                        } catch (e) {
+                            break;
+                        }
+                    }
                 }
             } catch (e) {
-                continue;
+                // Verification failed, search
+                latestEpoch = null;
+            }
+        }
+        
+        // If cache didn't work, search (try epochs 1-100, starting from highest)
+        if (latestEpoch === null || latestEpoch === 0) {
+            latestEpoch = 0;
+            for (let i = 100; i >= 1; i--) {
+                try {
+                    const info = await epochManager.epochs(i);
+                    if (info.modelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                        latestEpoch = i;
+                        epochInfo = info;
+                        updateLatestEpochCache(i);
+                        break;
+                    }
+                } catch (e) {
+                    continue;
+                }
             }
         }
         

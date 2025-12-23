@@ -232,6 +232,28 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             
             console.log('Training started successfully:', result);
             
+            // CRITICAL: Immediately refresh dashboard multiple times to catch new epoch
+            // The cache is updated on backend, so dashboard should see it right away
+            if (typeof window.refreshDashboard === 'function') {
+                console.log('🔄 Immediately refreshing dashboard to show new epoch...');
+                // Refresh immediately (with small delay to let backend cache update)
+                setTimeout(() => {
+                    window.refreshDashboard();
+                }, 500);
+                // Refresh again after 1 second
+                setTimeout(() => {
+                    window.refreshDashboard();
+                }, 1000);
+                // Refresh again after 2 seconds
+                setTimeout(() => {
+                    window.refreshDashboard();
+                }, 2000);
+                // Refresh again after 3 seconds
+                setTimeout(() => {
+                    window.refreshDashboard();
+                }, 3000);
+            }
+            
             // STAY ON TRAINING PAGE - Never navigate away or reload
             // Just refresh the training status to show the new epoch
             console.log('Training started - staying on training page and updating status...');
