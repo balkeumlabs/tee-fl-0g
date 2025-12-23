@@ -186,34 +186,22 @@ document.getElementById('config-form').addEventListener('submit', async (e) => {
             
             console.log('Training started successfully:', result);
             
-            // CRITICAL: Force dashboard refresh immediately after training starts
-            // The backend has already updated the cache with the new epoch ID
-            console.log('Training started successfully - forcing dashboard refresh...');
+            // STAY ON TRAINING PAGE - Never navigate away or reload
+            // Just refresh the training status to show the new epoch
+            console.log('Training started - staying on training page and updating status...');
+            console.log('Current page:', window.location.pathname);
             
-            // If on dashboard, refresh it immediately
-            if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
-                console.log('Immediately refreshing dashboard to show new epoch...');
-                if (typeof window.refreshDashboard === 'function') {
-                    // Refresh immediately, then again after 3 seconds to catch any delays
-                    await window.refreshDashboard();
-                    setTimeout(async () => {
-                        await window.refreshDashboard();
-                    }, 3000);
-                    setTimeout(async () => {
-                        await window.refreshDashboard();
-                    }, 6000);
-                } else {
-                    window.location.reload();
-                }
-            } else {
-                // If on training page, open dashboard in new tab AND refresh current page status
-                console.log('Training started - opening dashboard in new tab to show new epoch...');
-                window.open('/index.html', '_blank');
-                // Also refresh training status
-                setTimeout(async () => {
-                    await refreshTrainingStatus();
-                }, 2000);
-            }
+            // Refresh training status immediately and periodically to show progress
+            await refreshTrainingStatus();
+            setTimeout(async () => {
+                await refreshTrainingStatus();
+            }, 2000);
+            setTimeout(async () => {
+                await refreshTrainingStatus();
+            }, 5000);
+            
+            // DO NOT open dashboard automatically - user can open it manually if needed
+            // This prevents any unwanted navigation or tab opening
             
             // Poll for completion (demo is faster, real training takes longer)
             let pollCount = 0;
