@@ -212,13 +212,40 @@ function displayPipelineSteps(epochData) {
     }
 
     const events = epochData.events;
+    const currentEpochId = epochData.epochId;
+
+    // CRITICAL FIX: Validate that events belong to the current epoch
+    // This prevents showing events from previous epochs when a new epoch starts
+    const validateEventEpoch = (event) => {
+        // If no epochId in event, reject it (don't assume valid - be strict)
+        if (!event || event.epochId === undefined || event.epochId === null) {
+            console.warn('[Pipeline] Event missing epochId, rejecting:', event);
+            return false;
+        }
+        // Ensure currentEpochId is valid
+        if (!currentEpochId || currentEpochId <= 0) {
+            console.warn('[Pipeline] Invalid currentEpochId:', currentEpochId);
+            return false;
+        }
+        // Normalize both to numbers for comparison
+        const eventEpochId = typeof event.epochId === 'string' ? parseInt(event.epochId, 10) : Number(event.epochId);
+        const normalizedCurrentEpochId = typeof currentEpochId === 'string' ? parseInt(currentEpochId, 10) : Number(currentEpochId);
+        
+        const isValid = eventEpochId === normalizedCurrentEpochId;
+        if (!isValid) {
+            console.log(`[Pipeline] Event epoch ${eventEpochId} doesn't match current epoch ${normalizedCurrentEpochId}, filtering out`);
+        }
+        return isValid;
+    };
 
     // Step 1: Start Epoch - Update status and details
-    const step1Completed = events.epochStarted && events.epochStarted.length > 0;
+    // Filter events to only include those for the current epoch
+    const epochStartedEvents = (events.epochStarted || []).filter(validateEventEpoch);
+    const step1Completed = epochStartedEvents.length > 0;
     updatePipelineStepStatus(1, step1Completed);
     const step1 = document.getElementById('step-1-details');
     if (step1 && step1Completed) {
-        const event = events.epochStarted[0];
+        const event = epochStartedEvents[0];
         step1.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>Hash: ${formatHash(event.modelHash)}</div>
@@ -229,12 +256,14 @@ function displayPipelineSteps(epochData) {
     }
 
     // Step 2: Submit Update - Update status and details
-    const step2Completed = events.updatesSubmitted && events.updatesSubmitted.length > 0;
+    // CRITICAL FIX: Only mark as completed if there are updates for THIS epoch
+    const updatesSubmittedEvents = (events.updatesSubmitted || []).filter(validateEventEpoch);
+    const step2Completed = updatesSubmittedEvents.length > 0;
     updatePipelineStepStatus(2, step2Completed);
     const step2 = document.getElementById('step-2-details');
     if (step2 && step2Completed) {
-        const event = events.updatesSubmitted[0];
-        const updateCount = events.updatesSubmitted.length;
+        const event = updatesSubmittedEvents[0];
+        const updateCount = updatesSubmittedEvents.length;
         step2.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>Updates: ${updateCount} submitted</div>
@@ -246,11 +275,12 @@ function displayPipelineSteps(epochData) {
     }
 
     // Step 3: Compute Scores - Update status and details
-    const step3Completed = events.scoresPosted && events.scoresPosted.length > 0;
+    const scoresPostedEvents = (events.scoresPosted || []).filter(validateEventEpoch);
+    const step3Completed = scoresPostedEvents.length > 0;
     updatePipelineStepStatus(3, step3Completed);
     const step3 = document.getElementById('step-3-details');
     if (step3 && step3Completed) {
-        const event = events.scoresPosted[0];
+        const event = scoresPostedEvents[0];
         step3.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>Root: ${formatHash(event.scoresRoot)}</div>
@@ -261,11 +291,12 @@ function displayPipelineSteps(epochData) {
     }
 
     // Step 4: Publish Model - Update status and details
-    const step4Completed = events.modelPublished && events.modelPublished.length > 0;
+    const modelPublishedEvents = (events.modelPublished || []).filter(validateEventEpoch);
+    const step4Completed = modelPublishedEvents.length > 0;
     updatePipelineStepStatus(4, step4Completed);
     const step4 = document.getElementById('step-4-details');
     if (step4 && step4Completed) {
-        const event = events.modelPublished[0];
+        const event = modelPublishedEvents[0];
         step4.innerHTML = `
             <div>Block: ${event.blockNumber}</div>
             <div>CID: ${event.globalModelCid}</div>
@@ -730,20 +761,48 @@ function updateEpochProgress(epochData) {
     let completedSteps = 0;
     const totalSteps = 4;
     
+    // CRITICAL FIX: Validate events belong to current epoch before counting them
+    const currentEpochId = epochData.epochId;
+    const validateEventEpoch = (event) => {
+        // If no epochId in event, reject it (don't assume valid - be strict)
+        if (!event || event.epochId === undefined || event.epochId === null) {
+            return false;
+        }
+        // Ensure currentEpochId is valid
+        if (!currentEpochId || currentEpochId <= 0) {
+            return false;
+        }
+        // Normalize both to numbers for comparison
+        const eventEpochId = typeof event.epochId === 'string' ? parseInt(event.epochId, 10) : Number(event.epochId);
+        const normalizedCurrentEpochId = typeof currentEpochId === 'string' ? parseInt(currentEpochId, 10) : Number(currentEpochId);
+        return eventEpochId === normalizedCurrentEpochId;
+    };
+    
     if (epochData.events) {
-        if (epochData.events.epochStarted && epochData.events.epochStarted.length > 0) {
+        // Step 1: Epoch Started
+        const epochStartedEvents = (epochData.events.epochStarted || []).filter(validateEventEpoch);
+        if (epochStartedEvents.length > 0) {
             progress += 25;
             completedSteps++;
         }
-        if (epochData.events.updatesSubmitted && epochData.events.updatesSubmitted.length > 0) {
+        
+        // Step 2: Updates Submitted - CRITICAL: Only count updates for THIS epoch
+        const updatesSubmittedEvents = (epochData.events.updatesSubmitted || []).filter(validateEventEpoch);
+        if (updatesSubmittedEvents.length > 0) {
             progress += 25;
             completedSteps++;
         }
-        if (epochData.events.scoresPosted && epochData.events.scoresPosted.length > 0) {
+        
+        // Step 3: Scores Posted
+        const scoresPostedEvents = (epochData.events.scoresPosted || []).filter(validateEventEpoch);
+        if (scoresPostedEvents.length > 0) {
             progress += 25;
             completedSteps++;
         }
-        if (epochData.events.modelPublished && epochData.events.modelPublished.length > 0) {
+        
+        // Step 4: Model Published
+        const modelPublishedEvents = (epochData.events.modelPublished || []).filter(validateEventEpoch);
+        if (modelPublishedEvents.length > 0) {
             progress += 25;
             completedSteps++;
         }
