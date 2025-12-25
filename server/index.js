@@ -420,6 +420,35 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             queryWithTimeout(epochManager.queryFilter(modelPublishedFilter), eventTimeout)
         ]);
         
+        // CRITICAL FIX: Validate that all events belong to the current epoch
+        // This prevents showing events from previous epochs when a new epoch starts
+        const validateEventEpoch = (event, expectedEpochId) => {
+            if (!event || !event.args || !event.args.epochId) return false;
+            const eventEpochId = typeof event.args.epochId === 'bigint' 
+                ? Number(event.args.epochId) 
+                : parseInt(event.args.epochId.toString(), 10);
+            return eventEpochId === expectedEpochId;
+        };
+        
+        // Filter events to ensure they belong to the current epoch
+        const filteredEpochStartedEvents = epochStartedEvents.filter(e => validateEventEpoch(e, latestEpoch));
+        const filteredUpdateEvents = updateEvents.filter(e => validateEventEpoch(e, latestEpoch));
+        const filteredScoresEvents = scoresEvents.filter(e => validateEventEpoch(e, latestEpoch));
+        const filteredPublishedEvents = publishedEvents.filter(e => validateEventEpoch(e, latestEpoch));
+        
+        // Log if we filtered out any events (indicates potential issue)
+        if (epochStartedEvents.length !== filteredEpochStartedEvents.length ||
+            updateEvents.length !== filteredUpdateEvents.length ||
+            scoresEvents.length !== filteredScoresEvents.length ||
+            publishedEvents.length !== filteredPublishedEvents.length) {
+            console.warn(`[Latest Epoch] Filtered out events that didn't match epoch ${latestEpoch}:`, {
+                epochStarted: epochStartedEvents.length - filteredEpochStartedEvents.length,
+                updatesSubmitted: updateEvents.length - filteredUpdateEvents.length,
+                scoresPosted: scoresEvents.length - filteredScoresEvents.length,
+                modelPublished: publishedEvents.length - filteredPublishedEvents.length
+            });
+        }
+        
         // Structure data to match frontend expectations
         const epochData = {
             epochId: latestEpoch,
@@ -429,13 +458,13 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
             globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
             published: epochInfo.published,
             events: {
-                epochStarted: epochStartedEvents.map(e => ({
+                epochStarted: filteredEpochStartedEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     modelHash: e.args.modelHash,
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                updatesSubmitted: updateEvents.map(e => ({
+                updatesSubmitted: filteredUpdateEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     submitter: e.args.submitter,
                     updateCid: e.args.updateCid,
@@ -443,13 +472,13 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                scoresPosted: scoresEvents.map(e => ({
+                scoresPosted: filteredScoresEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     scoresRoot: e.args.scoresRoot,
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                modelPublished: publishedEvents.map(e => ({
+                modelPublished: filteredPublishedEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     globalModelCid: e.args.globalModelCid,
                     globalModelHash: e.args.globalModelHash,
@@ -458,6 +487,14 @@ app.get('/api/epoch/latest', asyncHandler(async (req, res) => {
                 }))
             }
         };
+        
+        // Log event counts for debugging
+        console.log(`[Latest Epoch] Epoch ${latestEpoch} events:`, {
+            epochStarted: filteredEpochStartedEvents.length,
+            updatesSubmitted: filteredUpdateEvents.length,
+            scoresPosted: filteredScoresEvents.length,
+            modelPublished: filteredPublishedEvents.length
+        });
         
         res.json(epochData);
     } catch (error) {
@@ -536,6 +573,22 @@ app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
             epochManager.queryFilter(modelPublishedFilter).catch(() => [])
         ]);
         
+        // CRITICAL FIX: Validate that all events belong to the requested epoch
+        // This prevents showing events from other epochs
+        const validateEventEpoch = (event, expectedEpochId) => {
+            if (!event || !event.args || !event.args.epochId) return false;
+            const eventEpochId = typeof event.args.epochId === 'bigint' 
+                ? Number(event.args.epochId) 
+                : parseInt(event.args.epochId.toString(), 10);
+            return eventEpochId === expectedEpochId;
+        };
+        
+        // Filter events to ensure they belong to the requested epoch
+        const filteredEpochStartedEvents = epochStartedEvents.filter(e => validateEventEpoch(e, epochNum));
+        const filteredUpdateEvents = updateEvents.filter(e => validateEventEpoch(e, epochNum));
+        const filteredScoresEvents = scoresEvents.filter(e => validateEventEpoch(e, epochNum));
+        const filteredPublishedEvents = publishedEvents.filter(e => validateEventEpoch(e, epochNum));
+        
         // Build epoch data structure to match frontend expectations
         const epochData = {
             epochId: epochNum,
@@ -545,13 +598,13 @@ app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
             globalModelHash: epochInfo.globalModelHash !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? epochInfo.globalModelHash : null,
             published: epochInfo.published,
             events: {
-                epochStarted: epochStartedEvents.map(e => ({
+                epochStarted: filteredEpochStartedEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     modelHash: e.args.modelHash,
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                updatesSubmitted: updateEvents.map(e => ({
+                updatesSubmitted: filteredUpdateEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     submitter: e.args.submitter,
                     updateCid: e.args.updateCid,
@@ -559,13 +612,13 @@ app.get('/api/epoch/:epochNumber', asyncHandler(async (req, res) => {
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                scoresPosted: scoresEvents.map(e => ({
+                scoresPosted: filteredScoresEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     scoresRoot: e.args.scoresRoot,
                     blockNumber: e.blockNumber,
                     transactionHash: e.transactionHash
                 })),
-                modelPublished: publishedEvents.map(e => ({
+                modelPublished: filteredPublishedEvents.map(e => ({
                     epochId: e.args.epochId.toString(),
                     globalModelCid: e.args.globalModelCid,
                     globalModelHash: e.args.globalModelHash,
