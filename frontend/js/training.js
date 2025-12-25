@@ -380,7 +380,10 @@ function updateTrainingStatus(status, rounds = null) {
     if (status === 'active') {
         statusEl.textContent = 'Training Active';
         statusEl.className = 'training-status-large active';
-        // Show more informative message based on client count
+        // Show more informative message based on update count
+        // FIX: Check updateCount to match dashboard logic (events.updatesSubmitted.length)
+        // Note: updateCount is not available in updateTrainingStatus, so we check connectedClients
+        // The refreshTrainingStatus function will update this with actual updateCount
         if (connectedClients === 0) {
             messageEl.textContent = 'Epoch started. Waiting for clients to submit updates...';
         } else {
@@ -439,12 +442,18 @@ async function refreshTrainingStatus() {
         }
         
         // Update message with connected clients info
+        // FIX: Check updateCount (actual updates submitted) not just connectedClients
+        // This ensures consistency with dashboard which checks events.updatesSubmitted.length
         const messageEl = document.getElementById('status-message');
         if (messageEl && data.status === 'active') {
-            if (data.connectedClients === 0) {
+            const hasUpdates = (data.updateCount && data.updateCount > 0) || (data.connectedClients && data.connectedClients > 0);
+            if (!hasUpdates) {
                 messageEl.textContent = 'Epoch started. Waiting for clients to submit updates...';
             } else {
-                messageEl.textContent = `Training in progress... ${data.connectedClients} client(s) connected`;
+                const updateText = data.updateCount > 0 
+                    ? `${data.updateCount} update(s) submitted`
+                    : `${data.connectedClients} client(s) connected`;
+                messageEl.textContent = `Training in progress... ${updateText}`;
             }
         }
         
