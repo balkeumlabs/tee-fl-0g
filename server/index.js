@@ -867,6 +867,17 @@ app.post('/api/training/start', asyncHandler(async (req, res) => {
         
         const epochManagerAddress = deployData.addresses.EpochManager;
         
+        // FIX: Clear demo data when actual training starts to prevent dashboard showing stale demo data
+        // This ensures dashboard and training page show the same (actual) data
+        if (demoMode.enabled) {
+            console.log('[Training Start] Clearing demo data because actual training is starting');
+            demoMode.epochData = null;
+            demoMode.currentEpoch = null;
+            demoMode.startTime = null;
+            // Note: We don't disable demoMode.enabled here - user can toggle it back if needed
+            // But we clear the data so dashboard shows actual blockchain data
+        }
+        
         // Check if PRIVATE_KEY is set (required for transactions)
         const privateKey = process.env.PRIVATE_KEY;
         if (!privateKey) {
